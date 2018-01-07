@@ -88,13 +88,18 @@ type ISubstitutable<'a> =
 module Substitution =
 
   [<CompiledName("New")>]
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   let subs a b = Subs struct (a, b)
 
+  [<CompiledName("Apply")>]
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   let apply substitution (varHolder : 'a when 'a :> IHasTypeVar<'a>) = varHolder.Substitute substitution
 
+  [<CompiledName("Apply")>]
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   let (<==) (target : 'a when 'a :> ISubstitutable<'a>) subs = target.Substitute subs
 
-type Subss =
+type [<NoEquality; NoComparison>] Subss =
  | Subss of Subs list
  with
   member this.TryResolveExact ty =
