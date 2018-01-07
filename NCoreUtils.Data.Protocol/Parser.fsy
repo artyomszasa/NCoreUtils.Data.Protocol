@@ -1,0 +1,48 @@
+%{
+open NCoreUtils.Data.Protocol.Ast
+open System.Collections.Immutable
+%}
+
+%start start
+%token <string> IDENT
+%token <string> VALUE
+%token EQ NEQ GT GE LT LE
+%token OR AND
+%token EOF LPAREN RPAREN COMMA
+%nonassoc EQ NEQ GT GE LT LE
+%left OR
+%left AND
+%nonassoc EOF LPAREN RPAREN COMMA
+%type < Node > start
+
+%%
+
+start:
+  | expr andor start { Binary ($1, $2, $3) }
+  | expr EOF { $1 }
+
+expr:
+  | LPAREN expr RPAREN { $2 }
+  | expr binop expr { Binary ($1, $2, $3) }
+  | valueexpr { $1 }
+
+valueexpr:
+  | IDENT LPAREN args RPAREN { Call ($1, ImmutableArray.CreateRange $3) }
+  | IDENT { Identifier $1 }
+  | VALUE { Constant $1 }
+
+args:
+  | expr COMMA args { $1 :: $3 }
+  | expr { [ $1 ] }
+
+andor:
+  | AND  { BinaryOperation.AndAlso }
+  | OR   { BinaryOperation.OrElse }
+
+binop:
+  | EQ   { BinaryOperation.Equal }
+  | NEQ  { BinaryOperation.NotEqual }
+  | GT   { BinaryOperation.GreaterThan }
+  | LT   { BinaryOperation.LessThan }
+  | GE   { BinaryOperation.GreaterThanOrEqual }
+  | LE   { BinaryOperation.LessThanOrEqual }

@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <!-- NuGet -->
+    <PackageId>NCoreUtils.Data.Protocol</PackageId>
+    <Title>$(PackageId)</Title>
+    <Authors>Artyom Antyipin</Authors>
+    <Description>Data query protocol implementation.</Description>
+    <Copyright>Artyom Antyipin</Copyright>
+    <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
+    <!-- Assembly Info -->
+    <Product>NCoreUtils</Product>
+    <AssemblyName>$(PackageId)</AssemblyName>
+    <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
+    <!-- Compilation -->
+    <OutputType>Library</OutputType>
+    <DebugType>portable</DebugType>
+    <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile> -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Parser.fs" />
+    <Compile Include="Lexer.fs" />
+    <Compile Include="Calls.fs" />
+    <Compile Include="CallInfoResolver.fs" />
+    <Compile Include="Data.fs" />
+    <Compile Include="TypeInference.fs" />
+    <Compile Include="DataQueryExpressionBuilder.fs" />
+    <Compile Include="Library.fs" />
+    <Compile Include="ServiceExtensions.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FsLexYacc-Core" Version="7.0.5" PrivateAssets="All" />
+    <PackageReference Include="FsLexYacc.Runtime-Core" Version="7.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+  </ItemGroup>
+  <Target Name="FsLexYacc">
+    <Exec Command="dotnet $(NuGetPackageRoot)fslexyacc-core/7.0.5/build/fsyacc.dll -o $(MSBuildProjectDirectory)/Parser.fs --module NCoreUtils.Data.Protocol.Parser $(MSBuildProjectDirectory)/Parser.fsy" />
+    <Exec Command="dotnet $(NuGetPackageRoot)fslexyacc-core/7.0.5/build/fslex.dll -o $(MSBuildProjectDirectory)/Lexer.fs --unicode $(MSBuildProjectDirectory)/Lexer.fsl" />
+  </Target>
+</Project>
