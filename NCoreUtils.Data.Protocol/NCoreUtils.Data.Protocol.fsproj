@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>1.0.1</VersionPrefix>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol</PackageId>
     <Title>$(PackageId)</Title>
@@ -9,6 +9,7 @@
     <Description>Data query protocol implementation.</Description>
     <Copyright>Artyom Antyipin</Copyright>
     <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
+    <PackageReleaseNotes>Expression parser fixed.</PackageReleaseNotes>
     <!-- Assembly Info -->
     <Product>NCoreUtils</Product>
     <AssemblyName>$(PackageId)</AssemblyName>

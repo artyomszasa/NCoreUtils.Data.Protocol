@@ -248,6 +248,9 @@ let main _ =
     let inputs =
       [ "x > 2"
         "length(name) > 2"
+        "(x > 30) || (x < 10) || (x = 20)"
+        "((x > 30) || (x < 10)) || (x = 20)"
+        "(x > 30) || ((x < 10) || (x = 20))"
         "name = null || length(name) > 2"
         "name = null || contains(name, \"xy\")" ]
     for input in inputs do
