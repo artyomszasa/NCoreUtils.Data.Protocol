@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <VersionPrefix>1.0.1</VersionPrefix>
+    <VersionPrefix>1.1.0</VersionPrefix>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol</PackageId>
     <Title>$(PackageId)</Title>
@@ -37,8 +37,8 @@
   <ItemGroup>
     <PackageReference Include="FsLexYacc-Core" Version="7.0.5" PrivateAssets="All" />
     <PackageReference Include="FsLexYacc.Runtime-Core" Version="7.0.5" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.0" />
   </ItemGroup>
   <Target Name="FsLexYacc">
     <Exec Command="dotnet $(NuGetPackageRoot)fslexyacc-core/7.0.5/build/fsyacc.dll -o $(MSBuildProjectDirectory)/Parser.fs --module NCoreUtils.Data.Protocol.Parser $(MSBuildProjectDirectory)/Parser.fsy" />

@@ -10,11 +10,17 @@ open NCoreUtils.Data.Protocol.TypeInference
 
 type DataQueryExpressionBuilder (parser : IDataQueryParser, typeInferer : ITypeInferer, callInfoResolver : ICallInfoResolver) =
 
+  static let isNullable (ty : Type) = ty.IsConstructedGenericType && ty.GetGenericTypeDefinition () = typedefof<Nullable<_>>
+
+
   static let rec toExpression resolveCall root (node : NodeX<Type>) =
     match node.Node with
     | ConstantX null ->
       match node.Data.IsValueType with
-      | true -> failwith "null value cannot be used with value types"
+      | true ->
+        match isNullable node.Data with
+        | true -> Expression.Constant (Activator.CreateInstance node.Data, node.Data) :> Expression
+        | _    -> failwith "null value cannot be used with value types"
       | _ ->
         Expression.Constant (null, node.Data) :> Expression
     | ConstantX value ->

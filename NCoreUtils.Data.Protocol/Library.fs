@@ -3,7 +3,6 @@ namespace NCoreUtils.Data.Protocol
 open Microsoft.FSharp.Text.Lexing
 
 type DataQueryParser () =
-
   let filter tok =
     match tok with
     | NCoreUtils.Data.Protocol.Parser.token.IDENT "null" -> NCoreUtils.Data.Protocol.Parser.token.VALUE null

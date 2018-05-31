@@ -25,13 +25,16 @@ type CallInfo =
       member this.ResultType = this.ResultType
       member this.Parameters = this.Parameters
       member this.CreateExpression arguments = this.CreateExpression.Invoke arguments
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     static member Create (name, resultType, parameters : ImmutableArray<Type>, createExpression) =
       { Name             = name
         ResultType       = resultType
         Parameters       = parameters
         CreateExpression = createExpression }
       :> ICallInfo
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     static member Create (name, resultType, parameters : Type[], createExpression) =
       CallInfo.Create (name, resultType, ImmutableArray.CreateRange parameters, createExpression)
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     static member Create (name, resultType, parameters : seq<Type>, createExpression) =
       CallInfo.Create (name, resultType, ImmutableArray.CreateRange parameters, createExpression)
