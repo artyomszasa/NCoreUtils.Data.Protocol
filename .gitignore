@@ -2,3 +2,4 @@
 .vs
 NCoreUtils*/bin
 NCoreUtils*/obj
+NCoreUtils.Data.Protocol.Grammar/.antlr

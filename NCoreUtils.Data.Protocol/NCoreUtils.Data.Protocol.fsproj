@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <VersionPrefix>1.1.1</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol</PackageId>
     <Title>$(PackageId)</Title>
@@ -9,7 +9,7 @@
     <Description>Data query protocol implementation.</Description>
     <Copyright>Artyom Antyipin</Copyright>
     <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
-    <PackageReleaseNotes>NuGet dependency bump.</PackageReleaseNotes>
+    <PackageReleaseNotes>F# 4.5 supoort.</PackageReleaseNotes>
     <!-- Assembly Info -->
     <Product>NCoreUtils</Product>
     <AssemblyName>$(PackageId)</AssemblyName>
@@ -21,27 +21,24 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Parser.fs" />
-    <Compile Include="Lexer.fs" />
     <Compile Include="Calls.fs" />
-    <Compile Include="CallInfoResolver.fs" />
-    <Compile Include="Data.fs" />
-    <Compile Include="TypeInference.fs" />
     <Compile Include="DataQueryExpressionBuilder.fs" />
-    <Compile Include="Library.fs" />
     <Compile Include="ServiceExtensions.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Grammar\NCoreUtils.Data.Protocol.Grammar.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Antlr4\NCoreUtils.Data.Protocol.Antlr4.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.TypeInference\NCoreUtils.Data.Protocol.TypeInference.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Common\NCoreUtils.Data.Protocol.Common.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions\NCoreUtils.Data.Protocol.Functions.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FsLexYacc-Core" Version="7.0.5" PrivateAssets="All" />
-    <PackageReference Include="FsLexYacc.Runtime-Core" Version="7.0.5" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
+    <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
+    <PackageReference Include="NCoreUtils.FSharp" Version="2.0.0" />
+    <PackageReference Include="NCoreUtils.Maybe" Version="1.0.4" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
   </ItemGroup>
-  <Target Name="FsLexYacc">
-    <Exec Command="dotnet $(NuGetPackageRoot)fslexyacc-core/7.0.5/build/fsyacc.dll -o $(MSBuildProjectDirectory)/Parser.fs --module NCoreUtils.Data.Protocol.Parser $(MSBuildProjectDirectory)/Parser.fsy" />
-    <Exec Command="dotnet $(NuGetPackageRoot)fslexyacc-core/7.0.5/build/fslex.dll -o $(MSBuildProjectDirectory)/Lexer.fs --unicode $(MSBuildProjectDirectory)/Lexer.fsl" />
-  </Target>
 </Project>

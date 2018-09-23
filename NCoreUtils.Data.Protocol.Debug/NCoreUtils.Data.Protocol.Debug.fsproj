@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol\NCoreUtils.Data.Protocol.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Grammar\NCoreUtils.Data.Protocol.Grammar.csproj" />
   </ItemGroup>
 
   <ItemGroup>

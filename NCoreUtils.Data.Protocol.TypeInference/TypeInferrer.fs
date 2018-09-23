@@ -1,0 +1,280 @@
+namespace NCoreUtils.Data.Protocol.TypeInference
+
+open System
+open System.Collections.Immutable
+open System.Threading
+open NCoreUtils
+open NCoreUtils.Data
+open NCoreUtils.Data.Protocol
+open NCoreUtils.Data.Protocol.Ast
+open System.Runtime.CompilerServices
+open NCoreUtils.Data.Protocol
+
+
+
+[<NoEquality; NoComparison>]
+type TypeInferenceContext =
+  internal
+    { Types         : Map<TypeUid, TypeVariable>
+      Substitutions : Map<TypeUid, TypeUid list> }
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module TypeInferenceContext =
+
+  [<CompiledName("Empty")>]
+  let empty = { Types = Map.empty; Substitutions = Map.empty }
+
+  [<CompiledName("ApplyConstraint")>]
+  let applyConstraint uid variable (ctx: TypeInferenceContext) =
+    let types' =
+      ctx.Types
+      |> Map.map (fun id c -> if id = uid then TypeVariable.merge c variable else c)
+    { Types = types'; Substitutions = ctx.Substitutions }
+
+  [<CompiledName("Substitute")>]
+  let substitute a b (ctx: TypeInferenceContext) =
+    let substitutions =
+      match Map.tryFind a ctx.Substitutions with
+      | Some l -> Map.add a (b :: l) ctx.Substitutions
+      | _      -> Map.add a [b] ctx.Substitutions
+    { Types = ctx.Types; Substitutions = substitutions }
+
+  [<CompiledName("GetAllConstraints")>]
+  let rec getAllConstraints uid (ctx : TypeInferenceContext) =
+    match Map.tryFind uid ctx.Types, Map.tryFind uid ctx.Substitutions with
+    | None, None
+    | None, Some []           -> TypeVariable.empty
+    | Some v0, None
+    | Some v0, Some []        -> v0
+    | Some v0, Some l         -> List.fold (fun v uid -> getAllConstraints uid ctx |> TypeVariable.merge v) v0 l
+    | None,    Some (v0 :: l) -> List.fold (fun v uid -> getAllConstraints uid ctx |> TypeVariable.merge v) (getAllConstraints v0 ctx) l
+
+  [<CompiledName("InstantiateType")>]
+  let instantiateType uid ctx =
+    match getAllConstraints uid ctx with
+    | KnownType ty -> ty
+    | UnknownType c ->
+      match c.Base with
+      | null ->
+        match c.Interfaces.Count with
+        | 1 -> c.Interfaces |> Seq.head
+        | _ ->
+          match c.IsNumeric, c.IsNullable with
+          | Nullable.Value true, Nullable.Empty
+          | Nullable.Value true, Nullable.Value false -> typeof<int32>
+          | _ -> typeof<string>
+      | _ -> c.Base
+
+// *********** MODULE FUNCTIONS AS MEMBERS **********************************
+
+type TypeInferenceContext with
+  static member Empty
+    with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = TypeInferenceContext.empty
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  member this.ApplyConstraint (uid, variable) =
+    TypeInferenceContext.applyConstraint uid variable this
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  member this.Substitute (sourceTypeUid, targetTypeUid) =
+    TypeInferenceContext.applyConstraint sourceTypeUid targetTypeUid this
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  member this.GetAllConstraints typeUid =
+    TypeInferenceContext.getAllConstraints typeUid this
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  member this.InstantiateType typeUid =
+    TypeInferenceContext.instantiateType typeUid this
+
+// *********** LOCAL ALIASES ************************************************
+
+type private Ctx = TypeInferenceContext
+
+module TypeInferenceContext = TypeInferenceContext
+
+// *********** IMPLEMENTATION ***********************************************
+
+[<RequireQualifiedAccess>]
+module internal TypeInferenceHelpers =
+
+  [<NoEquality; NoComparison>]
+  type internal NamingContext = NamingContext of Map<CaseInsensitive, struct (TypeUid * NameUid)>
+
+  [<RequireQualifiedAccess>]
+  [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+  module internal NamingContext =
+
+    let empty = NamingContext Map.empty
+
+    let add key typeUid uid (NamingContext names) = Map.add (CaseInsensitive key) (struct (typeUid, uid)) names |> NamingContext
+
+    let tryFind key (NamingContext names) = Map.tryFind (CaseInsensitive key) names
+
+  let private logicOperations =
+    [ BinaryOperation.OrElse
+      BinaryOperation.AndAlso
+      BinaryOperation.GreaterThan
+      BinaryOperation.GreaterThanOrEqual
+      BinaryOperation.LessThan
+      BinaryOperation.LessThanOrEqual
+      BinaryOperation.Equal
+      BinaryOperation.NotEqual ]
+    |> Set.ofList
+
+  let private numericArgOperations =
+    [ BinaryOperation.GreaterThan
+      BinaryOperation.GreaterThanOrEqual
+      BinaryOperation.LessThan
+      BinaryOperation.LessThanOrEqual
+      BinaryOperation.Add
+      BinaryOperation.Substract
+      BinaryOperation.Multiply
+      BinaryOperation.Divide
+      BinaryOperation.Modulo ]
+    |> Set.ofList
+
+  let private numericResultOperations =
+    [ BinaryOperation.Add
+      BinaryOperation.Substract
+      BinaryOperation.Multiply
+      BinaryOperation.Divide
+      BinaryOperation.Modulo ]
+    |> Set.ofList
+
+
+  let inline private mapImmutableArray f (arr : ImmutableArray<_>) =
+    let length = arr.Length
+    let builder = ImmutableArray.CreateBuilder length
+    for i in 0 .. arr.Length - 1 do
+      builder.Add <| f arr.[i]
+    builder.ToImmutable ()
+
+  let private getName node =
+    match node with
+    | Identifier name -> name
+    | _ -> ProtocolSyntaxException "Lambda argument supposed to be identifier" |> raise
+
+  [<CompiledName("Idfy")>]
+  let idfy node =
+    let newNameUid =
+      let supply = ref 0
+      fun () -> Interlocked.Increment supply |> NameUid
+    let newTypeUid =
+      let supply = ref 0
+      fun () -> Interlocked.Increment supply |> TypeUid
+    // process nodes
+    let rec impl ctx node =
+      match node with
+      | Lambda (Identifier argName, body) ->
+        let nodeTypeUid = newTypeUid ()
+        let argNameUid = newNameUid ()
+        let argTypeUid = newTypeUid ()
+        let ctx' = NamingContext.add argName argTypeUid argNameUid ctx
+        UnresolvedLambda (nodeTypeUid, UnresolvedIdentifier (argTypeUid, argNameUid), impl ctx' body)
+      | Lambda _ -> ProtocolSyntaxException "Lambda argument supposed to be identifier" |> raise
+      | Binary (left, op, right) ->
+        UnresolvedBinary (newTypeUid (), impl ctx left, op, impl ctx right)
+      | Call (name, args) ->
+        UnresolvedCall (newTypeUid (), name, args |> mapImmutableArray (impl ctx))
+      | Member (instance, name) ->
+        UnresolvedMember (newTypeUid (), impl ctx instance, name)
+      | Constant value ->
+        UnresolvedConstant (newTypeUid (), value)
+      | Identifier name ->
+        match NamingContext.tryFind name ctx with
+        | Some (struct (typeUid, nameUid)) -> UnresolvedIdentifier (typeUid, nameUid)
+        | _ -> sprintf "Unable to resolve identifier name \"%s\"." name |> ProtocolTypeInferenceException |> raise
+    impl NamingContext.empty node
+
+  [<CompiledName("CollectIds")>]
+  let collectIds node =
+    let rec impl acc (node : UnresolvedNode<string>) =
+      Seq.fold
+        (fun map node -> Map.fold (fun map k v -> Map.add k v map) map (impl acc node))
+        (Map.add node.TypeUid TypeVariable.empty acc)
+        (node.GetChildren ())
+    { Types = impl Map.empty node; Substitutions = Map.empty }
+
+  let inline private applyIf condition action (ctx : Ctx) =
+    match condition with
+    | true -> action ctx
+    | _    -> ctx
+
+  [<CompiledName("CollectConstraints")>]
+  let rec collectConstraints (functionResolver : IFunctionDescriptorResolver) node ctx =
+    match node with
+    | UnresolvedLambda (uid, UnresolvedIdentifier (argUid, argName), body) ->
+      let (ctx', body') = collectConstraints functionResolver body ctx
+      let arg' = UnresolvedIdentifier (argUid, argName)
+      ctx', UnresolvedLambda (uid, arg', body')
+    | UnresolvedLambda _ -> ProtocolSyntaxException "Lambda argument supposed to be identifier" |> raise
+    | UnresolvedBinary (uid, left, op, right) ->
+      let ctx' =
+        ctx
+        |> applyIf (Set.contains op logicOperations)         (TypeInferenceContext.applyConstraint uid (KnownType typeof<bool>))
+        |> applyIf (Set.contains op numericArgOperations)    (TypeInferenceContext.applyConstraint left.TypeUid TypeVariable.numeric >> TypeInferenceContext.applyConstraint right.TypeUid TypeVariable.numeric)
+        |> applyIf (Set.contains op numericResultOperations) (TypeInferenceContext.applyConstraint uid TypeVariable.numeric)
+        |> TypeInferenceContext.substitute left.TypeUid right.TypeUid
+      let (ctx'', l) = collectConstraints functionResolver left ctx'
+      let (ctx''', r) = collectConstraints functionResolver right ctx''
+      ctx''', UnresolvedBinary (uid, l, op, r)
+    | UnresolvedCall (uid, name, arguments) ->
+      let (ctx', resolvedArgsBuilder) =
+        Seq.fold
+          (fun (ctx, resolvedArgs : ImmutableArray<_>.Builder) arg ->
+            let (ctx', arg') = collectConstraints functionResolver arg ctx
+            resolvedArgs.Add arg'
+            (ctx', resolvedArgs))
+          (ctx, ImmutableArray.CreateBuilder arguments.Length)
+          arguments
+      let resolvedArgs = resolvedArgsBuilder.ToImmutable ()
+      let resConstraints = TypeInferenceContext.getAllConstraints uid ctx'
+      let argConstraints = arguments |> Seq.mapToArray (fun node -> TypeInferenceContext.getAllConstraints node.TypeUid ctx')
+      match functionResolver.ResolveFunction (name, resConstraints, argConstraints) with
+      | null ->
+        sprintf "Unable to resolve function call with (Name = %s, Result = %A, Args = %A)" name resConstraints argConstraints
+        |> ProtocolTypeInferenceException
+        |> raise
+      | desc ->
+        let ctx'' =
+          TypeInferenceContext.applyConstraint uid (KnownType desc.ResultType) ctx'
+          |> Seq.foldBack
+              (fun (node : UnresolvedNode<_>, ty) -> TypeInferenceContext.applyConstraint node.TypeUid (KnownType ty))
+              (Seq.zip arguments desc.ArgumentTypes)
+        ctx'', UnresolvedCall (uid, desc, resolvedArgs)
+    | UnresolvedMember (uid, instance, name) ->
+      let (ctx', instance') = collectConstraints functionResolver instance ctx
+      match TypeInferenceContext.getAllConstraints instance'.TypeUid ctx' with
+      | UnknownType _ ->
+        TypeInferenceContext.applyConstraint instance'.TypeUid (TypeVariable.hasMember name) ctx', UnresolvedMember (uid, instance', name)
+      | KnownType instanceType ->
+        match Members.getMember name instanceType with
+        | NoMember ->
+          sprintf "Type %A has no member %s" instanceType name |> ProtocolTypeInferenceException |> raise
+        | PropertyMember p ->
+          TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name)
+        | FieldMember f ->
+          TypeInferenceContext.applyConstraint uid (KnownType f.FieldType) ctx', UnresolvedMember (uid, instance', name)
+    | UnresolvedConstant (uid, null) -> TypeInferenceContext.applyConstraint uid TypeVariable.nullable ctx, UnresolvedConstant (uid, null)
+    | UnresolvedConstant (uid, value) -> ctx, UnresolvedConstant (uid, value)
+    | UnresolvedIdentifier (uid, name) -> ctx, UnresolvedIdentifier (uid, name)
+
+  [<CompiledName("Resolve")>]
+  let resolve rootType node ctx =
+    let ctx' =
+      match node with
+      | UnresolvedLambda (_, arg, _) -> TypeInferenceContext.applyConstraint arg.TypeUid (KnownType rootType) ctx
+      | _                            -> ctx
+    UnresolvedNode.resolve (fun typeUid -> TypeInferenceContext.instantiateType typeUid ctx') node
+
+type TypeInferrer =
+  val private functionResolver : IFunctionDescriptorResolver
+  member this.FunctionDescriptorResolver = this.functionResolver
+  new (functionResolver) = { functionResolver = functionResolver }
+  member this.InferTypes (rootType, expr) =
+    let exprX = TypeInferenceHelpers.idfy expr
+    let initialContext = TypeInferenceHelpers.collectIds exprX
+    let (context, unresolvedExpr) = TypeInferenceHelpers.collectConstraints this.functionResolver exprX initialContext
+    TypeInferenceHelpers.resolve rootType unresolvedExpr context
+
+  interface ITypeInferrer with
+    member this.InferTypes (rootType, expr) = this.InferTypes (rootType, expr)
+

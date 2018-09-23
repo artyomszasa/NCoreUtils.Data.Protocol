@@ -13,12 +13,19 @@ type BinaryOperation =
   // Conditional
   | OrElse               = 6
   | AndAlso              = 7
-  // TODO: Arithmetic
+  // Arithmetic
+  | Add                  = 8
+  | Substract            = 9
+  | Multiply             = 10
+  | Divide               = 11
+  | Modulo               = 12
   // TODO: Bitwise
 
 [<StructuralEquality; NoComparison>]
 type Node =
+  | Lambda of Arg:Node * Body:Node
   | Binary of Left:Node * Operation:BinaryOperation * Right:Node
   | Call of Name:string * Arguments:ImmutableArray<Node>
+  | Member of Instance:Node * Member:string
   | Constant of RawValue:string
   | Identifier of Value:string

@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ExceptionContract.fs" />
+    <Compile Include="Contract.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Common\NCoreUtils.Data.Protocol.Common.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
+    <PackageReference Include="NCoreUtils.FSharp" Version="2.0.0" />
+  </ItemGroup>
+</Project>
