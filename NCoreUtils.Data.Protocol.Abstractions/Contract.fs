@@ -6,6 +6,7 @@ open System
 open System.Linq.Expressions
 open System.Runtime.Serialization
 
+/// Represents errors that occur during protocol related operations.
 [<Serializable>]
 type ProtocolException =
   inherit Exception
@@ -14,6 +15,7 @@ type ProtocolException =
   new (message : string, innerException) = { inherit Exception (message, innerException) }
   new (info : SerializationInfo, context) = { inherit Exception (info, context) }
 
+/// Represents errors that occur when raw data query has invalid syntax.
 [<Serializable>]
 type ProtocolSyntaxException =
   inherit ProtocolException
@@ -21,6 +23,7 @@ type ProtocolSyntaxException =
   new (message : string, innerException) = { inherit ProtocolException (message, innerException) }
   new (info : SerializationInfo, context) = { inherit ProtocolException (info, context) }
 
+/// Defines functionality to parse raw input string into internal AST.
 [<Interface>]
 type IDataQueryParser =
   /// <summary>
@@ -33,18 +36,13 @@ type IDataQueryParser =
   /// </exception>
   abstract ParseQuery : input:string -> Node
 
-[<AllowNullLiteral>]
-[<Interface>]
-type ICallInfo =
-  abstract Name       : string
-  abstract ResultType : Type
-  abstract Parameters : ImmutableArray<Type>
-  abstract CreateExpression : arguments:Expression[] -> Expression
-
-[<Interface>]
-type ICallInfoResolver =
-  abstract ResolveCall : name:string * argNum:int -> ICallInfo
-
+/// Defines functionality to parse and process raw input string into LINQ expressions.
 [<Interface>]
 type IDataQueryExpressionBuilder =
+  /// <summary>
+  /// Parses and processes specified query creating LINQ expression with respect to the root argument type.
+  /// </summary>
+  /// <param name="rootType">Type of the root argument in the expression.</param>
+  /// <param name="input">Raw query to parse and process.</param>
+  /// <returns>LINQ Expression representation of the input query.</returns>
   abstract BuildExpression : rootType:Type * input:string -> LambdaExpression

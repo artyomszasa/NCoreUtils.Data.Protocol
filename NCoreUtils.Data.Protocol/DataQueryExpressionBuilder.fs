@@ -11,7 +11,7 @@ open NCoreUtils.Data.Protocol.Ast
 open NCoreUtils.Data.Protocol.TypeInference
 
 [<Sealed>]
-type ConstantBox<'a> (value : 'a) =
+type private ConstantBox<'a> (value : 'a) =
   member val Value = value
   override this.ToString () = sprintf "cbox(%A)" this.Value
 
@@ -27,7 +27,7 @@ type private BoxedConstantBuilder () =
 
 and private BoxedConstantBuilder<'a> () =
   inherit BoxedConstantBuilder ()
-  static let property = typeof<ConstantBox<'a>>.GetProperty("Value", BindingFlags.Instance ||| BindingFlags.Public)
+  static let property = typeof<ConstantBox<'a>>.GetProperty("Value", BindingFlags.Instance ||| BindingFlags.NonPublic)
   override __.BuildExpression value =
     let v = value :?> 'a
     let valueBox = ConstantBox v
@@ -97,20 +97,35 @@ module private DataQueryExpressionBuilderHelpers =
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   let toExpression node = createExpression Map.empty node
 
+/// <summary>
+/// Default data query expression builder. Uses provided data query parser and type inferrer to parse and process query
+/// creating LINQ expression as the result.
+/// </summary>
 type DataQueryExpressionBuilder =
   val private parser   : IDataQueryParser
   val private inferrer : ITypeInferrer
-
-  member this.Parser = this.parser
-
-  member this.Inferrer = this.inferrer
-
+  /// Gets the data query parser used to parse queries.
+  member this.Parser with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.parser
+  /// Gets type inferrer used to infer types in parsed query.
+  member this.Inferrer with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.inferrer
+  /// <summary>
+  /// Initializes new instance of default data query expression builder with the specified data query parser and type
+  /// inferrer.
+  /// </summary>
+  /// <param name="parser">Data query parser to use.</param>
+  /// <param name="inferrer">Type inferrer to use.</param>
   new (parser, inferrer) =
     if isNull (box parser)   then ArgumentNullException "parser"   |> raise
     if isNull (box inferrer) then ArgumentNullException "inferrer" |> raise
     { parser   = parser
       inferrer = inferrer }
 
+  /// <summary>
+  /// Parses and processes specified query creating LINQ expression with respect to the root argument type.
+  /// </summary>
+  /// <param name="rootType">Type of the root argument in the expression.</param>
+  /// <param name="input">Raw query to parse and process.</param>
+  /// <returns>LINQ Expression representation of the input query.</returns>
   member this.BuildExpression (rootType, input) =
     let expression = this.Parser.ParseQuery input
     this.Inferrer.InferTypes (rootType, expression)

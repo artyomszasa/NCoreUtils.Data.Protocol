@@ -7,11 +7,20 @@ open NCoreUtils.Data.Protocol.TypeInference
 open System
 open System.Runtime.CompilerServices
 
+/// Contains service collection extensions to easily add data query parsing services.
 [<Extension>]
+[<AbstractClass; Sealed>]
 type ServiceCollectionDataQueryExtensions =
 
+  /// <summary>
+  /// Adds data query parsing services optionally configuring supported function recognition.
+  /// </summary>
+  /// <param name="services">Service collection to operate on.</param>
+  /// <param name="suppressDefaultCalls">Whether to suppress adding default function recognition.</param>
+  /// <param name="configureFunctions">Optional function to configure function recognition.</param>
+  /// <returns>Original service collection for chaining.</returns>
   [<Extension>]
-  static member AddDataQueryServices (services : IServiceCollection, [<OptionalArgument>] suppressDefaultCalls : bool, [<OptionalArgument>] configureCalls : Action<FunctionDescriptorResolverBuilder>) =
+  static member AddDataQueryServices (services : IServiceCollection, [<OptionalArgument>] suppressDefaultCalls : bool, [<OptionalArgument>] configureFunctions : Action<FunctionDescriptorResolverBuilder>) =
     let cirBuilder = FunctionDescriptorResolverBuilder ()
     if not suppressDefaultCalls then
       services
@@ -19,15 +28,17 @@ type ServiceCollectionDataQueryExtensions =
         .AddSingleton<CommonFunctions.StringToLower>()
         .AddSingleton<CommonFunctions.StringToUpper>()
         .AddSingleton<CommonFunctions.StringContains>()
+        .AddSingleton<CommonFunctions.CollectionContains>()
         |> ignore
       cirBuilder
         .Add<CommonFunctions.StringLength>()
         .Add<CommonFunctions.StringToLower>()
         .Add<CommonFunctions.StringToUpper>()
         .Add<CommonFunctions.StringContains>()
+        .Add<CommonFunctions.CollectionContains>()
         |> ignore
-    if not (isNull configureCalls) then
-      configureCalls.Invoke cirBuilder
+    if not (isNull configureFunctions) then
+      configureFunctions.Invoke cirBuilder
 
     services.TryAddSingleton<IDataQueryExpressionBuilder, DataQueryExpressionBuilder>()
     services.TryAddSingleton<IDataQueryParser, DataQueryParser>()
@@ -35,6 +46,12 @@ type ServiceCollectionDataQueryExtensions =
 
     services.AddScoped<IFunctionDescriptorResolver>(fun serviceProvider -> cirBuilder.Build (serviceProvider))
 
+  /// <summary>
+  /// Adds data query parsing services with default function recognizers optionally configuring supported function recognition.
+  /// </summary>
+  /// <param name="services">Service collection to operate on.</param>
+  /// <param name="configureFunctions">Optional function to configure function recognition.</param>
+  /// <returns>Original service collection for chaining.</returns>
   [<Extension>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   static member AddDataQueryServices (services : IServiceCollection, configureCalls : Action<FunctionDescriptorResolverBuilder>) =

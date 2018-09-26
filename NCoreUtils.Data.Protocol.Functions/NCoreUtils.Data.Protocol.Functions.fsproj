@@ -1,19 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <VersionPrefix>2.1.0</VersionPrefix>
+    <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
+    <!-- NuGet -->
+    <PackageId>NCoreUtils.Data.Protocol.Functions</PackageId>
+    <Title>$(PackageId)</Title>
+    <Authors>Artyom Antyipin</Authors>
+    <Description>Data query protocol common functions and function resolver base classes.</Description>
+    <Copyright>Artyom Antyipin</Copyright>
+    <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
+    <!-- Assembly Info -->
+    <Product>NCoreUtils</Product>
+    <AssemblyName>$(PackageId)</AssemblyName>
+    <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
+    <!-- Compilation -->
+    <OutputType>Library</OutputType>
+    <DebugType>portable</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <Compile Include="CommonFunctions.fs" />
+    <Compile Include="Resolvers.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions.Abstractions\NCoreUtils.Data.Protocol.Functions.Abstractions.fsproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="2.0.0" />
   </ItemGroup>
-
 </Project>

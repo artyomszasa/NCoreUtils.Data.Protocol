@@ -1,30 +1,39 @@
 namespace NCoreUtils.Data.Protocol.TypeInference
 
-open System
 open System.Collections.Immutable
+open System.Diagnostics.Contracts
 open System.Threading
 open NCoreUtils
 open NCoreUtils.Data
 open NCoreUtils.Data.Protocol
 open NCoreUtils.Data.Protocol.Ast
 open System.Runtime.CompilerServices
-open NCoreUtils.Data.Protocol
+open System.Diagnostics.CodeAnalysis
 
-
-
+/// Represents immutable type inference context.
 [<NoEquality; NoComparison>]
 type TypeInferenceContext =
   internal
     { Types         : Map<TypeUid, TypeVariable>
       Substitutions : Map<TypeUid, TypeUid list> }
 
+/// Contains type inference context operations.
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TypeInferenceContext =
 
+  /// Gets empty type inference context.
   [<CompiledName("Empty")>]
   let empty = { Types = Map.empty; Substitutions = Map.empty }
 
+  /// <summary>
+  /// Creates new type inference context with the specified type variable.
+  /// </summary>
+  /// <param name="uid">Type UID to apply variable on.</param>
+  /// <param name="variable">Type variable to apply.</param>
+  /// <param name="ctx">Type inference context to use.</param>
+  /// <returns>New type inference context with the specified type variable.</returns>
+  [<Pure>]
   [<CompiledName("ApplyConstraint")>]
   let applyConstraint uid variable (ctx: TypeInferenceContext) =
     let types' =
@@ -32,6 +41,14 @@ module TypeInferenceContext =
       |> Map.map (fun id c -> if id = uid then TypeVariable.merge c variable else c)
     { Types = types'; Substitutions = ctx.Substitutions }
 
+  /// <summary>
+  /// Creates new type inference context with the specified substitution.
+  /// </summary>
+  /// <param name="a">Type UID to substitute.</param>
+  /// <param name="b">Target type UID.</param>
+  /// <param name="ctx">Type inference context to use.</param>
+  /// <returns>New type inference context with the specified substitution.</returns>
+  [<Pure>]
   [<CompiledName("Substitute")>]
   let substitute a b (ctx: TypeInferenceContext) =
     let substitutions =
@@ -40,6 +57,13 @@ module TypeInferenceContext =
       | _      -> Map.add a [b] ctx.Substitutions
     { Types = ctx.Types; Substitutions = substitutions }
 
+  /// <summary>
+  /// Collects all constaints (i.e. both owned constaints and substituted constraints) for the specified type UID.
+  /// </summary>
+  /// <param name="uid">Type UID to collect constraints for.</param>
+  /// <param name="ctx">Type inference context to use.</param>
+  /// <returns>Type constraints for the specified type UID.</returns>
+  [<Pure>]
   [<CompiledName("GetAllConstraints")>]
   let rec getAllConstraints uid (ctx : TypeInferenceContext) =
     match Map.tryFind uid ctx.Types, Map.tryFind uid ctx.Substitutions with
@@ -50,6 +74,13 @@ module TypeInferenceContext =
     | Some v0, Some l         -> List.fold (fun v uid -> getAllConstraints uid ctx |> TypeVariable.merge v) v0 l
     | None,    Some (v0 :: l) -> List.fold (fun v uid -> getAllConstraints uid ctx |> TypeVariable.merge v) (getAllConstraints v0 ctx) l
 
+  /// <summary>
+  /// Instantiate concrete type for the specified type UID.
+  /// </summary>
+  /// <param name="uid">Type UID to instantiate type for.</param>
+  /// <param name="ctx">Type inference context to use.</param>
+  /// <returns>Concrete type for the specified type UID.</returns>
+  [<Pure>]
   [<CompiledName("InstantiateType")>]
   let instantiateType uid ctx =
     match getAllConstraints uid ctx with
@@ -69,17 +100,45 @@ module TypeInferenceContext =
 // *********** MODULE FUNCTIONS AS MEMBERS **********************************
 
 type TypeInferenceContext with
+  /// Gets empty type inference context.
   static member Empty
     with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = TypeInferenceContext.empty
+  /// <summary>
+  /// Creates new type inference context with the specified type variable.
+  /// </summary>
+  /// <param name="uid">Type UID to apply variable on.</param>
+  /// <param name="variable">Type variable to apply.</param>
+  /// <returns>New type inference context with the specified type variable.</returns>
+  [<Pure>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   member this.ApplyConstraint (uid, variable) =
     TypeInferenceContext.applyConstraint uid variable this
+  /// <summary>
+  /// Creates new type inference context with the specified substitution.
+  /// </summary>
+  /// <param name="a">Type UID to substitute.</param>
+  /// <param name="b">Target type UID.</param>
+  /// <returns>New type inference context with the specified substitution.</returns>
+  [<Pure>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   member this.Substitute (sourceTypeUid, targetTypeUid) =
     TypeInferenceContext.applyConstraint sourceTypeUid targetTypeUid this
+  /// <summary>
+  /// Collects all constaints (i.e. both owned constaints and substituted constraints) for the specified type UID.
+  /// </summary>
+  /// <param name="uid">Type UID to collect constraints for.</param>
+  /// <returns>Type constraints for the specified type UID.</returns>
+  [<Pure>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   member this.GetAllConstraints typeUid =
     TypeInferenceContext.getAllConstraints typeUid this
+  /// <summary>
+  /// Instantiate concrete type for the specified type UID.
+  /// </summary>
+  /// <param name="uid">Type UID to instantiate type for.</param>
+  /// <param name="ctx">Type inference context to use.</param>
+  /// <returns>Concrete type for the specified type UID.</returns>
+  [<Pure>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   member this.InstantiateType typeUid =
     TypeInferenceContext.instantiateType typeUid this
@@ -104,8 +163,10 @@ module internal TypeInferenceHelpers =
 
     let empty = NamingContext Map.empty
 
+    [<Pure>]
     let add key typeUid uid (NamingContext names) = Map.add (CaseInsensitive key) (struct (typeUid, uid)) names |> NamingContext
 
+    [<Pure>]
     let tryFind key (NamingContext names) = Map.tryFind (CaseInsensitive key) names
 
   let private logicOperations =
@@ -139,7 +200,7 @@ module internal TypeInferenceHelpers =
       BinaryOperation.Modulo ]
     |> Set.ofList
 
-
+  [<ExcludeFromCodeCoverage>]
   let inline private mapImmutableArray f (arr : ImmutableArray<_>) =
     let length = arr.Length
     let builder = ImmutableArray.CreateBuilder length
@@ -147,11 +208,13 @@ module internal TypeInferenceHelpers =
       builder.Add <| f arr.[i]
     builder.ToImmutable ()
 
+  [<Pure>]
   let private getName node =
     match node with
     | Identifier name -> name
     | _ -> ProtocolSyntaxException "Lambda argument supposed to be identifier" |> raise
 
+  [<Pure>]
   [<CompiledName("Idfy")>]
   let idfy node =
     let newNameUid =
@@ -184,6 +247,7 @@ module internal TypeInferenceHelpers =
         | _ -> sprintf "Unable to resolve identifier name \"%s\"." name |> ProtocolTypeInferenceException |> raise
     impl NamingContext.empty node
 
+  [<Pure>]
   [<CompiledName("CollectIds")>]
   let collectIds node =
     let rec impl acc (node : UnresolvedNode<string>) =
@@ -193,6 +257,7 @@ module internal TypeInferenceHelpers =
         (node.GetChildren ())
     { Types = impl Map.empty node; Substitutions = Map.empty }
 
+  [<ExcludeFromCodeCoverage>]
   let inline private applyIf condition action (ctx : Ctx) =
     match condition with
     | true -> action ctx
@@ -257,6 +322,13 @@ module internal TypeInferenceHelpers =
     | UnresolvedConstant (uid, value) -> ctx, UnresolvedConstant (uid, value)
     | UnresolvedIdentifier (uid, name) -> ctx, UnresolvedIdentifier (uid, name)
 
+  let collectConstraintsRoot rootType functionResolver node ctx =
+    let ctx' =
+      match node with
+      | UnresolvedLambda (_, arg, _) -> TypeInferenceContext.applyConstraint arg.TypeUid (KnownType rootType) ctx
+      | _                            -> ctx
+    collectConstraints functionResolver node ctx'
+
   [<CompiledName("Resolve")>]
   let resolve rootType node ctx =
     let ctx' =
@@ -265,14 +337,26 @@ module internal TypeInferenceHelpers =
       | _                            -> ctx
     UnresolvedNode.resolve (fun typeUid -> TypeInferenceContext.instantiateType typeUid ctx') node
 
+/// Default type inferrer for data query protocol.
 type TypeInferrer =
   val private functionResolver : IFunctionDescriptorResolver
+  /// Gets function resolver.
   member this.FunctionDescriptorResolver = this.functionResolver
+  /// <summary>
+  /// Initializes new instance of type inferrer with the specified function resolver.
+  /// </summary>
+  /// <param name="functionResolver">Function resolver to be used.</param>
   new (functionResolver) = { functionResolver = functionResolver }
+  /// <summary>
+  /// Performs type inference on the specified AST with respect to the root lambda argument type.
+  /// </summary>
+  /// <param name="rootType">Type of the root lambda argument.</param>
+  /// <param name="expr">AST to perform type inference on.</param>
+  /// <returns>Type resolved AST.</returns>
   member this.InferTypes (rootType, expr) =
     let exprX = TypeInferenceHelpers.idfy expr
     let initialContext = TypeInferenceHelpers.collectIds exprX
-    let (context, unresolvedExpr) = TypeInferenceHelpers.collectConstraints this.functionResolver exprX initialContext
+    let (context, unresolvedExpr) = TypeInferenceHelpers.collectConstraintsRoot rootType this.functionResolver exprX initialContext
     TypeInferenceHelpers.resolve rootType unresolvedExpr context
 
   interface ITypeInferrer with

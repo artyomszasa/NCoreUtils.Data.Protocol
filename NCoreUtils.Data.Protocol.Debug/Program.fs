@@ -4,10 +4,12 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Antlr4.Runtime
 open NCoreUtils.Data.Protocol
+open System.Collections.Generic
 
 type X () =
   member val Id   =  2  with get, set
   member val Name = "2" with get, set
+  member val Set  = HashSet<int> () with get, set
 
 type AstNode =
   | Lambda of string * AstNode
@@ -18,31 +20,31 @@ type AstNode =
 [<EntryPoint>]
 let main _ =
 
-  let serviceCheck () =
-    let services =
-      ServiceCollection()
-        .AddLogging(fun builder -> builder.SetMinimumLevel(LogLevel.Trace).ClearProviders().AddConsole() |> ignore)
-        .AddDataQueryServices()
-        .BuildServiceProvider()
-    try
-      use scope = services.CreateScope ()
-      let serviceProvider = scope.ServiceProvider
-      let expressionBuilder = serviceProvider.GetRequiredService<IDataQueryExpressionBuilder>()
-      let inputs =
-        [ "x > 2"
-          "length(name) > 2"
-          "(x > 30) || (x < 10) || (x = 20)"
-          "((x > 30) || (x < 10)) || (x = 20)"
-          "(x > 30) || ((x < 10) || (x = 20))"
-          "name = null || length(name) > 2"
-          "name = null || contains(name, \"xy\")" ]
-      for input in inputs do
-        let lambda = expressionBuilder.BuildExpression<X> input
-        printfn "%A => %A" input lambda
-    finally
-      match box services with
-      | :? IDisposable as d -> d.Dispose ()
-      | _                   -> ()
+  // let serviceCheck () =
+  //   let services =
+  //     ServiceCollection()
+  //       .AddLogging(fun builder -> builder.SetMinimumLevel(LogLevel.Trace).ClearProviders().AddConsole() |> ignore)
+  //       .AddDataQueryServices()
+  //       .BuildServiceProvider()
+  //   try
+  //     use scope = services.CreateScope ()
+  //     let serviceProvider = scope.ServiceProvider
+  //     let expressionBuilder = serviceProvider.GetRequiredService<IDataQueryExpressionBuilder>()
+  //     let inputs =
+  //       [ "x > 2"
+  //         "length(name) > 2"
+  //         "(x > 30) || (x < 10) || (x = 20)"
+  //         "((x > 30) || (x < 10)) || (x = 20)"
+  //         "(x > 30) || ((x < 10) || (x = 20))"
+  //         "name = null || length(name) > 2"
+  //         "name = null || contains(name, \"xy\")" ]
+  //     for input in inputs do
+  //       let lambda = expressionBuilder.BuildExpression<X> input
+  //       printfn "%A => %A" input lambda
+  //   finally
+  //     match box services with
+  //     | :? IDisposable as d -> d.Dispose ()
+  //     | _                   -> ()
 
   let debugAntlr4 () =
     let stream = AntlrInputStream ("x => x.data > 2")
@@ -123,7 +125,8 @@ let main _ =
     use scope = services.CreateScope ()
     let qb = scope.ServiceProvider.GetRequiredService<IDataQueryExpressionBuilder> ()
 
-    qb.BuildExpression (typeof<X>, "x => length(lower(x.name)) < 5 && (x.id - 2 > 2 || x.name = \"alma\" || contains(x.name, \"körte\"))") |> printfn "%A"
+    let e = qb.BuildExpression (typeof<X>, "x => contains(x.set, 2) || length(lower(x.name)) < 5 && (x.id - 2 > 2 || x.name = \"alma\" || contains(x.name, \"körte\"))")
+    e |> printfn "%A"
 
     ()
 
