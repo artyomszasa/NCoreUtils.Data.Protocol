@@ -131,7 +131,7 @@ type TypeVariable =
   /// Represents exact type.
   | KnownType   of Type:Type
   /// Represents unresolved type.
-  | UnknownType of Constants:TypeConstraints
+  | UnknownType of Constraints:TypeConstraints
 
 /// Contains type constraints operations.
 [<RequireQualifiedAccess>]
@@ -478,11 +478,23 @@ type TypeConstraints with
   static member HasInterface iface =
     TypeConstraints.hasInterface iface
   /// <summary>
-  /// Validates type against type constraints. Throws exception on constraint mismatch.
+  /// Validates type against type constraints. Returns constraint mismatch is any.
   /// </summary>
   /// <param name="candidateType">Type to validate.</param>
   /// <returns>
-  /// The specified type.
+  /// Either empty value or constraint mismatch.
+  /// </returns>
+  [<Pure>]
+  [<ExcludeFromCodeCoverage>]
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  member this.Match candidateType =
+    TypeConstraints.``match`` this candidateType
+  /// <summary>
+  /// Merges constraints. Throws exception on constraint mismatch.
+  /// </summary>
+  /// <param name="other">Second constraint collection.</param>
+  /// <returns>
+  /// Result constraint collection.
   /// </returns>
   [<Pure>]
   [<ExcludeFromCodeCoverage>]

@@ -18,6 +18,7 @@
     <!-- Compilation -->
     <OutputType>Library</OutputType>
     <DebugType>portable</DebugType>
+    <NoWarn>FS2003</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Antlr4" Version="4.6.5">
