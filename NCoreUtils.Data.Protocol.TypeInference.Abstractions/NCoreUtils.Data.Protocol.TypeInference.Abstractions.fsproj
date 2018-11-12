@@ -16,9 +16,11 @@
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <!-- Compilation -->
     <OutputType>Library</OutputType>
-    <DebugType>portable</DebugType>
+    <!-- <DebugType>portable</DebugType> -->
+    <!--
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    -->
     <NoWarn>FS2003</NoWarn>
   </PropertyGroup>
   <ItemGroup>
@@ -31,6 +33,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
-    <PackageReference Include="NCoreUtils.FSharp" Version="2.0.0" />
+    <PackageReference Include="NCoreUtils.FSharp" Version="2.0.2" />
   </ItemGroup>
 </Project>

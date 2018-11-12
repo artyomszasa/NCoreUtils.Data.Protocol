@@ -16,7 +16,7 @@
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <!-- Compilation -->
     <OutputType>Library</OutputType>
-    <DebugType>portable</DebugType>
+    <!-- <DebugType>portable</DebugType> -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>FS2003</NoWarn>
@@ -29,6 +29,6 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions.Abstractions\NCoreUtils.Data.Protocol.Functions.Abstractions.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="2.0.0" />
+    <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="2.0.2" />
   </ItemGroup>
 </Project>

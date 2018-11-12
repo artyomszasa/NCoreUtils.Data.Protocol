@@ -4,6 +4,7 @@ open System.Collections.Immutable
 open Antlr4.Runtime
 open NCoreUtils.Data.Protocol.Ast
 open NCoreUtils.Data
+open System.Text.RegularExpressions
 
 [<AutoOpen>]
 module private DataQueryParserHelpers =
@@ -76,7 +77,8 @@ module private DataQueryParserHelpers =
           | root :: names ->
             List.fold (fun instance (name : Tree.ITerminalNode) -> Member (instance, name.GetText ())) (root.GetText () |> Identifier) names
         override __.VisitNumValue    context = context.NUMVALUE().Symbol.Text |> Constant
-        override __.VisitStringValue context = context.STRINGVALUE().Symbol.Text |> Constant
+        // FIMXE: escaőed quotes...
+        override __.VisitStringValue context = context.STRINGVALUE().Symbol.Text.Trim '"' |> Constant
     }
 
 /// <summary>

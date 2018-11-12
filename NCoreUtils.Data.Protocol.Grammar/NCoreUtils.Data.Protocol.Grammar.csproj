@@ -17,7 +17,7 @@
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <!-- Compilation -->
     <OutputType>Library</OutputType>
-    <DebugType>portable</DebugType>
+    <!-- <DebugType>portable</DebugType> -->
     <NoWarn>FS2003</NoWarn>
   </PropertyGroup>
   <ItemGroup>

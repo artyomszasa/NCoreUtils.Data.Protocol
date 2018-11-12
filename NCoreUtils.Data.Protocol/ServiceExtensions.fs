@@ -40,9 +40,9 @@ type ServiceCollectionDataQueryExtensions =
     if not (isNull configureFunctions) then
       configureFunctions.Invoke cirBuilder
 
-    services.TryAddSingleton<IDataQueryExpressionBuilder, DataQueryExpressionBuilder>()
+    services.TryAddScoped<IDataQueryExpressionBuilder, DataQueryExpressionBuilder>()
     services.TryAddSingleton<IDataQueryParser, DataQueryParser>()
-    services.TryAddSingleton<ITypeInferrer, TypeInferrer>()
+    services.TryAddScoped<ITypeInferrer, TypeInferrer>()
 
     services.AddScoped<IFunctionDescriptorResolver>(fun serviceProvider -> cirBuilder.Build (serviceProvider))
 

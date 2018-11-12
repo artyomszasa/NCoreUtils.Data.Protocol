@@ -1,7 +1,6 @@
 namespace NCoreUtils.Data
 
 open NCoreUtils.Data.Protocol.Ast
-open System.Collections.Immutable
 open System
 open System.Linq.Expressions
 open System.Runtime.Serialization

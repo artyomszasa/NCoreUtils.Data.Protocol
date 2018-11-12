@@ -16,7 +16,7 @@
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <!-- Compilation -->
     <OutputType>Library</OutputType>
-    <DebugType>portable</DebugType>
+    <!-- <DebugType>portable</DebugType> -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>FS2003</NoWarn>
