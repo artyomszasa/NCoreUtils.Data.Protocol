@@ -10,6 +10,7 @@ type X () =
   member val Id   =  2  with get, set
   member val Name = "2" with get, set
   member val Set  = HashSet<int> () with get, set
+  member val Opt  = Nullable<int>() with get, set
 
 type AstNode =
   | Lambda of string * AstNode
@@ -116,6 +117,7 @@ let main _ =
   let debugAntlr4Full () =
     let services =
       ServiceCollection()
+        .AddLogging()
         .AddDataQueryServices()
         .BuildServiceProvider()
     // let qp = NCoreUtils.Data.Protocol.DataQueryParser ()
@@ -125,8 +127,17 @@ let main _ =
     use scope = services.CreateScope ()
     let qb = scope.ServiceProvider.GetRequiredService<IDataQueryExpressionBuilder> ()
 
-    let e = qb.BuildExpression (typeof<X>, "x => contains(x.set, 2) || length(lower(x.name)) < 5 && (x.id - 2 > 2 || x.name = \"alma\" || contains(x.name, \"körte\"))")
-    e |> printfn "%A"
+    let e0 = qb.BuildExpression (typeof<X>, "x => contains(x.set, 2) || length(lower(x.name)) < 5 && (x.id - 2 > 2 || x.name = \"alma\" || contains(x.name, \"körte\"))")
+    e0 |> printfn "%A"
+
+    let e1 = qb.BuildExpression (typeof<X>, "x => null = x.opt")
+    e1 |> printfn "%A"
+
+    let e2 = qb.BuildExpression (typeof<X>, "x => x.opt = null")
+    e2 |> printfn "%A"
+
+    let e3 = qb.BuildExpression (typeof<X>, "contains(set, 2) || length(lower(name)) < 5 && (id - 2 > 2 || name = \"alma\" || contains(name, \"körte\"))")
+    e3 |> printfn "%A"
 
     ()
 

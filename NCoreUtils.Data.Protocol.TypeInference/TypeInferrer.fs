@@ -65,14 +65,20 @@ module TypeInferenceContext =
   /// <returns>Type constraints for the specified type UID.</returns>
   [<Pure>]
   [<CompiledName("GetAllConstraints")>]
-  let rec getAllConstraints uid (ctx : TypeInferenceContext) =
-    match Map.tryFind uid ctx.Types, Map.tryFind uid ctx.Substitutions with
-    | None, None
-    | None, Some []           -> TypeVariable.empty
-    | Some v0, None
-    | Some v0, Some []        -> v0
-    | Some v0, Some l         -> List.fold (fun v uid -> getAllConstraints uid ctx |> TypeVariable.merge v) v0 l
-    | None,    Some (v0 :: l) -> List.fold (fun v uid -> getAllConstraints uid ctx |> TypeVariable.merge v) (getAllConstraints v0 ctx) l
+  let getAllConstraints uid ctx =
+    let rec impl loop uid (ctx : TypeInferenceContext) =
+      match Set.contains uid loop with
+      | true -> TypeVariable.empty
+      | _ ->
+        let loop' = Set.add uid loop
+        match Map.tryFind uid ctx.Types, Map.tryFind uid ctx.Substitutions with
+        | None, None
+        | None, Some []           -> TypeVariable.empty
+        | Some v0, None
+        | Some v0, Some []        -> v0
+        | Some v0, Some l         -> List.fold (fun v uid -> impl loop' uid ctx |> TypeVariable.merge v) v0 l
+        | None,    Some (v0 :: l) -> List.fold (fun v uid -> impl loop' uid ctx |> TypeVariable.merge v) (impl loop' v0 ctx) l
+    impl Set.empty uid ctx
 
   /// <summary>
   /// Instantiate concrete type for the specified type UID.
@@ -278,6 +284,7 @@ module internal TypeInferenceHelpers =
         |> applyIf (Set.contains op numericArgOperations)    (TypeInferenceContext.applyConstraint left.TypeUid TypeVariable.numeric >> TypeInferenceContext.applyConstraint right.TypeUid TypeVariable.numeric)
         |> applyIf (Set.contains op numericResultOperations) (TypeInferenceContext.applyConstraint uid TypeVariable.numeric)
         |> TypeInferenceContext.substitute left.TypeUid right.TypeUid
+        |> TypeInferenceContext.substitute right.TypeUid left.TypeUid
       let (ctx'', l) = collectConstraints functionResolver left ctx'
       let (ctx''', r) = collectConstraints functionResolver right ctx''
       ctx''', UnresolvedBinary (uid, l, op, r)

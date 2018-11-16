@@ -2,7 +2,10 @@ grammar Protocol;
 
 /* PARSER */
 
-start: lambda EOF;
+start:
+    lambda EOF
+    | expr EOF
+    ;
 
 lambda: IDENT ARROW expr;
 

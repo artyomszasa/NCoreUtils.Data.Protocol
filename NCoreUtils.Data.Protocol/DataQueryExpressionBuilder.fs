@@ -2,9 +2,11 @@ namespace NCoreUtils.Data.Protocol
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Immutable
 open System.Linq.Expressions
 open System.Reflection
 open System.Runtime.CompilerServices
+open Microsoft.Extensions.Logging
 open NCoreUtils
 open NCoreUtils.Data
 open NCoreUtils.Data.Protocol.Ast
@@ -44,16 +46,21 @@ module private DataQueryExpressionBuilderHelpers =
   let rec private createExpression (ps : Map<_, ParameterExpression>) node =
     match node with
     | ResolvedConstant (ty, null) ->
-      let value =
-        match ty.IsValueType with
-        | true ->
-          match isNullable ty with
-          | true -> Activator.CreateInstance ty
-          | _    -> failwith "null value cannot be used with value types"
-        | _ -> null
-      BoxedConstantBuilder.BuildExpression (value, ty)
+      match ty.IsValueType with
+      | true ->
+        match isNullable ty with
+        | true -> Expression.Constant (null, ty) :> Expression
+        | _    -> failwith "null value cannot be used with value types"
+      | _ -> Expression.Constant (null, ty) :> _
     | ResolvedConstant (ty, value) ->
-      BoxedConstantBuilder.BuildExpression (Convert.ChangeType (value, ty), ty)
+      match isNullable ty with
+      | true ->
+        let realType = ty.GetGenericArguments().[0]
+        let value = Convert.ChangeType (value, realType)
+        let box = BoxedConstantBuilder.BuildExpression (value, realType)
+        Expression.Convert(box, ty) :> _
+      | _ ->
+        BoxedConstantBuilder.BuildExpression (Convert.ChangeType (value, ty), ty)
     | ResolvedIdentifier (ty, uid) ->
       match Map.tryFind uid ps with
       | Some expr -> expr :> Expression
@@ -95,6 +102,13 @@ module private DataQueryExpressionBuilderHelpers =
       Expression.Lambda (body', arg) :> _
 
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  let mapImmutableArray f (arr : ImmutableArray<_>) =
+    let builder = ImmutableArray.CreateBuilder arr.Length
+    for i = 0 to (arr.Length - 1) do
+      builder.Add (f arr.[i])
+    builder.ToImmutable ()
+
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   let toExpression node = createExpression Map.empty node
 
 /// <summary>
@@ -104,6 +118,7 @@ module private DataQueryExpressionBuilderHelpers =
 type DataQueryExpressionBuilder =
   val private parser   : IDataQueryParser
   val private inferrer : ITypeInferrer
+  val private logger   : ILogger
   /// Gets the data query parser used to parse queries.
   member this.Parser with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.parser
   /// Gets type inferrer used to infer types in parsed query.
@@ -114,11 +129,31 @@ type DataQueryExpressionBuilder =
   /// </summary>
   /// <param name="parser">Data query parser to use.</param>
   /// <param name="inferrer">Type inferrer to use.</param>
-  new (parser, inferrer) =
+  new (parser, inferrer, logger : ILogger<DataQueryExpressionBuilder>) =
     if isNull (box parser)   then ArgumentNullException "parser"   |> raise
     if isNull (box inferrer) then ArgumentNullException "inferrer" |> raise
+    if isNull  logger        then ArgumentNullException "logger"   |> raise
     { parser   = parser
-      inferrer = inferrer }
+      inferrer = inferrer
+      logger   = logger }
+
+  member private this.AdaptLegacy (node : Node) =
+    // expression is legacy expression if its root node is not a lambda
+    match node with
+    | Node.Lambda _ -> node
+    | _ ->
+      this.logger.LogDebug "Root node is not a lambda, assuming legacy node."
+      let rec adapt (rootArg : Node) (node : Node) =
+        match node with
+        | Node.Binary (l, op, r) -> Node.Binary (adapt rootArg l, op, adapt rootArg r)
+        | Node.Constant _        -> node
+        | Node.Call (name, args) -> Node.Call (name, mapImmutableArray (adapt rootArg) args)
+        | Node.Identifier (name) -> Node.Member (rootArg, name)
+        | _                      -> notImplementdf "Node %A is not valid in legacy mode" node
+      let arg = Node.Identifier "__generated"
+      let body = adapt arg node
+      Node.Lambda (arg, body)
+
 
   /// <summary>
   /// Parses and processes specified query creating LINQ expression with respect to the root argument type.
@@ -127,7 +162,7 @@ type DataQueryExpressionBuilder =
   /// <param name="input">Raw query to parse and process.</param>
   /// <returns>LINQ Expression representation of the input query.</returns>
   member this.BuildExpression (rootType, input) =
-    let expression = this.Parser.ParseQuery input
+    let expression = this.Parser.ParseQuery input |> this.AdaptLegacy
     this.Inferrer.InferTypes (rootType, expression)
     |> toExpression
 

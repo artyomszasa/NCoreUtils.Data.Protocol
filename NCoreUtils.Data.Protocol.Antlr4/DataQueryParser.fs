@@ -46,7 +46,10 @@ module private DataQueryParserHelpers =
 
   let antl4NodeVisitor =
     { new ProtocolBaseVisitor<Node>() with
-        override this.VisitStart context = this.VisitLambda <| context.lambda ()
+        override this.VisitStart context =
+          match context.lambda () with
+          | null   -> this.VisitExpr   <| context.expr ()
+          | lambda -> this.VisitLambda <| lambda
         override this.VisitLambda context =
           let arg = context.IDENT().Symbol.Text
           let body = this.VisitExpr <| context.expr ()
