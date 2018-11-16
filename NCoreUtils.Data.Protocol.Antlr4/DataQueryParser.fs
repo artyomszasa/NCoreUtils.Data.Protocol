@@ -4,7 +4,6 @@ open System.Collections.Immutable
 open Antlr4.Runtime
 open NCoreUtils.Data.Protocol.Ast
 open NCoreUtils.Data
-open System.Text.RegularExpressions
 
 [<AutoOpen>]
 module private DataQueryParserHelpers =
@@ -92,6 +91,8 @@ type DataQueryParser =
   /// Initializes new instance of default data parser.
   new () = { }
 
+  abstract ParseQuery : raw:string -> Node
+
   /// <summary>
   /// Parses input into internal AST using Antlr4 grammar.
   /// </summary>
@@ -100,10 +101,10 @@ type DataQueryParser =
   /// <exception cref="NCoreUtils.Data.ProtocolException">
   /// Thrown if expression is malformed.
   /// </exception>
-  member __.ParseQuery (input : string) =
+  default __.ParseQuery (raw : string) =
     let ctx =
       let parser =
-        AntlrInputStream input
+        AntlrInputStream raw
         |> ProtocolLexer
         |> CommonTokenStream
         |> ProtocolParser

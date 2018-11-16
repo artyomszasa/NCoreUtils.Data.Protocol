@@ -273,9 +273,9 @@ module internal TypeInferenceHelpers =
   let rec collectConstraints (functionResolver : IFunctionDescriptorResolver) node ctx =
     match node with
     | UnresolvedLambda (uid, UnresolvedIdentifier (argUid, argName), body) ->
-      let (ctx', body') = collectConstraints functionResolver body ctx
+      let struct (ctx', body') = collectConstraints functionResolver body ctx
       let arg' = UnresolvedIdentifier (argUid, argName)
-      ctx', UnresolvedLambda (uid, arg', body')
+      struct (ctx', UnresolvedLambda (uid, arg', body'))
     | UnresolvedLambda _ -> ProtocolSyntaxException "Lambda argument supposed to be identifier" |> raise
     | UnresolvedBinary (uid, left, op, right) ->
       let ctx' =
@@ -285,14 +285,14 @@ module internal TypeInferenceHelpers =
         |> applyIf (Set.contains op numericResultOperations) (TypeInferenceContext.applyConstraint uid TypeVariable.numeric)
         |> TypeInferenceContext.substitute left.TypeUid right.TypeUid
         |> TypeInferenceContext.substitute right.TypeUid left.TypeUid
-      let (ctx'', l) = collectConstraints functionResolver left ctx'
-      let (ctx''', r) = collectConstraints functionResolver right ctx''
-      ctx''', UnresolvedBinary (uid, l, op, r)
+      let struct (ctx'', l)  = collectConstraints functionResolver left ctx'
+      let struct (ctx''', r) = collectConstraints functionResolver right ctx''
+      struct (ctx''', UnresolvedBinary (uid, l, op, r))
     | UnresolvedCall (uid, name, arguments) ->
       let (ctx', resolvedArgsBuilder) =
         Seq.fold
           (fun (ctx, resolvedArgs : ImmutableArray<_>.Builder) arg ->
-            let (ctx', arg') = collectConstraints functionResolver arg ctx
+            let struct (ctx', arg') = collectConstraints functionResolver arg ctx
             resolvedArgs.Add arg'
             (ctx', resolvedArgs))
           (ctx, ImmutableArray.CreateBuilder arguments.Length)
@@ -311,23 +311,23 @@ module internal TypeInferenceHelpers =
           |> Seq.foldBack
               (fun (node : UnresolvedNode<_>, ty) -> TypeInferenceContext.applyConstraint node.TypeUid (KnownType ty))
               (Seq.zip arguments desc.ArgumentTypes)
-        ctx'', UnresolvedCall (uid, desc, resolvedArgs)
+        struct (ctx'', UnresolvedCall (uid, desc, resolvedArgs))
     | UnresolvedMember (uid, instance, name) ->
-      let (ctx', instance') = collectConstraints functionResolver instance ctx
+      let struct (ctx', instance') = collectConstraints functionResolver instance ctx
       match TypeInferenceContext.getAllConstraints instance'.TypeUid ctx' with
       | UnknownType _ ->
-        TypeInferenceContext.applyConstraint instance'.TypeUid (TypeVariable.hasMember name) ctx', UnresolvedMember (uid, instance', name)
+        struct (TypeInferenceContext.applyConstraint instance'.TypeUid (TypeVariable.hasMember name) ctx', UnresolvedMember (uid, instance', name))
       | KnownType instanceType ->
         match Members.getMember name instanceType with
         | NoMember ->
           sprintf "Type %A has no member %s" instanceType name |> ProtocolTypeInferenceException |> raise
         | PropertyMember p ->
-          TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name)
+          struct (TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name))
         | FieldMember f ->
-          TypeInferenceContext.applyConstraint uid (KnownType f.FieldType) ctx', UnresolvedMember (uid, instance', name)
-    | UnresolvedConstant (uid, null) -> TypeInferenceContext.applyConstraint uid TypeVariable.nullable ctx, UnresolvedConstant (uid, null)
-    | UnresolvedConstant (uid, value) -> ctx, UnresolvedConstant (uid, value)
-    | UnresolvedIdentifier (uid, name) -> ctx, UnresolvedIdentifier (uid, name)
+          struct (TypeInferenceContext.applyConstraint uid (KnownType f.FieldType) ctx', UnresolvedMember (uid, instance', name))
+    | UnresolvedConstant (uid, null) -> struct (TypeInferenceContext.applyConstraint uid TypeVariable.nullable ctx, UnresolvedConstant (uid, null))
+    | UnresolvedConstant (uid, value) -> struct (ctx, UnresolvedConstant (uid, value))
+    | UnresolvedIdentifier (uid, name) -> struct (ctx, UnresolvedIdentifier (uid, name))
 
   let collectConstraintsRoot rootType functionResolver node ctx =
     let ctx' =
@@ -354,16 +354,20 @@ type TypeInferrer =
   /// </summary>
   /// <param name="functionResolver">Function resolver to be used.</param>
   new (functionResolver) = { functionResolver = functionResolver }
+
+  abstract InferTypes : rootType:System.Type -> expr:Node -> ResolvedNode
+
   /// <summary>
   /// Performs type inference on the specified AST with respect to the root lambda argument type.
   /// </summary>
   /// <param name="rootType">Type of the root lambda argument.</param>
   /// <param name="expr">AST to perform type inference on.</param>
   /// <returns>Type resolved AST.</returns>
-  member this.InferTypes (rootType, expr) =
-    let exprX = TypeInferenceHelpers.idfy expr
-    let initialContext = TypeInferenceHelpers.collectIds exprX
-    let (context, unresolvedExpr) = TypeInferenceHelpers.collectConstraintsRoot rootType this.functionResolver exprX initialContext
+  default this.InferTypes (rootType, expr) =
+    let struct (context, unresolvedExpr) =
+      let exprX = TypeInferenceHelpers.idfy expr
+      let initialContext = TypeInferenceHelpers.collectIds exprX
+      TypeInferenceHelpers.collectConstraintsRoot rootType this.functionResolver exprX initialContext
     TypeInferenceHelpers.resolve rootType unresolvedExpr context
 
   interface ITypeInferrer with

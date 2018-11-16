@@ -25,11 +25,11 @@ type FunctionDescriptor =
   val private argumentTypes : ImmutableArray<Type>
 
   /// Gets function name.
-  member this.Name = this.name
+  member this.Name          with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.name
   /// Gets function result type.
-  member this.ResultType = this.resultType
+  member this.ResultType    with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.resultType
   /// Gets function argument types.
-  member this.ArgumentTypes = this.argumentTypes
+  member this.ArgumentTypes with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.argumentTypes
   /// <summary>
   /// Initializes new instance of function descriptor from the specified arguments.
   /// </summary>
@@ -49,8 +49,8 @@ type FunctionDescriptor =
   /// <returns>Expression that represents function invocation.</returns>
   abstract CreateExpression : arguments:IReadOnlyList<Expression> -> Expression
   interface IFunctionDescriptor with
-    member this.Name = this.name
-    member this.ResultType = this.resultType
+    member this.Name          = this.name
+    member this.ResultType    = this.resultType
     member this.ArgumentTypes = this.argumentTypes :> _
     member this.CreateExpression args = this.CreateExpression args
 
