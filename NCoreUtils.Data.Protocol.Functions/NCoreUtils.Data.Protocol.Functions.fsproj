@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <VersionPrefix>2.1.0</VersionPrefix>
+    <Version>2.1.0-beta5</Version>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.Functions</PackageId>
@@ -29,6 +29,6 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions.Abstractions\NCoreUtils.Data.Protocol.Functions.Abstractions.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="2.0.2" />
+    <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="2.0.3-alpha0" />
   </ItemGroup>
 </Project>

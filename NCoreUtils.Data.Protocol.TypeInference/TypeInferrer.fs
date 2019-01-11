@@ -355,7 +355,7 @@ type TypeInferrer =
   /// <param name="functionResolver">Function resolver to be used.</param>
   new (functionResolver) = { functionResolver = functionResolver }
 
-  abstract InferTypes : rootType:System.Type -> expr:Node -> ResolvedNode
+  abstract InferTypes : rootType:System.Type * expr:Node -> ResolvedNode
 
   /// <summary>
   /// Performs type inference on the specified AST with respect to the root lambda argument type.
@@ -363,7 +363,7 @@ type TypeInferrer =
   /// <param name="rootType">Type of the root lambda argument.</param>
   /// <param name="expr">AST to perform type inference on.</param>
   /// <returns>Type resolved AST.</returns>
-  default this.InferTypes (rootType, expr) =
+  default this.InferTypes (rootType : System.Type, expr : Node) : ResolvedNode =
     let struct (context, unresolvedExpr) =
       let exprX = TypeInferenceHelpers.idfy expr
       let initialContext = TypeInferenceHelpers.collectIds exprX

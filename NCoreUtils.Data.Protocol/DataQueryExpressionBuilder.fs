@@ -53,6 +53,16 @@ module private DataQueryExpressionBuilderHelpers =
         | _    -> failwith "null value cannot be used with value types"
       | _ -> Expression.Constant (null, ty) :> _
     | ResolvedConstant (ty, value) ->
+      match ty.IsEnum with
+      | true ->
+        match tryInt64Value value with
+        | ValueSome i64 ->
+          let value = Convert.ChangeType (i64, Enum.GetUnderlyingType ty)
+          BoxedConstantBuilder.BuildExpression (Enum.ToObject (ty, value), ty)
+        | _ ->
+          let enumValue = Enum.Parse (ty, value, true)
+          BoxedConstantBuilder.BuildExpression (enumValue, ty)
+      | _ ->
       match isNullable ty with
       | true ->
         let realType = ty.GetGenericArguments().[0]
