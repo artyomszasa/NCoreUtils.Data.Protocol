@@ -27,9 +27,9 @@ type private BoxedConstantBuilder () =
   static member BuildExpression (value : obj, ty) =
     cache.GetOrAdd(ty, mkBuilder).BuildExpression value
 
-and private BoxedConstantBuilder<'a> () =
+and [<Sealed>] private BoxedConstantBuilder<'a> () =
   inherit BoxedConstantBuilder ()
-  static let property = typeof<ConstantBox<'a>>.GetProperty("Value", BindingFlags.Instance ||| BindingFlags.NonPublic)
+  let property = typeof<ConstantBox<'a>>.GetProperty("Value", BindingFlags.Instance ||| BindingFlags.NonPublic)
   override __.BuildExpression value =
     let v = value :?> 'a
     let valueBox = ConstantBox v
@@ -46,12 +46,9 @@ module private DataQueryExpressionBuilderHelpers =
   let rec private createExpression (ps : Map<_, ParameterExpression>) node =
     match node with
     | ResolvedConstant (ty, null) ->
-      match ty.IsValueType with
-      | true ->
-        match isNullable ty with
-        | true -> Expression.Constant (null, ty) :> Expression
-        | _    -> failwith "null value cannot be used with value types"
-      | _ -> Expression.Constant (null, ty) :> _
+      match ty.IsValueType || isNullable ty with
+      | false -> failwith "null value cannot be used with value types"
+      | _     -> Expression.Constant (null, ty) :> Expression
     | ResolvedConstant (ty, value) ->
       match ty.IsEnum with
       | true ->
@@ -164,6 +161,7 @@ type DataQueryExpressionBuilder =
       let body = adapt arg node
       Node.Lambda (arg, body)
 
+  abstract BuildExpression: rootType:Type * input:string -> Expression
 
   /// <summary>
   /// Parses and processes specified query creating LINQ expression with respect to the root argument type.
@@ -171,7 +169,7 @@ type DataQueryExpressionBuilder =
   /// <param name="rootType">Type of the root argument in the expression.</param>
   /// <param name="input">Raw query to parse and process.</param>
   /// <returns>LINQ Expression representation of the input query.</returns>
-  member this.BuildExpression (rootType, input) =
+  default this.BuildExpression (rootType, input) =
     let expression = this.Parser.ParseQuery input |> this.AdaptLegacy
     this.Inferrer.InferTypes (rootType, expression)
     |> toExpression

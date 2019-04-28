@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.1.0-beta5</Version>
+    <Version>2.2.0-alpha0</Version>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol</PackageId>
     <Title>$(PackageId)</Title>
@@ -9,7 +9,7 @@
     <Description>Data query protocol implementation.</Description>
     <Copyright>Artyom Antyipin</Copyright>
     <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
-    <PackageReleaseNotes>Complete rewrite to support advanced data queries.</PackageReleaseNotes>
+    <PackageReleaseNotes>Target F# 4.6.</PackageReleaseNotes>
     <!-- Assembly Info -->
     <Product>NCoreUtils</Product>
     <AssemblyName>$(PackageId)</AssemblyName>
@@ -37,8 +37,8 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
     <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
-    <PackageReference Include="NCoreUtils.FSharp" Version="2.0.2" />
-    <PackageReference Include="NCoreUtils.Maybe" Version="1.0.4" />
+    <PackageReference Include="NCoreUtils.FSharp" Version="2.1.0-alpha0" />
+    <PackageReference Include="NCoreUtils.Maybe" Version="1.0.5" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
   </ItemGroup>
 </Project>

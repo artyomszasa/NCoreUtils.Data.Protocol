@@ -1,6 +1,7 @@
 namespace NCoreUtils.Data.Protocol
 
 open System.Collections.Immutable
+open System.Runtime.CompilerServices
 open Antlr4.Runtime
 open NCoreUtils.Data.Protocol.Ast
 open NCoreUtils.Data
@@ -8,13 +9,15 @@ open NCoreUtils.Data
 [<AutoOpen>]
 module private DataQueryParserHelpers =
 
-  let inline private (|IsExprInParens|_|) (context : ProtocolParser.ExprContext) =
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  let private (|IsExprInParens|_|) (context : ProtocolParser.ExprContext) =
     match context.expr () with
     | null               -> None
     | [| exprInParens |] -> Some exprInParens
     | _                  -> None
 
-  let inline private (|IsBinOp|_|) (context : ProtocolParser.ExprContext) =
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  let private (|IsBinOp|_|) (context : ProtocolParser.ExprContext) =
     match context.expr () with
     | null               -> None
     | [| left; right |]  ->
@@ -23,7 +26,8 @@ module private DataQueryParserHelpers =
       | binOp            -> Some (left, binOp.Text, right)
     | _                  -> None
 
-  let inline private parseBinOp source =
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  let private parseBinOp source =
     match source with
     | "&&" -> BinaryOperation.AndAlso
     | "||" -> BinaryOperation.OrElse

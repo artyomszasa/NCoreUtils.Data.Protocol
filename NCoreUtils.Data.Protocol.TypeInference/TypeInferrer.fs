@@ -309,7 +309,21 @@ module internal TypeInferenceHelpers =
         let ctx'' =
           TypeInferenceContext.applyConstraint uid (KnownType desc.ResultType) ctx'
           |> Seq.foldBack
-              (fun (node : UnresolvedNode<_>, ty) -> TypeInferenceContext.applyConstraint node.TypeUid (KnownType ty))
+              (fun (node : UnresolvedNode<_>, ty) ctx ->
+                let ctx' = TypeInferenceContext.applyConstraint node.TypeUid (KnownType ty) ctx
+                match ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<System.Func<_, _>> with
+                | false -> ctx'
+                | _ ->
+                  let argType = ty.GetGenericArguments().[0]
+                  // node ncesserily must be lambda
+                  match node with
+                  | UnresolvedLambda (_, UnresolvedIdentifier (tid, _), _) ->
+                    TypeInferenceContext.applyConstraint tid (KnownType argType) ctx'
+                  | _ ->
+                    sprintf "Invalid argument (non-lambda) in function call with (Name = %s, Result = %A, Args = %A)" name resConstraints argConstraints
+                  |> ProtocolTypeInferenceException
+                  |> raise
+              )
               (Seq.zip arguments desc.ArgumentTypes)
         struct (ctx'', UnresolvedCall (uid, desc, resolvedArgs))
     | UnresolvedMember (uid, instance, name) ->

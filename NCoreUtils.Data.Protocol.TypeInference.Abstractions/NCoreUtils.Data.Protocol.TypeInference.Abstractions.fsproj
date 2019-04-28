@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.1.0-beta5</Version>
+    <Version>2.2.0-alpha0</Version>
     <RootNamespace>NCoreUtils.Data</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.TypeInference.Abstraction</PackageId>
@@ -10,6 +10,7 @@
     <Description>Type inference abstractions for data query protocol.</Description>
     <Copyright>Artyom Antyipin</Copyright>
     <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
+    <PackageReleaseNotes>Target F# 4.6.</PackageReleaseNotes>
     <!-- Assembly Info -->
     <Product>NCoreUtils</Product>
     <AssemblyName>$(PackageId)</AssemblyName>
@@ -33,6 +34,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
-    <PackageReference Include="NCoreUtils.FSharp" Version="2.0.2" />
+    <PackageReference Include="NCoreUtils.FSharp" Version="2.1.0-alpha0" />
   </ItemGroup>
 </Project>

@@ -1,8 +1,10 @@
 namespace NCoreUtils.Data.Protocol
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Diagnostics.CodeAnalysis
 open System.Linq
 open System.Linq.Expressions
 open System.Reflection
@@ -14,6 +16,44 @@ open NCoreUtils.Data.Protocol.TypeInference
 [<RequireQualifiedAccess>]
 module CommonFunctions =
 
+  module private Names =
+
+    [<Literal>]
+    let Length = "length"
+
+    [<Literal>]
+    let Lower = "lower"
+
+    [<Literal>]
+    let Upper = "upper"
+
+    [<Literal>]
+    let Contains = "contains"
+
+    [<Literal>]
+    let Includes = "includes"
+
+    [<Literal>]
+    let Some = "some"
+
+    [<Literal>]
+    let Every = "every"
+
+  [<ExcludeFromCodeCoverage>]
+  let inline private eqi a b = StringComparer.OrdinalIgnoreCase.Equals (a, b)
+
+  type private Exprs =
+
+    static member GetMethod (expr : Expression<Func<_, _>>) =
+      match expr.Body with
+      | :? MethodCallExpression as mexpr -> mexpr.Method
+      | _ -> failwithf "invalid expression provided"
+
+    static member GetMethod (expr : Expression<Func<_, _, _>>) =
+      match expr.Body with
+      | :? MethodCallExpression as mexpr -> mexpr.Method
+      | _ -> failwithf "invalid expression provided"
+
   /// String.Length operation resolver.
   [<Sealed>]
   type StringLength () =
@@ -21,15 +61,15 @@ module CommonFunctions =
       let args = ImmutableArray.Create typeof<string>
       let pLength = typeof<string>.GetProperty ("Length", BindingFlags.Instance ||| BindingFlags.Public)
       { new IFunctionDescriptor with
-          member __.Name = "length"
+          member __.Name = Names.Length
           member __.ResultType = typeof<int>
           member __.ArgumentTypes = args :> _
           member __.CreateExpression args = Expression.Property (args.[0], pLength) :> _
       }
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
-        match name with
-        | EQI "length" when args.Count = 1 ->
+        match eqi Names.Length name && 1 = args.Count with
+        | true ->
           match args.[0] with
           | KnownType ty when ty = typeof<string> -> desc
           | UnknownType cs ->
@@ -44,12 +84,9 @@ module CommonFunctions =
   type StringToLower () =
     static let desc =
       let args = ImmutableArray.Create typeof<string>
-      let mToLower =
-        typeof<string>.GetMethods (BindingFlags.Instance ||| BindingFlags.Public)
-        |> Seq.filter (fun m -> m.Name = "ToLower" && m.GetParameters().Length = 0)
-        |> Seq.head
+      let mToLower = Exprs.GetMethod (fun (s : string) -> s.ToLower())
       { new IFunctionDescriptor with
-          member __.Name = "lower"
+          member __.Name = Names.Lower
           member __.ResultType = typeof<string>
           member __.ArgumentTypes = args :> _
           member __.CreateExpression args = Expression.Call (args.[0], mToLower) :> _
@@ -57,7 +94,7 @@ module CommonFunctions =
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
         match name with
-        | EQI "lower" when args.Count = 1 ->
+        | EQI Names.Lower when args.Count = 1 ->
           match args.[0] with
           | KnownType ty when ty = typeof<string> -> desc
           | UnknownType cs ->
@@ -72,20 +109,17 @@ module CommonFunctions =
   type StringToUpper () =
     static let desc =
       let args = ImmutableArray.Create typeof<string>
-      let mToLower =
-        typeof<string>.GetMethods (BindingFlags.Instance ||| BindingFlags.Public)
-        |> Seq.filter (fun m -> m.Name = "ToUpper" && m.GetParameters().Length = 0)
-        |> Seq.head
+      let mToUpper = Exprs.GetMethod (fun (s : string) -> s.ToUpper())
       { new IFunctionDescriptor with
-          member __.Name = "upper"
+          member __.Name = Names.Upper
           member __.ResultType = typeof<string>
           member __.ArgumentTypes = args :> _
-          member __.CreateExpression args = Expression.Call (args.[0], mToLower) :> _
+          member __.CreateExpression args = Expression.Call (args.[0], mToUpper) :> _
       }
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
         match name with
-        | EQI "upper" when args.Count = 1 ->
+        | EQI Names.Upper when args.Count = 1 ->
           match args.[0] with
           | KnownType ty when ty = typeof<string> -> desc
           | UnknownType cs ->
@@ -100,12 +134,9 @@ module CommonFunctions =
   type StringContains () =
     static let desc =
       let args = ImmutableArray.Create (typeof<string>, typeof<string>)
-      let mContains =
-        typeof<string>.GetMethods (BindingFlags.Instance ||| BindingFlags.Public)
-        |> Seq.filter (fun m -> m.Name = "Contains" && m.GetParameters().Length = 1)
-        |> Seq.head
+      let mContains = Exprs.GetMethod (fun (s0 : string) (s1 : string) -> s0.Contains(s1))
       { new IFunctionDescriptor with
-          member __.Name = "contains"
+          member __.Name = Names.Contains
           member __.ResultType = typeof<bool>
           member __.ArgumentTypes = args :> _
           member __.CreateExpression args = Expression.Call (args.[0], mContains, args.[1]) :> _
@@ -113,7 +144,7 @@ module CommonFunctions =
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
         match name with
-        | EQI "contains" when args.Count = 2 ->
+        | EQI Names.Contains when args.Count = 2 ->
           match args.[0] with
           | KnownType ty when ty = typeof<string> -> desc
           | UnknownType cs ->
@@ -123,25 +154,10 @@ module CommonFunctions =
           | _ -> next.Invoke ()
         | _ -> next.Invoke ()
 
-  /// Enumerable.Contains operation resolver.
-  [<Sealed>]
-  type CollectionContains () =
-    static let gDescription = typeof<CollectionContains>.GetMethod("Description", BindingFlags.NonPublic ||| BindingFlags.Static)
-    static let gContains =
-      typeof<Enumerable>.GetMethods (BindingFlags.Static ||| BindingFlags.Public)
-      |> Seq.filter (fun m -> m.Name = "Contains" && m.GetParameters().Length = 2)
-      |> Seq.head
-    static member private Description<'a> () =
-      let args = ImmutableArray.Create (typeof<seq<'a>>, typeof<'a>)
-      let mContains = gContains.MakeGenericMethod typeof<'a>
-      { new IFunctionDescriptor with
-          member __.Name = "contains"
-          member __.ResultType = typeof<bool>
-          member __.ArgumentTypes = args :> _
-          member __.CreateExpression args = Expression.Call (mContains, args) :> _
-      }
+  type private Helpers =
+
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    static member private GetElementType (tys : Type[]) =
+    static member GetElementType (tys : Type[]) =
       let rec impl i =
         match i < tys.Length with
         | false -> ValueNone
@@ -153,37 +169,148 @@ module CommonFunctions =
       impl 0
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    static member private GetElementType (ty : Type) =
+    static member GetElementType (ty : Type) =
       match ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<IEnumerable<_>> with
       | true -> ValueSome <| ty.GetGenericArguments().[0]
-      | _    -> CollectionContains.GetElementType (ty.GetInterfaces ())
+      | _    -> Helpers.GetElementType (ty.GetInterfaces ())
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    static member private GetElementType (c : TypeConstraints) =
+    static member GetElementType (c : TypeConstraints) =
       match c.Base with
       | null     -> ValueNone
-      | baseType -> CollectionContains.GetElementType baseType
+      | baseType -> Helpers.GetElementType baseType
+
+  /// Enumerable.Contains operation resolver.
+  [<Sealed>]
+  type CollectionContains () =
+    static let gDescription = typeof<CollectionContains>.GetMethod("Description", BindingFlags.NonPublic ||| BindingFlags.Static)
+
+    static let gContains = Exprs.GetMethod(fun (col : seq<int>) -> col.Contains 2).GetGenericMethodDefinition ()
+
+    static let cache = ConcurrentDictionary<Type, IFunctionDescriptor>()
+
+    static let factory =
+      Func<Type, IFunctionDescriptor> (fun ty -> gDescription.MakeGenericMethod(ty).Invoke(null, [| |]) :?> _)
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    static let getFunctionDescriptorFor ty = cache.GetOrAdd (ty, factory)
+
+    static member private Description<'a> () =
+      let args = ImmutableArray.Create (typeof<seq<'a>>, typeof<'a>)
+      let mContains = gContains.MakeGenericMethod typeof<'a>
+      { new IFunctionDescriptor with
+          member __.Name = Names.Includes
+          member __.ResultType = typeof<bool>
+          member __.ArgumentTypes = args :> _
+          member __.CreateExpression args = Expression.Call (mContains, args) :> _
+      }
 
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
         match name with
-        | EQI "contains" when args.Count = 2 ->
+        | (EQI Names.Contains | EQI Names.Includes) when args.Count = 2 ->
           match args.[0] with
           | KnownType ty ->
-            match CollectionContains.GetElementType ty with
-            | ValueSome elementType ->
-              gDescription.MakeGenericMethod(elementType).Invoke(null, [| |]) :?> _
+            match Helpers.GetElementType ty with
+            | ValueSome elementType -> getFunctionDescriptorFor elementType
             | _ -> next.Invoke ()
           | UnknownType c ->
             let elementType =
-              match CollectionContains.GetElementType c with
+              match Helpers.GetElementType c with
               | ValueSome _ as result -> result
               | _ ->
                 match args.[1] with
                 | KnownType ty -> ValueSome ty
                 | _            -> ValueNone
             match elementType with
-            | ValueSome elementType ->
-              gDescription.MakeGenericMethod(elementType).Invoke(null, [| |]) :?> _
+            | ValueSome elementType -> getFunctionDescriptorFor elementType
             | _ -> next.Invoke ()
         | _ -> next.Invoke ()
+
+  [<AbstractClass>]
+  type CollectionOperationWithLambda () =
+    abstract MatchName : name:string -> bool
+    abstract GetFunctionDescriptorFor : ``type``:Type -> IFunctionDescriptor
+
+    interface IFunctionDescriptorResolver with
+      member this.ResolveFunction (name, _, args, next) =
+        match this.MatchName name with
+        | true when args.Count = 2 ->
+          match args.[0] with
+          | KnownType ty ->
+            match Helpers.GetElementType ty with
+            | ValueSome elementType -> this.GetFunctionDescriptorFor elementType
+            | _ -> next.Invoke ()
+          | UnknownType c ->
+            let elementType =
+              match Helpers.GetElementType c with
+              | ValueSome _ as result -> result
+              | _ ->
+                match args.[1] with
+                | KnownType ty when ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<System.Func<_, _>> -> ValueSome <| ty.GetGenericArguments().[0]
+                | _            -> ValueNone
+            match elementType with
+            | ValueSome elementType -> this.GetFunctionDescriptorFor elementType
+            | _ -> next.Invoke ()
+        | _ -> next.Invoke ()
+
+
+  /// Enumerable.Any operation resolver.
+  [<Sealed>]
+  type CollectionAny () =
+    inherit CollectionOperationWithLambda ()
+
+    static let gDescription = typeof<CollectionAny>.GetMethod("Description", BindingFlags.NonPublic ||| BindingFlags.Static)
+
+    static let gAny = Exprs.GetMethod(fun (col : seq<int>) -> col.Any (fun i -> i = 2)).GetGenericMethodDefinition ()
+
+    static let cache = ConcurrentDictionary<Type, IFunctionDescriptor>()
+
+    static let factory =
+      Func<Type, IFunctionDescriptor> (fun ty -> gDescription.MakeGenericMethod(ty).Invoke(null, [| |]) :?> _)
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    static let getFunctionDescriptorFor ty = cache.GetOrAdd (ty, factory)
+
+    static member private Description<'a> () =
+      let args = ImmutableArray.Create (typeof<seq<'a>>, typeof<Func<'a, bool>>)
+      let mAny = gAny.MakeGenericMethod typeof<'a>
+      { new IFunctionDescriptor with
+          member __.Name = Names.Some
+          member __.ResultType = typeof<bool>
+          member __.ArgumentTypes = args :> _
+          member __.CreateExpression args = Expression.Call (mAny, args) :> _
+      }
+
+    override __.MatchName name = eqi Names.Some name
+    override __.GetFunctionDescriptorFor ty = getFunctionDescriptorFor ty
+
+  /// Enumerable.All operation resolver.
+  [<Sealed>]
+  type CollectionAll () =
+    inherit CollectionOperationWithLambda ()
+
+    static let gDescription = typeof<CollectionAll>.GetMethod("Description", BindingFlags.NonPublic ||| BindingFlags.Static)
+
+    static let gAll = Exprs.GetMethod(fun (col : seq<int>) -> col.All (fun i -> i = 2)).GetGenericMethodDefinition ()
+
+    static let cache = ConcurrentDictionary<Type, IFunctionDescriptor>()
+
+    static let factory =
+      Func<Type, IFunctionDescriptor> (fun ty -> gDescription.MakeGenericMethod(ty).Invoke(null, [| |]) :?> _)
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    static let getFunctionDescriptorFor ty = cache.GetOrAdd (ty, factory)
+
+    static member private Description<'a> () =
+      let args = ImmutableArray.Create (typeof<seq<'a>>, typeof<Func<'a, bool>>)
+      let mAll = gAll.MakeGenericMethod typeof<'a>
+      { new IFunctionDescriptor with
+          member __.Name = Names.Every
+          member __.ResultType = typeof<bool>
+          member __.ArgumentTypes = args :> _
+          member __.CreateExpression args = Expression.Call (mAll, args) :> _
+      }
+
+    override __.MatchName name = eqi Names.Every name
+    override __.GetFunctionDescriptorFor ty = getFunctionDescriptorFor ty

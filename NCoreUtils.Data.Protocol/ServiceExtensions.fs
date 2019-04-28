@@ -29,6 +29,8 @@ type ServiceCollectionDataQueryExtensions =
         .AddSingleton<CommonFunctions.StringToUpper>()
         .AddSingleton<CommonFunctions.StringContains>()
         .AddSingleton<CommonFunctions.CollectionContains>()
+        .AddSingleton<CommonFunctions.CollectionAny>()
+        .AddSingleton<CommonFunctions.CollectionAll>()
         |> ignore
       cirBuilder
         .Add<CommonFunctions.StringLength>()
@@ -36,6 +38,8 @@ type ServiceCollectionDataQueryExtensions =
         .Add<CommonFunctions.StringToUpper>()
         .Add<CommonFunctions.StringContains>()
         .Add<CommonFunctions.CollectionContains>()
+        .Add<CommonFunctions.CollectionAny>()
+        .Add<CommonFunctions.CollectionAll>()
         |> ignore
     if not (isNull configureFunctions) then
       configureFunctions.Invoke cirBuilder

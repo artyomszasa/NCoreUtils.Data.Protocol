@@ -139,6 +139,15 @@ let main _ =
     let e3 = qb.BuildExpression (typeof<X>, "contains(set, 2) || length(lower(name)) < 5 && (id - 2 > 2 || name = \"alma\" || contains(name, \"körte\"))")
     e3 |> printfn "%A"
 
+    let e4 = qb.BuildExpression (typeof<X>, "x => y => contains(y, x.name)")
+    e4 |> printfn "%A"
+
+    let e5 = qb.BuildExpression (typeof<X>, "x => y => some(x.set, v => v = y)")
+    e5 |> printfn "%A"
+
+    let e6 = qb.BuildExpression (typeof<X>, "x => y => includes(y, x.name)")
+    e6 |> printfn "%A"
+
     ()
 
   debugAntlr4Full ()

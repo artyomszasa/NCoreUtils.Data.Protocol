@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.1.0-beta5</Version>
+    <Version>2.2.0-alpha0</Version>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.Functions.Abstractions</PackageId>
@@ -10,6 +10,7 @@
     <Description>Function resolvation interface for data query protocol.</Description>
     <Copyright>Artyom Antyipin</Copyright>
     <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
+    <PackageReleaseNotes>Target F# 4.6.</PackageReleaseNotes>
     <!-- Assembly Info -->
     <Product>NCoreUtils</Product>
     <AssemblyName>$(PackageId)</AssemblyName>

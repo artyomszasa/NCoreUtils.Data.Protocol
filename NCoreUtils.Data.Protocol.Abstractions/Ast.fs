@@ -36,8 +36,13 @@ type BinaryOperation =
   | Modulo               = 12
   // TODO: Bitwise
 
+[<AutoOpen>]
+module private NodeHelpers =
+
+  let eq = System.StringComparer.OrdinalIgnoreCase
+
 /// Represents a single node in protocol AST.
-[<StructuralEquality; NoComparison>]
+[<CustomEquality; NoComparison>]
 type Node =
   /// Represents lambda expression node.
   | Lambda     of Arg:Node * Body:Node
@@ -51,3 +56,45 @@ type Node =
   | Constant   of RawValue:string
   /// Represents identifier node.
   | Identifier of Value:string
+  with
+    static member private DeepEq (a : Node, b : Node, ctx : Map<string, string>) =
+      match a, b with
+      | Lambda (Identifier arg0, body0), Lambda (Identifier arg1, body1) ->
+        Node.DeepEq (body0, body1, Map.add arg0 arg1 ctx)
+      | Binary (left0, op0, right0), Binary (left1, op1, right1) when op0 = op1 ->
+        Node.DeepEq (left0, left1, ctx) && Node.DeepEq (right0, right1, ctx)
+      | Call (name0, args0), Call (name1, args1) when eq.Equals (name0, name1) && args0.Length = args1.Length ->
+        Seq.forall2 (fun arg0 arg1 -> Node.DeepEq (arg0, arg1, ctx)) args0 args1
+      | Member (inst0, name0), Member (inst1, name1) when eq.Equals (name0, name1) ->
+        Node.DeepEq (inst0, inst1, ctx)
+      | Constant c0, Constant c1 -> c0 = c1
+      | Identifier name0, Identifier name1 ->
+        match Map.tryFind name0 ctx with
+        | Some name0' -> eq.Equals (name0', name1)
+        | _ -> false
+      | _ -> false
+    interface System.IEquatable<Node> with
+      member this.Equals other = Node.DeepEq (this, other, Map.empty)
+    override this.Equals obj =
+      match obj with
+      | null             -> false
+      | :? Node as other -> Node.DeepEq (this, other, Map.empty)
+      | _                -> false
+    override this.GetHashCode () =
+      match this with
+      | Lambda (_, body) ->
+        body.GetHashCode () * 17
+      | Binary (left, op, right) ->
+        (left.GetHashCode () * 17
+          + op.GetHashCode () * 17)
+            + right.GetHashCode ()
+      | Call (name, args) ->
+        Seq.fold
+          (fun hash arg -> hash * 17 + arg.GetHashCode ())
+          (name.GetHashCode ())
+          args
+      | Member (inst, name) ->
+        inst.GetHashCode () * 17 + name.GetHashCode ()
+      | Constant null -> 0
+      | Constant v -> v.GetHashCode ()
+      | Identifier x -> 0

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>NCoreUtils.Data</RootNamespace>
-    <Version>2.1.0-beta5</Version>
+    <Version>2.2.0-alpha0</Version>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.Abstractions</PackageId>
     <Title>$(PackageId)</Title>
@@ -10,7 +10,7 @@
     <Description>Data query protocol abstractions.</Description>
     <Copyright>Artyom Antyipin</Copyright>
     <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
-    <PackageReleaseNotes>Complete rewrite to support advanced data queries.</PackageReleaseNotes>
+    <PackageReleaseNotes>Target F# 4.6.</PackageReleaseNotes>
     <!-- Assembly Info -->
     <Product>NCoreUtils</Product>
     <AssemblyName>$(PackageId)</AssemblyName>
