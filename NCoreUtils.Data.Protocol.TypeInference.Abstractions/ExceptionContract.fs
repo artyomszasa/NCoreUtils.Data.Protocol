@@ -1,7 +1,35 @@
 namespace NCoreUtils.Data
 
 open System
+open System.Runtime.CompilerServices
 open System.Runtime.Serialization
+
+/// Serializable System.Type container
+type TypeRef =
+
+  val private typeName : string
+
+  member this.Type = Type.GetType (this.typeName, true)
+
+  new (``type`` : Type) =
+    if isNull ``type`` then nullArg "type"
+    { typeName = ``type``.AssemblyQualifiedName }
+
+  override this.ToString () = this.Type.ToString ()
+
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  member this.Equals (other : TypeRef) = this.Type.Equals other.Type
+
+  interface IEquatable<TypeRef> with
+    member this.Equals other = this.Equals other
+
+  override this.Equals obj =
+    match obj with
+    | null -> false
+    | :? TypeRef as other -> this.Equals other
+    | _ -> false
+
+  override this.GetHashCode () = this.Type.GetHashCode ()
 
 /// Represents type constraint mismatch detials.
 [<Struct>]
@@ -10,9 +38,9 @@ type TypeConstriantMismatchReason =
   /// Examined type is missing some constrainted attribute.
   | MissingMember of MemberName:string
   /// Examined type is missing some constrainted interface.
-  | MissingInterfaceImplmentation of Interface:Type
+  | MissingInterfaceImplmentation of Interface:TypeRef
   /// Examined type is incompatible with the constainted base type.
-  | IncompatibleType of BaseType:Type
+  | IncompatibleType of BaseType:TypeRef
   /// Examined type is not numeric but constrainted to be so.
   | NumericConstraint
   /// Examined type is numeric but constrainted not to be so.
@@ -27,7 +55,7 @@ type TypeConstriantMismatchReason =
 [<StructuralEquality; NoComparison>]
 type TypeConstriantMismatch = {
   /// Gets examined type.
-  TargetType : Type
+  TargetType : TypeRef
   /// Gets constraint mismatch details.
   Reason     : TypeConstriantMismatchReason }
   with
@@ -37,10 +65,10 @@ type TypeConstriantMismatch = {
       | MissingMember name -> sprintf "Type %A has no member %s" this.TargetType name
       | MissingInterfaceImplmentation iface -> sprintf "Type %A does not implment %A" this.TargetType iface
       | IncompatibleType baseType -> sprintf "Type %A is not compatible with constrainted base type %A" this.TargetType baseType
-      | NumericConstraint                   -> sprintf "Type %A has been constrinted to be numeric." this.TargetType
-      | NonNumericConstraint                -> sprintf "Type %A has been constrinted to be non-numeric." this.TargetType
-      | NullableConstraint                  -> sprintf "Type %A has been constrinted to be nullable." this.TargetType
-      | NonNullableConstraint               -> sprintf "Type %A has been constrinted to be non-nullable." this.TargetType
+      | NumericConstraint                   -> sprintf "Type %A has been constrainted to be numeric." this.TargetType
+      | NonNumericConstraint                -> sprintf "Type %A has been constrainted to be non-numeric." this.TargetType
+      | NullableConstraint                  -> sprintf "Type %A has been constrainted to be nullable." this.TargetType
+      | NonNullableConstraint               -> sprintf "Type %A has been constrainted to be non-nullable." this.TargetType
 
 /// Represents errors that occur when raw data query is semantically invalid.
 [<Serializable>]

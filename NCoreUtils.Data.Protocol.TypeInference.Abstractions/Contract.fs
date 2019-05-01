@@ -237,7 +237,7 @@ module TypeConstraints =
       | _ ->
         let memberName = enumerator.Current
         match Members.getMember memberName.Value candidateType with
-        | NoMember -> ValueSome { TargetType = candidateType; Reason = MissingMember memberName.Value }
+        | NoMember -> ValueSome { TargetType = TypeRef candidateType; Reason = MissingMember memberName.Value }
         | _        -> impl enumerator
     use enumerator = members.GetEnumerator ()
     impl enumerator
@@ -251,7 +251,7 @@ module TypeConstraints =
       | _ ->
         let iface = enumerator.Current
         match iface.IsAssignableFrom candidateType with
-        | false -> ValueSome { TargetType = candidateType; Reason = MissingInterfaceImplmentation iface }
+        | false -> ValueSome { TargetType = TypeRef candidateType; Reason = MissingInterfaceImplmentation (TypeRef iface) }
         | _     -> impl enumerator
     use enumerator = members.GetEnumerator ()
     impl enumerator
@@ -264,7 +264,7 @@ module TypeConstraints =
     | _ ->
     match baseType = candidateType || baseType.IsAssignableFrom candidateType with
     | true -> ValueNone
-    | _    -> ValueSome { TargetType = candidateType; Reason = IncompatibleType baseType }
+    | _    -> ValueSome { TargetType = TypeRef candidateType; Reason = IncompatibleType (TypeRef baseType) }
 
   [<Pure>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
@@ -273,8 +273,8 @@ module TypeConstraints =
     | false -> ValueNone
     | true ->
       match numericity.Value, numericTypes.Contains candidateType with
-      | true, false -> ValueSome { TargetType = candidateType; Reason = NumericConstraint }
-      | false, true -> ValueSome { TargetType = candidateType; Reason = NonNumericConstraint }
+      | true, false -> ValueSome { TargetType = TypeRef candidateType; Reason = NumericConstraint }
+      | false, true -> ValueSome { TargetType = TypeRef candidateType; Reason = NonNumericConstraint }
       | _           -> ValueNone
 
   [<Pure>]
@@ -284,8 +284,8 @@ module TypeConstraints =
     | false -> ValueNone
     | true ->
       match nullability.Value, not candidateType.IsValueType || isNullable candidateType with
-      | true, false -> ValueSome { TargetType = candidateType; Reason = NullableConstraint }
-      | false, true -> ValueSome { TargetType = candidateType; Reason = NonNullableConstraint }
+      | true, false -> ValueSome { TargetType = TypeRef candidateType; Reason = NullableConstraint }
+      | false, true -> ValueSome { TargetType = TypeRef candidateType; Reason = NonNullableConstraint }
       | _           -> ValueNone
 
   /// <summary>

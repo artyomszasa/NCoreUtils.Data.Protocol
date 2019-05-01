@@ -54,7 +54,7 @@
     <!-- msbuild not integrated this yet...
     <CallTarget Targets="VSTest" />
     -->
-    <Exec Command="dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:Include=&quot;[NCoreUtils.Data.Protocol*]*&quot; " />
+    <Exec Command="dotnet test --no-restore /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:Include=&quot;[NCoreUtils.Data.Protocol*]*&quot; /p:Exclude=&quot;[NCoreUtils.Data.Protocol.Unit]*&quot;" />
     <Exec Command="mono $(UseReportGeneratorPath) -reports:coverage.opencover.xml -targetdir:report -reporttypes:Html" Condition="'$(OS)' == 'Unix'" />
     <Exec Command="$(UseReportGeneratorPath) -reports:coverage.opencover.xml -targetdir:report -reporttypes:Html" Condition="'$(OS)' != 'Unix'" />
   </Target>

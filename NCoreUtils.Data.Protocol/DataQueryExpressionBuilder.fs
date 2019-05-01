@@ -3,6 +3,7 @@ namespace NCoreUtils.Data.Protocol
 open System
 open System.Collections.Concurrent
 open System.Collections.Immutable
+open System.Diagnostics.CodeAnalysis
 open System.Linq.Expressions
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -15,6 +16,7 @@ open NCoreUtils.Data.Protocol.TypeInference
 [<Sealed>]
 type private ConstantBox<'a> (value : 'a) =
   member val Value = value
+  [<ExcludeFromCodeCoverage>]
   override this.ToString () = sprintf "cbox(%A)" this.Value
 
 [<AbstractClass>]
@@ -137,9 +139,9 @@ type DataQueryExpressionBuilder =
   /// <param name="parser">Data query parser to use.</param>
   /// <param name="inferrer">Type inferrer to use.</param>
   new (parser, inferrer, logger : ILogger<DataQueryExpressionBuilder>) =
-    if isNull (box parser)   then ArgumentNullException "parser"   |> raise
-    if isNull (box inferrer) then ArgumentNullException "inferrer" |> raise
-    if isNull  logger        then ArgumentNullException "logger"   |> raise
+    if isNull (box parser)   then nullArg "parser"
+    if isNull (box inferrer) then nullArg "inferrer"
+    if isNull  logger        then nullArg "logger"
     { parser   = parser
       inferrer = inferrer
       logger   = logger }
