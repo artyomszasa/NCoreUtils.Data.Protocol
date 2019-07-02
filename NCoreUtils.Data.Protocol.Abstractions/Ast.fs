@@ -1,6 +1,8 @@
 namespace NCoreUtils.Data.Protocol.Ast
 
 open System.Collections.Immutable
+open System.Runtime.CompilerServices
+open System.Threading
 
 /// Supported binary operations
 type BinaryOperation =
@@ -97,4 +99,117 @@ type Node =
         inst.GetHashCode () * 17 + name.GetHashCode ()
       | Constant null -> 0
       | Constant v -> v.GetHashCode ()
-      | Identifier x -> 0
+      | Identifier _ -> 0
+
+[<RequireQualifiedAccess>]
+[<Extension>]
+module Node =
+
+  let private binOpStrings =
+    Map.ofList
+      [ BinaryOperation.Equal,              "="
+        BinaryOperation.NotEqual,           "!="
+        BinaryOperation.LessThan,           "<"
+        BinaryOperation.LessThanOrEqual,    "<="
+        BinaryOperation.GreaterThan,        ">"
+        BinaryOperation.GreaterThanOrEqual, ">="
+        BinaryOperation.OrElse,             "||"
+        BinaryOperation.AndAlso,            "&&"
+        BinaryOperation.Add,                "+"
+        BinaryOperation.Substract,          "-"
+        BinaryOperation.Multiply,           "*"
+        BinaryOperation.Divide,             "/"
+        BinaryOperation.Modulo,             "%" ]
+
+  let private isNum (s : string) =
+    s |> String.forall (fun ch -> ch >= '0' && ch <= '9')
+
+  let private nextUid =
+    let i = ref 0
+    fun () -> sprintf "__param%d" <| Interlocked.Increment i
+
+  [<CompiledName("SubstituteParameter")>]
+  let rec substituteParameter source target node =
+    match node with
+    | Lambda (arg, body) ->
+      let struct (arg', body') =
+        match arg with
+        | Identifier n ->
+          match n = target with
+          | true ->
+            let n' = nextUid ()
+            struct (Identifier n', substituteParameter n n' body)
+          | _    -> struct (arg, body)
+        | _ -> invalidArg "node" "Invalid lambda node."
+      Lambda (arg', substituteParameter source target body')
+    | Binary (left, op, right) ->
+      Binary (substituteParameter source target left, op, substituteParameter source target right)
+    | Call (name, args) ->
+      let builder = ImmutableArray.CreateBuilder args.Length
+      for i = 0 to args.Length - 1 do
+        builder.Add (substituteParameter source target args.[i])
+      Call (name, builder.ToImmutable ())
+    | Member (inst, name) ->
+      Member (substituteParameter source target inst, name)
+    | Identifier n ->
+      Identifier (if n = source then target else n)
+    | v -> v
+
+  [<Extension>]
+  [<CompiledName("Stringify")>]
+  let stringify node =
+    let rec impl complex node =
+      match node with
+      | Lambda (arg, body) ->
+        sprintf "%s => %s" (impl false arg) (impl false body)
+      | Binary (left, op, right) ->
+        match complex with
+        | true -> sprintf "(%s %s %s)" (impl true left) (Map.find op binOpStrings) (impl true right)
+        | _    -> sprintf "%s %s %s"   (impl true left) (Map.find op binOpStrings) (impl true right)
+      | Call (name, args) ->
+        sprintf "%s(%s)" name (args |> Seq.map (impl false) |> String.concat ", ")
+      | Member (inst, name) ->
+        sprintf "%s.%s" (impl true inst) name
+      | Constant null -> "null"
+      | Constant v    ->
+        match isNum v with
+        | true -> v
+        | _    -> sprintf "\"%s\"" (v.Replace("\\", "\\\\").Replace("\"", "\\\""))
+      | Identifier x  -> x
+    impl false node
+
+  [<CompiledName("Equals")>]
+  let eq node1 node2 =
+    let rec impl map node1 node2 =
+      match node1, node2 with
+      | Lambda (Identifier i1, body1), Lambda (Identifier i2, body2) ->
+        impl (Map.add i1 i2 map) body1 body2
+      | Binary (left1, op1, right1), Binary (left2, op2, right2) ->
+        op1 = op2
+          && impl map left1  left2
+          && impl map right1 right2
+      | Call (name1, args1), Call (name2, args2) ->
+        System.StringComparer.OrdinalIgnoreCase.Equals (name1, name2)
+          && args1.Length = args2.Length
+          && Seq.forall2 (impl map) args1 args2
+      | Member (inst1, name1), Member (inst2, name2) ->
+        System.StringComparer.OrdinalIgnoreCase.Equals (name1, name2)
+          && impl map inst1 inst2
+      | Constant c1, Constant c2 -> c1 = c2
+      | Identifier i1, Identifier i2 ->
+        match Map.tryFind i1 map with
+        | Some ix -> ix = i2
+        | _       -> i1 = i2
+      | _ -> false
+    impl Map.empty node1 node2
+
+  [<CompiledName("CombineBy")>]
+  let combineBy f node1 node2 =
+    match node1, node2 with
+    | Lambda ((Identifier n1) as arg1, body1), Lambda (Identifier n2, body2) ->
+      Lambda (arg1, f body1 (substituteParameter n2 n1 body2))
+    | _ -> invalidOp <| sprintf "Invalid nodes (%A, %A)." node1 node2
+
+  [<CompiledName("CombineAnd")>]
+  let combineAnd node1 node2 =
+    combineBy (fun body1 body2 -> Binary (body1, BinaryOperation.AndAlso, body2)) node1 node2

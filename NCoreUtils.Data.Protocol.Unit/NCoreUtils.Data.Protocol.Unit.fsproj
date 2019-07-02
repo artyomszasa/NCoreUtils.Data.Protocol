@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
     <DebugType>portable</DebugType>
@@ -11,12 +11,13 @@
   <ItemGroup>
     <Compile Include="DataQueryParserTests.fs" />
     <Compile Include="DataQueryExpressionBuilderTests.fs" />
+    <Compile Include="QueryTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.msbuild" Version="2.6.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0-preview7.19305.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.1" />
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
@@ -25,7 +26,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol\NCoreUtils.Data.Protocol.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Linq\NCoreUtils.Data.Protocol.Linq.csproj" />
   </ItemGroup>
+
+  <!-- WORKAROUND -->
+  <Target Name="WorkaroundNetStandard" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <TransitiveFrameworkReference Remove="NETStandard.Library" />
+    </ItemGroup>
+  </Target>
+  <!-- /WORKAROUND -->
 
   <Target Name="RunCoverageTests">
     <PropertyGroup>

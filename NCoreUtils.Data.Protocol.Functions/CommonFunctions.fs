@@ -57,9 +57,9 @@ module CommonFunctions =
   /// String.Length operation resolver.
   [<Sealed>]
   type StringLength () =
+    static let pLength = typeof<string>.GetProperty ("Length", BindingFlags.Instance ||| BindingFlags.Public)
     static let desc =
       let args = ImmutableArray.Create typeof<string>
-      let pLength = typeof<string>.GetProperty ("Length", BindingFlags.Instance ||| BindingFlags.Public)
       { new IFunctionDescriptor with
           member __.Name = Names.Length
           member __.ResultType = typeof<int>
@@ -78,13 +78,20 @@ module CommonFunctions =
             | _         -> next.Invoke ()
           | _ -> next.Invoke ()
         | _ -> next.Invoke ()
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MemberExpression as mexpr when mexpr.Member.Equals pLength ->
+          ValueSome { Name = Names.Length; Arguments = [| mexpr.Expression |] :> IReadOnlyList<_> }
+        | _ -> next.Invoke ()
+
 
   /// String.ToLower operation resolver.
   [<Sealed>]
   type StringToLower () =
+    static let mToLower = Exprs.GetMethod (fun (s : string) -> s.ToLower())
     static let desc =
       let args = ImmutableArray.Create typeof<string>
-      let mToLower = Exprs.GetMethod (fun (s : string) -> s.ToLower())
       { new IFunctionDescriptor with
           member __.Name = Names.Lower
           member __.ResultType = typeof<string>
@@ -103,13 +110,20 @@ module CommonFunctions =
             | _         -> next.Invoke ()
           | _ -> next.Invoke ()
         | _ -> next.Invoke ()
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.Equals mToLower ->
+          ValueSome { Name = Names.Lower; Arguments = [| mexpr.Object |] :> IReadOnlyList<_> }
+        | _ -> next.Invoke ()
+
 
   /// String.ToUpper operation resolver.
   [<Sealed>]
   type StringToUpper () =
+    static let mToUpper = Exprs.GetMethod (fun (s : string) -> s.ToUpper())
     static let desc =
       let args = ImmutableArray.Create typeof<string>
-      let mToUpper = Exprs.GetMethod (fun (s : string) -> s.ToUpper())
       { new IFunctionDescriptor with
           member __.Name = Names.Upper
           member __.ResultType = typeof<string>
@@ -128,13 +142,19 @@ module CommonFunctions =
             | _         -> next.Invoke ()
           | _ -> next.Invoke ()
         | _ -> next.Invoke ()
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.Equals mToUpper ->
+          ValueSome { Name = Names.Upper; Arguments = [| mexpr.Object |] :> IReadOnlyList<_> }
+        | _ -> next.Invoke ()
 
   /// String.Contains operation resolver.
   [<Sealed>]
   type StringContains () =
+    static let mContains = Exprs.GetMethod (fun (s0 : string) (s1 : string) -> s0.Contains(s1))
     static let desc =
       let args = ImmutableArray.Create (typeof<string>, typeof<string>)
-      let mContains = Exprs.GetMethod (fun (s0 : string) (s1 : string) -> s0.Contains(s1))
       { new IFunctionDescriptor with
           member __.Name = Names.Contains
           member __.ResultType = typeof<bool>
@@ -153,6 +173,13 @@ module CommonFunctions =
             | _         -> next.Invoke ()
           | _ -> next.Invoke ()
         | _ -> next.Invoke ()
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.Equals mContains ->
+          ValueSome { Name = Names.Contains; Arguments = [| mexpr.Object; mexpr.Arguments.[0] |] :> IReadOnlyList<_> }
+        | _ -> next.Invoke ()
+
 
   type private Helpers =
 
@@ -226,6 +253,13 @@ module CommonFunctions =
             | ValueSome elementType -> getFunctionDescriptorFor elementType
             | _ -> next.Invoke ()
         | _ -> next.Invoke ()
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.IsGenericMethod && mexpr.Method.GetGenericMethodDefinition () = gContains ->
+          ValueSome { Name = Names.Contains; Arguments = mexpr.Arguments }
+        | _ -> next.Invoke ()
+
 
   [<AbstractClass>]
   type CollectionOperationWithLambda () =
@@ -285,6 +319,14 @@ module CommonFunctions =
     override __.MatchName name = eqi Names.Some name
     override __.GetFunctionDescriptorFor ty = getFunctionDescriptorFor ty
 
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.IsGenericMethod && mexpr.Method.GetGenericMethodDefinition () = gAny ->
+          ValueSome { Name = Names.Some; Arguments = mexpr.Arguments }
+        | _ -> next.Invoke ()
+
+
   /// Enumerable.All operation resolver.
   [<Sealed>]
   type CollectionAll () =
@@ -314,3 +356,10 @@ module CommonFunctions =
 
     override __.MatchName name = eqi Names.Every name
     override __.GetFunctionDescriptorFor ty = getFunctionDescriptorFor ty
+
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.IsGenericMethod && mexpr.Method.GetGenericMethodDefinition () = gAll ->
+          ValueSome { Name = Names.Every; Arguments = mexpr.Arguments }
+        | _ -> next.Invoke ()

@@ -72,6 +72,24 @@ type IFunctionDescriptorResolver =
   /// <returns>Descriptor of the function that should handle the specified call.</returns>
   abstract ResolveFunction : name:string * resultTypeConstraints:TypeVariable * argumentTypeConstraints:IReadOnlyList<TypeVariable> * next:Func<IFunctionDescriptor> -> IFunctionDescriptor
 
+/// Represents output of the successfull function match.
+[<NoEquality; NoComparison>]
+type FunctionMatch = {
+  /// Name of the protocol function.
+  Name      : string
+  /// Arguments to pass to the function call.
+  Arguments : IReadOnlyList<Expression> }
+
+/// Defines functionality to match function invocations.
+type IFunctionMatcher =
+  /// <summary>
+  /// Matches expression against supported functions.
+  /// </summary>
+  /// <param name="expression">Expression to match.</param>
+  /// <param name="next">Function that calls next matcher in function match chain.</param>
+  /// <returns>Matched function or <c>None</c></returns>
+  abstract MatchFunction : expression:Expression * next:Func<ValueOption<FunctionMatch>> -> ValueOption<FunctionMatch>
+
 /// Defines extensions methods for function resolvation.
 [<AbstractClass; Sealed>]
 [<Extension>]
@@ -91,3 +109,20 @@ type FunctionDescriptorResolverExtensions private () =
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   static member ResolveFunction (resolver : IFunctionDescriptorResolver, name, resultTypeConstraints, argumentTypeConstraints) =
     resolver.ResolveFunction (name, resultTypeConstraints, argumentTypeConstraints, retNull)
+
+[<AbstractClass; Sealed>]
+[<Extension>]
+type FunctionMatcherExtensions private () =
+
+  static let retNone = Func<ValueOption<FunctionMatch>> (fun () -> ValueNone)
+
+  /// <summary>
+  /// Matches expression against supported functions.
+  /// </summary>
+  /// <param name="matcher">Matcher instance to use.</param>
+  /// <param name="expression">Expression to match.</param>
+  /// <returns>Matched function or <c>None</c></returns>
+  [<Extension>]
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  static member MatchFunction (matcher : IFunctionMatcher, expression) =
+    matcher.MatchFunction (expression, retNone)

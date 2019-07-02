@@ -5,6 +5,7 @@ open Microsoft.Extensions.Logging
 open Antlr4.Runtime
 open NCoreUtils.Data.Protocol
 open System.Collections.Generic
+open System.Linq.Expressions
 
 type X () =
   member val Id   =  2  with get, set
@@ -17,6 +18,12 @@ type AstNode =
   | Var    of string []
   | Value  of string
   | Binar  of AstNode * string * AstNode
+
+type ToExpr =
+
+  static member Get1Arg (e : Expression<Func<_, _>>) = e
+
+  static member Get2Args (e : Expression<Func<_, _, _>>) = e
 
 [<EntryPoint>]
 let main _ =
@@ -150,7 +157,22 @@ let main _ =
 
     ()
 
-  debugAntlr4Full ()
+  let debugExprParser () =
+    let e1 = ToExpr.Get1Arg (fun (x : X) -> x.Id + 1)
+    let e2 = ToExpr.Get2Args (fun (a : X) (b : X) -> a.Id = b.Id)
+    let e3 = ToExpr.Get1Arg (fun (x : X) -> x.Name.Length + 1 < 2)
+    let matcher = CommonFunctions.StringLength () :> IFunctionMatcher
+    let parser = ExpressionParser matcher
+    printfn "%A" (parser.ParseExpression e1)
+    printfn "%A" (parser.ParseExpression e2)
+    printfn "%A" (parser.ParseExpression e3)
+    printfn "%s" (parser.ParseExpression e1 |> Ast.Node.stringify)
+    printfn "%s" (parser.ParseExpression e2 |> Ast.Node.stringify)
+    printfn "%s" (parser.ParseExpression e3 |> Ast.Node.stringify)
+
+  debugExprParser ()
+
+  // debugAntlr4Full ()
 
   // let qparser = DataQueryParser () :> IDataQueryParser
   // let q0 = qparser.ParseQuery "x > 2"

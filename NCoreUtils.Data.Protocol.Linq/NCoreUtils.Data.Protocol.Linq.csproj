@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <Version>3.0.0-alpha3</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.fsproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Expressions\NCoreUtils.Data.Protocol.Expressions.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NCoreUtils.Extensions.Expressions" Version="1.0.5" />
+  </ItemGroup>
+</Project>

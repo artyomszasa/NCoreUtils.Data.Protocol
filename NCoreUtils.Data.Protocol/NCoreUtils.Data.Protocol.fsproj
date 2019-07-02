@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.2.0</Version>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <Version>3.0.0-alpha1</Version>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol</PackageId>
     <Title>$(PackageId)</Title>
@@ -34,11 +34,11 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions\NCoreUtils.Data.Protocol.Functions.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0-preview7.19305.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0-preview7.19305.4" />
     <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
-    <PackageReference Include="NCoreUtils.FSharp" Version="2.1.0" />
+    <PackageReference Include="NCoreUtils.FSharp" Version="3.0.0-alpha0" />
     <PackageReference Include="NCoreUtils.Maybe" Version="1.0.5" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.6.0-preview7.19306.9" />
   </ItemGroup>
 </Project>
