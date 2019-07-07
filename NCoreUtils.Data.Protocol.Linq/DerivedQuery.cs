@@ -6,52 +6,31 @@ using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Linq
 {
-    public static class DirectQuery
+    class DerivedQuery<TBase, TDerived> : DirectQuery<TDerived>
     {
-        public static Query<T> Create<T>(QueryProvider provider) => new DirectQuery<T>(provider);
-    }
+        public override string Target => typeof(TDerived).Name.ToLowerInvariant();
 
-    class DirectQuery<T> : Query<T>
-    {
-        public Ast.Node Filter { get; }
-
-        public Ast.Node SortBy { get; }
-
-        public bool IsDescending { get; }
-
-        public int Offset { get; }
-
-        public int Limit { get; }
-
-        public virtual string Target => string.Empty;
-
-        public DirectQuery(
+        public DerivedQuery(
             IQueryProvider provider,
-            Ast.Node filter = null,
-            Ast.Node sortBy = null,
+            Node filter = null,
+            Node sortBy = null,
             bool isDescending = false,
             int offset = 0,
             int limit = -1)
-            : base(provider)
-        {
-            Filter = filter;
-            SortBy = sortBy;
-            IsDescending = isDescending;
-            Offset = offset;
-            Limit = limit;
-        }
+            : base(provider, filter, sortBy, isDescending, offset, limit)
+        { }
 
-        internal override IAsyncEnumerable<T> ExecuteEnumerationAsync(IDataQueryExecutor executor)
-            => executor.ExecuteEnumerationAsync<T>(
+        internal override IAsyncEnumerable<TDerived> ExecuteEnumerationAsync(IDataQueryExecutor executor)
+            => executor.ExecuteEnumerationAsync<TBase>(
                 Target,
                 Filter,
                 SortBy,
                 IsDescending,
                 Offset,
-                Limit);
+                Limit).Cast<TBase, TDerived>();
 
         internal override Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, string reduction, CancellationToken cancellationToken)
-            => executor.ExecuteReductionAsync<T, TResult>(
+            => executor.ExecuteReductionAsync<TBase, TResult>(
                 Target,
                 reduction,
                 Filter,
@@ -64,7 +43,7 @@ namespace NCoreUtils.Data.Protocol.Linq
         public override Query ApplyWhere(Node node)
         {
             var newFilter = null == Filter ? node : NodeModule.CombineAnd(Filter, node);
-            return new DirectQuery<T>(
+            return new DerivedQuery<TBase, TDerived>(
                 Provider,
                 newFilter,
                 SortBy,
@@ -74,7 +53,7 @@ namespace NCoreUtils.Data.Protocol.Linq
         }
 
         public override Query ApplyOrderBy(Node node, bool isDescending)
-            => new DirectQuery<T>(
+            => new DerivedQuery<TBase, TDerived>(
                 Provider,
                 Filter,
                 node,
@@ -83,7 +62,7 @@ namespace NCoreUtils.Data.Protocol.Linq
                 Limit);
 
         public override Query ApplyOffset(int offset)
-            => new DirectQuery<T>(
+            => new DerivedQuery<TBase, TDerived>(
                 Provider,
                 Filter,
                 SortBy,
@@ -92,7 +71,7 @@ namespace NCoreUtils.Data.Protocol.Linq
                 Limit);
 
         public override Query ApplyLimit(int limit)
-            => new DirectQuery<T>(
+            => new DerivedQuery<TBase, TDerived>(
                 Provider,
                 Filter,
                 SortBy,

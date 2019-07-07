@@ -7,6 +7,7 @@ namespace NCoreUtils.Data.Protocol.Linq
     public interface IDataQueryExecutor
     {
         IAsyncEnumerable<T> ExecuteEnumerationAsync<T>(
+            string target,
             Ast.Node filter = null,
             Ast.Node sortBy = null,
             bool isDescending = false,
@@ -16,6 +17,7 @@ namespace NCoreUtils.Data.Protocol.Linq
         /// <summary>
         /// Executes reduction defined by the arguments.
         /// </summary>
+        /// <param name="target">Target type. Used when quering derived type.</param>
         /// <param name="reduction">Reduction type.</param>
         /// <param name="filter">Optional filter.</param>
         /// <param name="sortBy">Optional ordering.</param>
@@ -27,6 +29,7 @@ namespace NCoreUtils.Data.Protocol.Linq
         /// <typeparam name="TResult">Type of the result.</typeparam>
         /// <returns>Reduction result.</returns>
         Task<TResult> ExecuteReductionAsync<TSource, TResult>(
+            string target,
             string reduction,
             Ast.Node filter = null,
             Ast.Node sortBy = null,

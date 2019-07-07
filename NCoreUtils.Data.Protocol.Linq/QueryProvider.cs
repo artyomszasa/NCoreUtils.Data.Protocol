@@ -61,6 +61,11 @@ namespace NCoreUtils.Data.Protocol.Linq
             }
         }
 
+        static readonly MethodInfo _gCreateDerivedQuery =
+            typeof(QueryProvider)
+                .GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                .First(m => m.Name == "CreateDerivedQuery");
+
         static bool TryExtractQueryableCall(Expression expression, out MethodInfo method, out IReadOnlyList<Expression> arguments)
         {
             if (expression is MethodCallExpression methodExpression)
@@ -107,6 +112,25 @@ namespace NCoreUtils.Data.Protocol.Linq
             return (TResult)(object)result;
         }
 
+        static Query CreateDerivedQuery<TBase, TDerived>(Query source)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (source is DirectQuery<TBase> q)
+            {
+                return new DerivedQuery<TBase, TDerived>(
+                    q.Provider,
+                    q.Filter,
+                    q.SortBy,
+                    q.IsDescending,
+                    q.Offset,
+                    q.Limit);
+            }
+            throw new InvalidOperationException($"Unable to create derived query for {typeof(TBase)} => {typeof(TDerived)} from {source.GetType()}.");
+        }
+
         readonly ExpressionParser _expressionParser;
 
         readonly IDataQueryExecutor _executor;
@@ -146,6 +170,10 @@ namespace NCoreUtils.Data.Protocol.Linq
                     Ast.Node node;
                     switch (method.Name)
                     {
+                        case nameof(Queryable.OfType):
+                            var derivedType = method.GetGenericArguments()[0];
+                            var mCreateDerivedQuery = _gCreateDerivedQuery.MakeGenericMethod(query.ElementType, derivedType);
+                            return (IQueryable)mCreateDerivedQuery.Invoke(null, new object[] { query });
                         case nameof(Queryable.Where):
                             node = _expressionParser.ParseExpression(arguments[1]);
                             return query.ApplyWhere(node);
