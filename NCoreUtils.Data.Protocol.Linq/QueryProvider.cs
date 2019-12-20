@@ -183,6 +183,12 @@ namespace NCoreUtils.Data.Protocol.Linq
                         case nameof(Queryable.OrderByDescending):
                             node = _expressionParser.ParseExpression(arguments[1]);
                             return query.ApplyOrderBy(node, true);
+                        case nameof(Queryable.Select):
+                            if (arguments[1].TryExtractLambda(out var lambda) && lambda.Parameters.Count == 1)
+                            {
+                                return query.ApplySelect(lambda);
+                            }
+                            throw new NotSupportedException($"Not supported select expression: {expression}.");
                         case nameof(Queryable.Skip):
                             if (arguments[1].TryExtractConstant(out var boxedOffset) && boxedOffset is int offset)
                             {

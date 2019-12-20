@@ -6,6 +6,7 @@ open NCoreUtils.Data.Protocol.Ast
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Reflection
+open System.Globalization
 
 module ValueOption = Microsoft.FSharp.Core.ValueOption
 
@@ -102,7 +103,13 @@ module ExpressionToAstVisitor =
       Call (name, mapToImmutable (nodeToAst ctx matcher) args)
     | _ ->
     match node with
-    | ConstableExpression (_, value) -> Constant (if isNull value then null else value.ToString ())
+    | ConstableExpression (_, value) ->
+      match value with
+      | null           -> Constant null
+      | :? float   as f -> Constant (f.ToString CultureInfo.InvariantCulture)
+      | :? single  as s -> Constant (s.ToString CultureInfo.InvariantCulture)
+      | :? decimal as d -> Constant (d.ToString CultureInfo.InvariantCulture)
+      | _               -> Constant (value.ToString ())
     | :? MemberExpression as node ->
       match isHasValue node with
       | true -> Binary (nodeToAst ctx matcher node.Expression, BinaryOperation.Equal, Constant null)

@@ -45,11 +45,22 @@ module private DataQueryExpressionBuilderHelpers =
 
   let inline private isNullable (ty : Type) = ty.IsConstructedGenericType && ty.GetGenericTypeDefinition () = typedefof<Nullable<_>>
 
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  let private changeType (value: string) (target: Type) =
+    match target with
+    | t when t = typeof<Guid> ->
+      match value with
+      | null | "" -> Guid.Empty       :> obj
+      | _         -> Guid.Parse value :> obj
+    | _ ->
+      // default
+      Convert.ChangeType (value, target, Globalization.CultureInfo.InvariantCulture)
+
   let rec private createExpression (ps : Map<_, ParameterExpression>) node =
     match node with
     | ResolvedConstant (ty, null) ->
-      match ty.IsValueType || isNullable ty with
-      | false -> failwith "null value cannot be used with value types"
+      match ty.IsValueType with
+      | true -> failwith "null value cannot be used with value types"
       | _     -> Expression.Constant (null, ty) :> Expression
     | ResolvedConstant (ty, value) ->
       match ty.IsEnum with
@@ -65,12 +76,12 @@ module private DataQueryExpressionBuilderHelpers =
       match isNullable ty with
       | true ->
         let realType = ty.GetGenericArguments().[0]
-        let value = Convert.ChangeType (value, realType)
+        let value = changeType value realType
         let box = BoxedConstantBuilder.BuildExpression (value, realType)
         Expression.Convert(box, ty) :> _
       | _ ->
-        BoxedConstantBuilder.BuildExpression (Convert.ChangeType (value, ty), ty)
-    | ResolvedIdentifier (ty, uid) ->
+        BoxedConstantBuilder.BuildExpression (changeType value ty, ty)
+    | ResolvedIdentifier (_, uid) ->
       match Map.tryFind uid ps with
       | Some expr -> expr :> Expression
       | None      -> failwithf "No parameter for %A" uid
@@ -106,7 +117,7 @@ module private DataQueryExpressionBuilderHelpers =
         match arg with
         | ResolvedIdentifier (ty, uid) -> (ty, uid)
         | _ -> failwith "WTF param"
-      let arg = Expression.Parameter ty
+      let arg = Expression.Parameter (ty, "e" + uid.RawDisplayString)
       let body' = createExpression (Map.add uid arg ps) body
       Expression.Lambda (body', arg) :> _
 
@@ -172,9 +183,13 @@ type DataQueryExpressionBuilder =
   /// <param name="input">Raw query to parse and process.</param>
   /// <returns>LINQ Expression representation of the input query.</returns>
   default this.BuildExpression (rootType, input) =
-    let expression = this.Parser.ParseQuery input |> this.AdaptLegacy
-    this.Inferrer.InferTypes (rootType, expression)
-    |> toExpression
+    try
+      let expression = this.Parser.ParseQuery input |> this.AdaptLegacy
+      this.Inferrer.InferTypes (rootType, expression)
+      |> toExpression
+    with exn ->
+      ProtocolException (sprintf "Failed to build expression for \"%s\" with root type %A" input rootType, exn)
+      |> raise
 
   interface IDataQueryExpressionBuilder with
     member this.BuildExpression (rootType, input) =

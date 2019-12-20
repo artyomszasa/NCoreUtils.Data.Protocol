@@ -28,6 +28,12 @@ module CommonFunctions =
     let Upper = "upper"
 
     [<Literal>]
+    let StartsWith = "startsWith"
+
+    [<Literal>]
+    let EndsWith = "endsWith"
+
+    [<Literal>]
     let Contains = "contains"
 
     [<Literal>]
@@ -41,6 +47,17 @@ module CommonFunctions =
 
   [<ExcludeFromCodeCoverage>]
   let inline private eqi a b = StringComparer.OrdinalIgnoreCase.Equals (a, b)
+
+  [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+  [<CompiledName("IsStringCompatible")>]
+  let private isStringCompatible ``constraint`` =
+    match ``constraint`` with
+    | KnownType ty when ty = typeof<string> -> true
+    | UnknownType cs ->
+      match TypeConstraints.``match`` cs typeof<string> with
+      | ValueNone -> true
+      | _         -> false
+    | _ -> false
 
   type private Exprs =
 
@@ -69,15 +86,8 @@ module CommonFunctions =
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
         match eqi Names.Length name && 1 = args.Count with
-        | true ->
-          match args.[0] with
-          | KnownType ty when ty = typeof<string> -> desc
-          | UnknownType cs ->
-            match TypeConstraints.``match`` cs typeof<string> with
-            | ValueNone -> desc
-            | _         -> next.Invoke ()
-          | _ -> next.Invoke ()
-        | _ -> next.Invoke ()
+        | true when isStringCompatible args.[0] -> desc
+        | _                                     -> next.Invoke ()
     interface IFunctionMatcher with
       member __.MatchFunction (expression, next) =
         match expression with
@@ -101,15 +111,8 @@ module CommonFunctions =
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
         match name with
-        | EQI Names.Lower when args.Count = 1 ->
-          match args.[0] with
-          | KnownType ty when ty = typeof<string> -> desc
-          | UnknownType cs ->
-            match TypeConstraints.``match`` cs typeof<string> with
-            | ValueNone -> desc
-            | _         -> next.Invoke ()
-          | _ -> next.Invoke ()
-        | _ -> next.Invoke ()
+        | EQI Names.Lower when args.Count = 1 && isStringCompatible args.[0] -> desc
+        | _                                                                  -> next.Invoke ()
     interface IFunctionMatcher with
       member __.MatchFunction (expression, next) =
         match expression with
@@ -133,20 +136,61 @@ module CommonFunctions =
     interface IFunctionDescriptorResolver with
       member __.ResolveFunction (name, _, args, next) =
         match name with
-        | EQI Names.Upper when args.Count = 1 ->
-          match args.[0] with
-          | KnownType ty when ty = typeof<string> -> desc
-          | UnknownType cs ->
-            match TypeConstraints.``match`` cs typeof<string> with
-            | ValueNone -> desc
-            | _         -> next.Invoke ()
-          | _ -> next.Invoke ()
-        | _ -> next.Invoke ()
+        | EQI Names.Upper when args.Count = 1 && isStringCompatible args.[0] -> desc
+        | _                                                                  -> next.Invoke ()
     interface IFunctionMatcher with
       member __.MatchFunction (expression, next) =
         match expression with
         | :? MethodCallExpression as mexpr when mexpr.Method.Equals mToUpper ->
           ValueSome { Name = Names.Upper; Arguments = [| mexpr.Object |] :> IReadOnlyList<_> }
+        | _ -> next.Invoke ()
+
+  /// String.StartsWith operation resolver.
+  [<Sealed>]
+  type StringStartsWith () =
+    static let mStartsWith = Exprs.GetMethod (fun (source : string) (seed: string) -> source.StartsWith(seed))
+    static let desc =
+      let args = ImmutableArray.Create (typeof<string>, typeof<string>)
+      { new IFunctionDescriptor with
+          member __.Name = Names.StartsWith
+          member __.ResultType = typeof<bool>
+          member __.ArgumentTypes = args :> _
+          member __.CreateExpression args = Expression.Call (args.[0], mStartsWith, args.[1]) :> _
+      }
+    interface IFunctionDescriptorResolver with
+      member __.ResolveFunction (name, _, args, next) =
+        match name with
+        | EQI Names.StartsWith when args.Count = 2 && isStringCompatible args.[0] && isStringCompatible args.[1] -> desc
+        | _ -> next.Invoke ()
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.Equals mStartsWith && 1 = mexpr.Arguments.Count ->
+          ValueSome { Name = Names.StartsWith; Arguments = [| mexpr.Object; mexpr.Arguments.[0] |] :> IReadOnlyList<_> }
+        | _ -> next.Invoke ()
+
+  /// String.EndsWith operation resolver.
+  [<Sealed>]
+  type StringEndsWith () =
+    static let mEndsWith = Exprs.GetMethod (fun (source : string) (seed: string) -> source.EndsWith(seed))
+    static let desc =
+      let args = ImmutableArray.Create (typeof<string>, typeof<string>)
+      { new IFunctionDescriptor with
+          member __.Name = Names.EndsWith
+          member __.ResultType = typeof<bool>
+          member __.ArgumentTypes = args :> _
+          member __.CreateExpression args = Expression.Call (args.[0], mEndsWith, args.[1]) :> _
+      }
+    interface IFunctionDescriptorResolver with
+      member __.ResolveFunction (name, _, args, next) =
+        match name with
+        | EQI Names.EndsWith when args.Count = 2 && isStringCompatible args.[0] && isStringCompatible args.[1] -> desc
+        | _ -> next.Invoke ()
+    interface IFunctionMatcher with
+      member __.MatchFunction (expression, next) =
+        match expression with
+        | :? MethodCallExpression as mexpr when mexpr.Method.Equals mEndsWith && 1 = mexpr.Arguments.Count ->
+          ValueSome { Name = Names.EndsWith; Arguments = [| mexpr.Object; mexpr.Arguments.[0] |] :> IReadOnlyList<_> }
         | _ -> next.Invoke ()
 
   /// String.Contains operation resolver.

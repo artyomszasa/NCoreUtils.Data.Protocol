@@ -106,14 +106,17 @@ type DataQueryParser =
   /// Thrown if expression is malformed.
   /// </exception>
   default __.ParseQuery (raw : string) =
-    let ctx =
-      let parser =
-        AntlrInputStream raw
-        |> ProtocolLexer
-        |> CommonTokenStream
-        |> ProtocolParser
-      parser.start ()
-    ctx.Accept antl4NodeVisitor
+    try
+      let ctx =
+        let parser =
+          AntlrInputStream raw
+          |> ProtocolLexer
+          |> CommonTokenStream
+          |> ProtocolParser
+        parser.start ()
+      ctx.Accept antl4NodeVisitor
+    with exn ->
+      ProtocolSyntaxException (sprintf "Failed to parse expression: \"%s\"." raw, exn) |> raise
 
   interface NCoreUtils.Data.IDataQueryParser with
     member this.ParseQuery input = this.ParseQuery input

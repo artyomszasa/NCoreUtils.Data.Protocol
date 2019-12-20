@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.0.0-alpha1</Version>
+    <Version>3.0.0.6</Version>
+    <NoWarn>FS2003;NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ExpressionParser.fs" />
@@ -10,6 +11,7 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions.Abstractions\NCoreUtils.Data.Protocol.Functions.Abstractions.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.Linq.Abstractions" Version="3.0.0-alpha0" />
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+    <PackageReference Include="NCoreUtils.Linq.Abstractions" Version="3.0.0" />
   </ItemGroup>
 </Project>

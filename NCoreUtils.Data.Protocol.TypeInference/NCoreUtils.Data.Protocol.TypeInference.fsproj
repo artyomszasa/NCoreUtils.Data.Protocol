@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.0.0-alpha1</Version>
+    <Version>3.0.0.6</Version>
     <RootNamespace>NCoreUtils.Data.Protocol.TypeInference</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.TypeInference</PackageId>
@@ -20,7 +20,7 @@
     <!-- <DebugType>portable</DebugType> -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>FS2003</NoWarn>
+    <NoWarn>FS2003;NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Internals.fs" />
@@ -28,5 +28,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions.Abstractions\NCoreUtils.Data.Protocol.Functions.Abstractions.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.0.0-alpha1</Version>
+    <NetStandardImplicitPackageVersion>2.0.3</NetStandardImplicitPackageVersion>
+    <Version>3.0.0.6</Version>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <Antlr4UseCSharpGenerator>True</Antlr4UseCSharpGenerator>
     <!-- NuGet -->
@@ -18,7 +19,7 @@
     <!-- Compilation -->
     <OutputType>Library</OutputType>
     <!-- <DebugType>portable</DebugType> -->
-    <NoWarn>FS2003</NoWarn>
+    <NoWarn>FS2003;NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Antlr4" Version="4.6.6">
@@ -26,5 +27,9 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="3.0.0" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="3.0.0" />
+    <!-- for some reason NetStandardImplicitPackageVersion does not add entry in nuspec... -->
+    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
   </ItemGroup>
 </Project>

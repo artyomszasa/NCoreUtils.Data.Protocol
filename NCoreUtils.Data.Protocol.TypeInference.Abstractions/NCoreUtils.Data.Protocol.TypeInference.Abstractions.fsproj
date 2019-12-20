@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.0.0-alpha1</Version>
+    <Version>3.0.0.6</Version>
     <RootNamespace>NCoreUtils.Data</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.TypeInference.Abstraction</PackageId>
@@ -22,7 +22,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     -->
-    <NoWarn>FS2003</NoWarn>
+    <NoWarn>FS2003;NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ExceptionContract.fs" />
@@ -33,7 +33,8 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Common\NCoreUtils.Data.Protocol.Common.fsproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
     <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
-    <PackageReference Include="NCoreUtils.FSharp" Version="3.0.0-alpha0" />
+    <PackageReference Include="NCoreUtils.FSharp" Version="3.0.0" />
   </ItemGroup>
 </Project>

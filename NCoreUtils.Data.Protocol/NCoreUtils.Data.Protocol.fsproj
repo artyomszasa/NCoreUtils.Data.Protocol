@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.0.0-alpha1</Version>
+    <Version>3.0.0.6</Version>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol</PackageId>
     <Title>$(PackageId)</Title>
@@ -19,9 +19,10 @@
     <!-- <DebugType>portable</DebugType> -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>FS2003</NoWarn>
+    <NoWarn>FS2003;NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CompositeFunctionMatcher.fs" />
     <Compile Include="DataQueryExpressionBuilder.fs" />
     <Compile Include="ServiceExtensions.fs" />
   </ItemGroup>
@@ -34,11 +35,13 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions\NCoreUtils.Data.Protocol.Functions.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0-preview7.19305.4" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0-preview7.19305.4" />
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="3.0.0" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="3.0.0" />
     <PackageReference Include="NCoreUtils.CaseInsensitive" Version="1.0.1" />
-    <PackageReference Include="NCoreUtils.FSharp" Version="3.0.0-alpha0" />
+    <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="3.0.0" />
     <PackageReference Include="NCoreUtils.Maybe" Version="1.0.5" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.6.0-preview7.19306.9" />
   </ItemGroup>
 </Project>

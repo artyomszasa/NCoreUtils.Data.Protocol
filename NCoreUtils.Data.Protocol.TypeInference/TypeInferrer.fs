@@ -39,7 +39,7 @@ module TypeInferenceContext =
     let types' =
       ctx.Types
       |> Map.map (fun id c -> if id = uid then TypeVariable.merge c variable else c)
-    { Types = types'; Substitutions = ctx.Substitutions }
+    { ctx with Types = types' }
 
   /// <summary>
   /// Creates new type inference context with the specified substitution.
@@ -55,7 +55,7 @@ module TypeInferenceContext =
       match Map.tryFind a ctx.Substitutions with
       | Some l -> Map.add a (b :: l) ctx.Substitutions
       | _      -> Map.add a [b] ctx.Substitutions
-    { Types = ctx.Types; Substitutions = substitutions }
+    { ctx with Substitutions = substitutions }
 
   /// <summary>
   /// Collects all constaints (i.e. both owned constaints and substituted constraints) for the specified type UID.
@@ -94,6 +94,22 @@ module TypeInferenceContext =
     | UnknownType c ->
       match c.Base with
       | null ->
+        let isMember =
+          match c.MemberOf.Count with
+          | i when i > 0 ->
+            // FIXME: check multiple memberships
+            let struct (owner, memberName) = c.MemberOf.[0]
+            match getAllConstraints owner ctx with
+            | KnownType ty ->
+              match Members.getMember memberName ty with
+              | NoMember -> sprintf "Type %A has no member %s" ty memberName |> ProtocolTypeInferenceException |> raise
+              | PropertyMember p -> ValueSome p.PropertyType
+              | FieldMember    f -> ValueSome f.FieldType
+            | _ -> ValueNone
+          | _ -> ValueNone
+        match isMember with
+        | ValueSome ty -> ty
+        | _ ->
         match c.Interfaces.Count with
         | 1 -> c.Interfaces |> Seq.head
         | _ ->
@@ -330,7 +346,11 @@ module internal TypeInferenceHelpers =
       let struct (ctx', instance') = collectConstraints functionResolver instance ctx
       match TypeInferenceContext.getAllConstraints instance'.TypeUid ctx' with
       | UnknownType _ ->
-        struct (TypeInferenceContext.applyConstraint instance'.TypeUid (TypeVariable.hasMember name) ctx', UnresolvedMember (uid, instance', name))
+        let ctx'' = TypeInferenceContext.applyConstraint instance'.TypeUid (TypeVariable.hasMember name) ctx'
+        struct (
+          TypeInferenceContext.applyConstraint uid (TypeVariable.isMemberOf name instance'.TypeUid) ctx'',
+          UnresolvedMember (uid, instance', name)
+        )
       | KnownType instanceType ->
         match Members.getMember name instanceType with
         | NoMember ->

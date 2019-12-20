@@ -24,6 +24,9 @@ type NameUid =
     member private this.DisplayString
       with [<Pure>][<MethodImpl(MethodImplOptions.AggressiveInlining)>][<ExcludeFromCodeCoverage>] get () =
         let (NameUid uid) = this in sprintf "#%d" uid
+    member this.RawDisplayString
+      with [<Pure>][<MethodImpl(MethodImplOptions.AggressiveInlining)>][<ExcludeFromCodeCoverage>] get () =
+        let (NameUid uid) = this in sprintf "%d" uid
     [<Pure>]
     [<ExcludeFromCodeCoverage>]
     override this.ToString () = this.DisplayString
@@ -111,27 +114,31 @@ type UnresolvedNode<'T> =
     override this.ToString () = this.DisplayString
 
 /// Represents immutable type constraint collection.
-[<StructuralEquality; NoComparison>]
-type TypeConstraints = {
-  /// Gets member constraints.
-  Members    : ImmutableHashSet<CaseInsensitive>
-  /// Gets interface constraints.
-  Interfaces : ImmutableHashSet<Type>
-  /// Gets base type constraint.
-  Base       : Type
-  /// Gets numericity constraint.
-  IsNumeric  : Nullable<bool>
-  /// Gets nullability constraint.
-  IsNullable : Nullable<bool>  }
+type
+  [<StructuralEquality; NoComparison>]
+  TypeConstraints = {
+    /// Gets member constraints.
+    Members    : ImmutableHashSet<CaseInsensitive>
+    /// Gets interface constraints.
+    Interfaces : ImmutableHashSet<Type>
+    /// Gets base type constraint.
+    Base       : Type
+    /// Gets numericity constraint.
+    IsNumeric  : Nullable<bool>
+    /// Gets nullability constraint.
+    IsNullable : Nullable<bool>
+    /// Gets membership information.
+    MemberOf   : ImmutableList<struct (TypeUid * string)>  }
 
 /// Represents immutable type variable.
-[<Struct>]
-[<StructuralEquality; NoComparison>]
-type TypeVariable =
-  /// Represents exact type.
-  | KnownType   of Type:Type
-  /// Represents unresolved type.
-  | UnknownType of Constraints:TypeConstraints
+and
+  [<Struct>]
+  [<StructuralEquality; NoComparison>]
+  TypeVariable =
+    /// Represents exact type.
+    | KnownType   of Type:Type
+    /// Represents unresolved type.
+    | UnknownType of Constraints:TypeConstraints
 
 /// Contains type constraints operations.
 [<RequireQualifiedAccess>]
@@ -149,7 +156,18 @@ module TypeConstraints =
       typeof<uint64>
       typeof<decimal>
       typeof<single>
-      typeof<float> ]
+      typeof<float>
+      typeof<Nullable<int8>>
+      typeof<Nullable<int16>>
+      typeof<Nullable<int32>>
+      typeof<Nullable<int64>>
+      typeof<Nullable<uint8>>
+      typeof<Nullable<uint16>>
+      typeof<Nullable<uint32>>
+      typeof<Nullable<uint64>>
+      typeof<Nullable<decimal>>
+      typeof<Nullable<single>>
+      typeof<Nullable<float>> ]
     |> ImmutableHashSet.CreateRange
 
   let private nullableTypedefs =
@@ -169,7 +187,8 @@ module TypeConstraints =
       Interfaces = ImmutableHashSet.Empty
       Base       = null
       IsNullable = Nullable.empty
-      IsNumeric  = Nullable.empty }
+      IsNumeric  = Nullable.empty
+      MemberOf   = ImmutableList.Empty }
 
   /// Gets numeric type constraint.
   [<CompiledName("Numeric")>]
@@ -178,7 +197,8 @@ module TypeConstraints =
       Interfaces = ImmutableHashSet.Empty
       Base       = null
       IsNullable = Nullable.empty
-      IsNumeric  = Nullable.mk true }
+      IsNumeric  = Nullable.mk true
+      MemberOf   = ImmutableList.Empty }
 
   /// Gets non-numeric type constraint.
   [<CompiledName("NotNumeric")>]
@@ -187,7 +207,8 @@ module TypeConstraints =
       Interfaces = ImmutableHashSet.Empty
       Base       = null
       IsNullable = Nullable.empty
-      IsNumeric  = Nullable.mk false }
+      IsNumeric  = Nullable.mk false
+      MemberOf   = ImmutableList.Empty }
 
   /// Gets nullable type constraint.
   [<CompiledName("Nullable")>]
@@ -196,7 +217,8 @@ module TypeConstraints =
       Interfaces = ImmutableHashSet.Empty
       Base       = null
       IsNullable = Nullable.mk true
-      IsNumeric  = Nullable.empty }
+      IsNumeric  = Nullable.empty
+      MemberOf   = ImmutableList.Empty }
 
   /// <summary>
   /// Gets type constraint for the specified member.
@@ -211,7 +233,8 @@ module TypeConstraints =
       Interfaces = ImmutableHashSet.Empty
       Base       = null
       IsNullable = Nullable.empty
-      IsNumeric  = Nullable.empty }
+      IsNumeric  = Nullable.empty
+      MemberOf   = ImmutableList.Empty }
 
   /// <summary>
   /// Gets type constraint for the specified interface.
@@ -226,7 +249,16 @@ module TypeConstraints =
       Interfaces = ImmutableHashSet.Create iface
       Base       = null
       IsNullable = Nullable.empty
-      IsNumeric  = Nullable.empty }
+      IsNumeric  = Nullable.empty
+      MemberOf   = ImmutableList.Empty }
+
+  let isMemberOf memberName owner =
+    { Members    = ImmutableHashSet.Empty
+      Interfaces = ImmutableHashSet.Empty
+      Base       = null
+      IsNullable = Nullable.empty
+      IsNumeric  = Nullable.empty
+      MemberOf   = ImmutableList.Create (struct (owner, memberName)) }
 
   [<Pure>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
@@ -369,11 +401,18 @@ module TypeConstraints =
       match a = b with
       | true -> Nullable.mk a
       | _    -> ProtocolTypeInferenceException "Incompatible nullability" |> raise
+    let memberOf =
+      match a.MemberOf.Count, b.MemberOf.Count with
+      | 0, 0 -> ImmutableList.Empty
+      | _, 0 -> a.MemberOf
+      | 0, _ -> b.MemberOf
+      | _    -> a.MemberOf.AddRange b.MemberOf
     { Members    = Seq.append a.Members b.Members |> ImmutableHashSet.CreateRange
       Interfaces = Seq.append a.Interfaces b.Interfaces |> ImmutableHashSet.CreateRange
       Base       = newBase
       IsNullable = isNullable
-      IsNumeric  = isNumeric }
+      IsNumeric  = isNumeric
+      MemberOf   = memberOf }
 
 /// Contains type variable oprations.
 [<RequireQualifiedAccess>]
@@ -415,6 +454,8 @@ module TypeVariable =
   [<CompiledName("HasInterface")>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   let hasInterface iface = UnknownType (TypeConstraints.hasInterface iface)
+
+  let isMemberOf owner memberName = UnknownType (TypeConstraints.isMemberOf owner memberName)
 
   /// <summary>
   /// Merges type variables. Throws exception on constraint mismatch.

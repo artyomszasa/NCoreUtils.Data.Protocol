@@ -10,7 +10,7 @@ open System.Linq.Expressions
 type X () =
   member val Id   =  2  with get, set
   member val Name = "2" with get, set
-  member val Set  = HashSet<int> () with get, set
+  member val Set  = HashSet<int64> () with get, set
   member val Opt  = Nullable<int>() with get, set
 
 type AstNode =
@@ -24,6 +24,9 @@ type ToExpr =
   static member Get1Arg (e : Expression<Func<_, _>>) = e
 
   static member Get2Args (e : Expression<Func<_, _, _>>) = e
+
+let private dummyServiceProvider =
+  { new IServiceProvider with member __.GetService _ = null }
 
 [<EntryPoint>]
 let main _ =
@@ -134,6 +137,9 @@ let main _ =
     use scope = services.CreateScope ()
     let qb = scope.ServiceProvider.GetRequiredService<IDataQueryExpressionBuilder> ()
 
+    let e5 = qb.BuildExpression (typeof<X>, "x => some(x.set, v => v = 2)")
+    e5 |> printfn "%A"
+
     let e0 = qb.BuildExpression (typeof<X>, "x => contains(x.set, 2) || length(lower(x.name)) < 5 && (x.id - 2 > 2 || x.name = \"alma\" || contains(x.name, \"körte\"))")
     e0 |> printfn "%A"
 
@@ -149,11 +155,14 @@ let main _ =
     let e4 = qb.BuildExpression (typeof<X>, "x => y => contains(y, x.name)")
     e4 |> printfn "%A"
 
-    let e5 = qb.BuildExpression (typeof<X>, "x => y => some(x.set, v => v = y)")
-    e5 |> printfn "%A"
-
     let e6 = qb.BuildExpression (typeof<X>, "x => y => includes(y, x.name)")
     e6 |> printfn "%A"
+
+    let e7 = qb.BuildExpression (typeof<X>, "x => y => startsWith(x.name, y)")
+    e7 |> printfn "%A"
+
+    let e8 = qb.BuildExpression (typeof<X>, "x => endsWith(x.name, \"some\")")
+    e8 |> printfn "%A"
 
     ()
 
@@ -161,18 +170,29 @@ let main _ =
     let e1 = ToExpr.Get1Arg (fun (x : X) -> x.Id + 1)
     let e2 = ToExpr.Get2Args (fun (a : X) (b : X) -> a.Id = b.Id)
     let e3 = ToExpr.Get1Arg (fun (x : X) -> x.Name.Length + 1 < 2)
-    let matcher = CommonFunctions.StringLength () :> IFunctionMatcher
+    let e4 = ToExpr.Get2Args (fun (a : X) (b : string) -> a.Name.StartsWith b)
+    // let matcher = CommonFunctions.StringLength () :> IFunctionMatcher
+    let matcher =
+      CompositeFunctionMatcher (
+        dummyServiceProvider,
+        CompositeFunctionMatcherBuilder()
+          .Add<CommonFunctions.StringLength>()
+          .Add<CommonFunctions.StringStartsWith>()
+          .Add<CommonFunctions.StringEndsWith>()
+      )
     let parser = ExpressionParser matcher
     printfn "%A" (parser.ParseExpression e1)
     printfn "%A" (parser.ParseExpression e2)
     printfn "%A" (parser.ParseExpression e3)
+    printfn "%A" (parser.ParseExpression e4)
     printfn "%s" (parser.ParseExpression e1 |> Ast.Node.stringify)
     printfn "%s" (parser.ParseExpression e2 |> Ast.Node.stringify)
     printfn "%s" (parser.ParseExpression e3 |> Ast.Node.stringify)
+    printfn "%s" (parser.ParseExpression e4 |> Ast.Node.stringify)
 
-  debugExprParser ()
+  // debugExprParser ()
 
-  // debugAntlr4Full ()
+  debugAntlr4Full ()
 
   // let qparser = DataQueryParser () :> IDataQueryParser
   // let q0 = qparser.ParseQuery "x > 2"

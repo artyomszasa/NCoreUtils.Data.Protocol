@@ -6,7 +6,7 @@ using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Linq
 {
-    public static class DirectQuery
+  public static class DirectQuery
     {
         public static Query<T> Create<T>(QueryProvider provider) => new DirectQuery<T>(provider);
     }
