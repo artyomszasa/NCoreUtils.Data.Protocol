@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.0.0.6</Version>
+    <Version>3.1.0-alpha0</Version>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.Functions.Abstractions</PackageId>
@@ -10,7 +10,7 @@
     <Description>Function resolvation interface for data query protocol.</Description>
     <Copyright>Artyom Antyipin</Copyright>
     <RepositoryUrl>https://github.com/artyomszasa/NCoreUtils.Data.Protocol.git</RepositoryUrl>
-    <PackageReleaseNotes>Target F# 4.6.</PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
     <!-- Assembly Info -->
     <Product>NCoreUtils</Product>
     <AssemblyName>$(PackageId)</AssemblyName>
@@ -29,6 +29,6 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.TypeInference.Abstractions\NCoreUtils.Data.Protocol.TypeInference.Abstractions.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+    <PackageReference Update="FSharp.Core" Version="4.7.1" />
   </ItemGroup>
 </Project>

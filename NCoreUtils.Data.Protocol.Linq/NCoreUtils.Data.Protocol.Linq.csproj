@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
-    <Version>3.0.0-rc5</Version>
+    <Version>3.1.0-alpha0</Version>
     <NoWarn>NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>

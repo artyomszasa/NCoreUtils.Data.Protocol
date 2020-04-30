@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.0.0.6</Version>
+    <Version>3.1.0-alpha0</Version>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.Common</PackageId>
@@ -26,6 +26,6 @@
     <Compile Include="Members.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+    <PackageReference Update="FSharp.Core" Version="4.7.1" />
   </ItemGroup>
 </Project>
