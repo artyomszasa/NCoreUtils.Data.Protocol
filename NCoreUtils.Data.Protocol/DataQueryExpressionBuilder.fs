@@ -56,12 +56,12 @@ module private DataQueryExpressionBuilderHelpers =
       // default
       Convert.ChangeType (value, target, Globalization.CultureInfo.InvariantCulture)
 
-  let rec private createExpression (ps : Map<_, ParameterExpression>) node =
+  let rec private createExpression (propertyResolver : IPropertyResolver) (ps : Map<_, ParameterExpression>) node =
     match node with
     | ResolvedConstant (ty, null) ->
-      match ty.IsValueType with
+      match ty.IsValueType && not (isNullable ty) with
       | true -> failwith "null value cannot be used with value types"
-      | _     -> Expression.Constant (null, ty) :> Expression
+      | _    -> Expression.Constant (null, ty) :> Expression
     | ResolvedConstant (ty, value) ->
       match ty.IsEnum with
       | true ->
@@ -86,17 +86,20 @@ module private DataQueryExpressionBuilderHelpers =
       | Some expr -> expr :> Expression
       | None      -> failwithf "No parameter for %A" uid
     | ResolvedCall (_, desc, args) ->
-      let args' = Seq.mapToArray (createExpression ps) args
+      let args' = Seq.mapToArray (createExpression propertyResolver ps) args
       desc.CreateExpression args'
     | ResolvedMember (_, instance, name) ->
-      let inst = createExpression ps instance
+      let inst = createExpression propertyResolver ps instance
       match Members.getMember name inst.Type with
-      | NoMember         -> failwithf "Type %A has no member %s" inst.Type name
       | PropertyMember p -> Expression.Property (inst, p) :> _
       | FieldMember f    -> Expression.Field    (inst, f) :> _
+      | NoMember         ->
+      match propertyResolver.TryResolve (inst.Type, name) with
+      | ValueNone        -> failwithf "Type %A has no member %s" inst.Type name
+      | ValueSome p      -> p.CreateExpression inst
     | ResolvedBinary (_, left, op, right) ->
-      let l = createExpression ps left
-      let r = createExpression ps right
+      let l = createExpression propertyResolver ps left
+      let r = createExpression propertyResolver ps right
       match op with
       | BinaryOperation.AndAlso            -> Expression.AndAlso            (l, r) :> _
       | BinaryOperation.OrElse             -> Expression.OrElse             (l, r) :> _
@@ -118,7 +121,7 @@ module private DataQueryExpressionBuilderHelpers =
         | ResolvedIdentifier (ty, uid) -> (ty, uid)
         | _ -> failwith "WTF param"
       let arg = Expression.Parameter (ty, "e" + uid.RawDisplayString)
-      let body' = createExpression (Map.add uid arg ps) body
+      let body' = createExpression propertyResolver (Map.add uid arg ps) body
       Expression.Lambda (body', arg) :> _
 
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
@@ -129,7 +132,7 @@ module private DataQueryExpressionBuilderHelpers =
     builder.ToImmutable ()
 
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-  let toExpression node = createExpression Map.empty node
+  let toExpression propertyResolver node = createExpression propertyResolver Map.empty node
 
 /// <summary>
 /// Default data query expression builder. Uses provided data query parser and type inferrer to parse and process query
@@ -186,7 +189,7 @@ type DataQueryExpressionBuilder =
     try
       let expression = this.Parser.ParseQuery input |> this.AdaptLegacy
       this.Inferrer.InferTypes (rootType, expression)
-      |> toExpression
+      |> toExpression this.Inferrer.PropertyResolver
     with exn ->
       ProtocolException (sprintf "Failed to build expression for \"%s\" with root type %A" input rootType, exn)
       |> raise

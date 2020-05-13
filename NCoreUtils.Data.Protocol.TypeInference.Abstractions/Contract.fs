@@ -52,6 +52,15 @@ type IHasName =
   /// Gets name of the object.
   abstract Name : string
 
+type IProperty =
+  abstract PropertyType : Type
+  abstract CreateExpression : instance:Expression -> Expression
+
+[<Interface>]
+[<AllowNullLiteral>]
+type IPropertyResolver =
+  abstract TryResolve : ``type``:Type * name:string -> IProperty voption
+
 [<AutoOpen>]
 module private UnresolvedNodeHelpers =
 
@@ -664,6 +673,8 @@ type ResolvedNode =
 /// Defines type inferrer functionality.
 [<Interface>]
 type ITypeInferrer =
+  abstract PropertyResolver : IPropertyResolver
+
   /// <summary>
   /// Infers type for all nodes in the specified expression with respect to the specified root type.
   /// </summary>

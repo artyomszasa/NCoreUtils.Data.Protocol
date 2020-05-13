@@ -8,6 +8,7 @@ open NCoreUtils.Data
 open NCoreUtils.Data.Protocol
 open NCoreUtils.Data.Protocol.Ast
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 open System.Diagnostics.CodeAnalysis
 
 /// Represents immutable type inference context.
@@ -286,10 +287,10 @@ module internal TypeInferenceHelpers =
     | _    -> ctx
 
   [<CompiledName("CollectConstraints")>]
-  let rec collectConstraints (functionResolver : IFunctionDescriptorResolver) node ctx =
+  let rec collectConstraints (propertyResolver : IPropertyResolver) (functionResolver : IFunctionDescriptorResolver) node ctx =
     match node with
     | UnresolvedLambda (uid, UnresolvedIdentifier (argUid, argName), body) ->
-      let struct (ctx', body') = collectConstraints functionResolver body ctx
+      let struct (ctx', body') = collectConstraints propertyResolver functionResolver body ctx
       let arg' = UnresolvedIdentifier (argUid, argName)
       struct (ctx', UnresolvedLambda (uid, arg', body'))
     | UnresolvedLambda _ -> ProtocolSyntaxException "Lambda argument supposed to be identifier" |> raise
@@ -301,14 +302,14 @@ module internal TypeInferenceHelpers =
         |> applyIf (Set.contains op numericResultOperations) (TypeInferenceContext.applyConstraint uid TypeVariable.numeric)
         |> TypeInferenceContext.substitute left.TypeUid right.TypeUid
         |> TypeInferenceContext.substitute right.TypeUid left.TypeUid
-      let struct (ctx'', l)  = collectConstraints functionResolver left ctx'
-      let struct (ctx''', r) = collectConstraints functionResolver right ctx''
+      let struct (ctx'', l)  = collectConstraints propertyResolver functionResolver left ctx'
+      let struct (ctx''', r) = collectConstraints propertyResolver functionResolver right ctx''
       struct (ctx''', UnresolvedBinary (uid, l, op, r))
     | UnresolvedCall (uid, name, arguments) ->
       let (ctx', resolvedArgsBuilder) =
         Seq.fold
           (fun (ctx, resolvedArgs : ImmutableArray<_>.Builder) arg ->
-            let struct (ctx', arg') = collectConstraints functionResolver arg ctx
+            let struct (ctx', arg') = collectConstraints propertyResolver functionResolver arg ctx
             resolvedArgs.Add arg'
             (ctx', resolvedArgs))
           (ctx, ImmutableArray.CreateBuilder arguments.Length)
@@ -343,7 +344,7 @@ module internal TypeInferenceHelpers =
               (Seq.zip arguments desc.ArgumentTypes)
         struct (ctx'', UnresolvedCall (uid, desc, resolvedArgs))
     | UnresolvedMember (uid, instance, name) ->
-      let struct (ctx', instance') = collectConstraints functionResolver instance ctx
+      let struct (ctx', instance') = collectConstraints propertyResolver functionResolver instance ctx
       match TypeInferenceContext.getAllConstraints instance'.TypeUid ctx' with
       | UnknownType _ ->
         let ctx'' = TypeInferenceContext.applyConstraint instance'.TypeUid (TypeVariable.hasMember name) ctx'
@@ -354,7 +355,10 @@ module internal TypeInferenceHelpers =
       | KnownType instanceType ->
         match Members.getMember name instanceType with
         | NoMember ->
-          sprintf "Type %A has no member %s" instanceType name |> ProtocolTypeInferenceException |> raise
+          match propertyResolver.TryResolve (instanceType, name) with
+          | ValueNone -> sprintf "Type %A has no member %s" instanceType name |> ProtocolTypeInferenceException |> raise
+          | ValueSome p ->
+            struct (TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name))
         | PropertyMember p ->
           struct (TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name))
         | FieldMember f ->
@@ -363,12 +367,12 @@ module internal TypeInferenceHelpers =
     | UnresolvedConstant (uid, value) -> struct (ctx, UnresolvedConstant (uid, value))
     | UnresolvedIdentifier (uid, name) -> struct (ctx, UnresolvedIdentifier (uid, name))
 
-  let collectConstraintsRoot rootType functionResolver node ctx =
+  let collectConstraintsRoot rootType propertyResolver functionResolver node ctx =
     let ctx' =
       match node with
       | UnresolvedLambda (_, arg, _) -> TypeInferenceContext.applyConstraint arg.TypeUid (KnownType rootType) ctx
       | _                            -> ctx
-    collectConstraints functionResolver node ctx'
+    collectConstraints propertyResolver functionResolver node ctx'
 
   [<CompiledName("Resolve")>]
   let resolve rootType node ctx =
@@ -380,14 +384,17 @@ module internal TypeInferenceHelpers =
 
 /// Default type inferrer for data query protocol.
 type TypeInferrer =
-  val private functionResolver : IFunctionDescriptorResolver
+  val public FunctionResolver : IFunctionDescriptorResolver
+  val public PropertyResolver : IPropertyResolver
   /// Gets function resolver.
-  member this.FunctionDescriptorResolver = this.functionResolver
+  member this.FunctionDescriptorResolver = this.FunctionResolver
   /// <summary>
   /// Initializes new instance of type inferrer with the specified function resolver.
   /// </summary>
   /// <param name="functionResolver">Function resolver to be used.</param>
-  new (functionResolver) = { functionResolver = functionResolver }
+  new (functionResolver, [<Optional; DefaultParameterValue(null:IPropertyResolver)>] propertyResolver) =
+    { FunctionResolver = functionResolver
+      PropertyResolver = if isNull propertyResolver then (DefaultPropertyResolver.Instance :> IPropertyResolver) else propertyResolver }
 
   abstract InferTypes : rootType:System.Type * expr:Node -> ResolvedNode
 
@@ -401,9 +408,10 @@ type TypeInferrer =
     let struct (context, unresolvedExpr) =
       let exprX = TypeInferenceHelpers.idfy expr
       let initialContext = TypeInferenceHelpers.collectIds exprX
-      TypeInferenceHelpers.collectConstraintsRoot rootType this.functionResolver exprX initialContext
+      TypeInferenceHelpers.collectConstraintsRoot rootType this.PropertyResolver this.FunctionResolver exprX initialContext
     TypeInferenceHelpers.resolve rootType unresolvedExpr context
 
   interface ITypeInferrer with
+    member this.PropertyResolver = this.PropertyResolver
     member this.InferTypes (rootType, expr) = this.InferTypes (rootType, expr)
 
