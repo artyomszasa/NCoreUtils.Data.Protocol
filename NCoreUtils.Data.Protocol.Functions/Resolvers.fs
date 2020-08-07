@@ -31,8 +31,10 @@ type FunctionDescriptorResolverBuilder =
   val private resolvers : ResizeArray<Type>
   /// Gets internal collection of the function resolver types.
   member this.Resolvers = this.resolvers
+
   /// Initializes new instance of builder.
   new () = { resolvers = ResizeArray () }
+
   /// <summary>
   /// Appends function resolver to function resolver collection.
   /// </summary>
@@ -41,6 +43,7 @@ type FunctionDescriptorResolverBuilder =
   member this.Add<'TResolver when 'TResolver :> IFunctionDescriptorResolver> () =
     this.resolvers.Add typeof<'TResolver>
     this
+
   /// <summary>
   /// Inserts function resolver to function resolver collection at the specified index.
   /// </summary>
@@ -50,6 +53,7 @@ type FunctionDescriptorResolverBuilder =
   member this.Insert<'TResolver when 'TResolver :> IFunctionDescriptorResolver> index =
     this.resolvers.Insert (index, typeof<'TResolver>)
     this
+
   /// <summary>
   /// Builds function resolver for the DI context defined by the specified service provider.
   /// </summary>

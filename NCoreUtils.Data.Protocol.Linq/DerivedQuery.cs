@@ -12,8 +12,8 @@ namespace NCoreUtils.Data.Protocol.Linq
 
         public DerivedQuery(
             IQueryProvider provider,
-            Node filter = null,
-            Node sortBy = null,
+            Node? filter = default,
+            Node? sortBy = default,
             bool isDescending = false,
             int offset = 0,
             int limit = -1)
@@ -26,6 +26,8 @@ namespace NCoreUtils.Data.Protocol.Linq
                 Filter,
                 SortBy,
                 IsDescending,
+                default,
+                default,
                 Offset,
                 Limit).Cast<TBase, TDerived>();
 

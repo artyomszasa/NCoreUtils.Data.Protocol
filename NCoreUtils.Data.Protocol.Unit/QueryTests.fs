@@ -47,7 +47,7 @@ let SimpleSelect () =
   let f = ref Unchecked.defaultof<_>
   let executor =
     { new IDataQueryExecutor with
-        member __.ExecuteEnumerationAsync<'T> (_, filter, _, _, _, _) =
+        member __.ExecuteEnumerationAsync<'T> (_, filter, _, _, _, _, _, _) =
           f := filter
           Unchecked.defaultof<IAsyncEnumerable<'T>>
         member __.ExecuteReductionAsync<'TSource, 'TResult> (_, _, filter, _, _, _, _, _) =
@@ -77,7 +77,7 @@ let DerivedSelect () =
   let dt = ref Unchecked.defaultof<_>
   let executor =
     { new IDataQueryExecutor with
-        member __.ExecuteEnumerationAsync<'T> (derivedType, filter, _, _, _, _) =
+        member __.ExecuteEnumerationAsync<'T> (derivedType, filter, _, _, _, _, _, _) =
           f := filter
           dt := derivedType
           Unchecked.defaultof<IAsyncEnumerable<'T>>
@@ -112,7 +112,7 @@ let SimpleAny () =
   let r = ref Unchecked.defaultof<_>
   let executor =
     { new IDataQueryExecutor with
-        member __.ExecuteEnumerationAsync<'T> (_, filter, _, _, _, _) =
+        member __.ExecuteEnumerationAsync<'T> (_, filter, _, _, _, _, _, _) =
           f := filter
           Unchecked.defaultof<IAsyncEnumerable<'T>>
         member __.ExecuteReductionAsync<'TSource, 'TResult> (_, reduction, filter, _, _, _, _, _) =
@@ -145,7 +145,7 @@ let CountWithPredicate () =
   let r = ref Unchecked.defaultof<_>
   let executor =
     { new IDataQueryExecutor with
-        member __.ExecuteEnumerationAsync<'T> (_, filter, _, _, _, _) =
+        member __.ExecuteEnumerationAsync<'T> (_, filter, _, _, _, _, _, _) =
           f := filter
           Unchecked.defaultof<IAsyncEnumerable<'T>>
         member __.ExecuteReductionAsync<'TSource, 'TResult> (_, reduction, filter, _, _, _, _, _) =

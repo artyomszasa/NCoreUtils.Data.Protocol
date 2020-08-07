@@ -18,6 +18,7 @@ open NCoreUtils.Data.Protocol.Ast
 [<Struct>]
 [<StructuralEquality; StructuralComparison>]
 [<StructuredFormatDisplay("{DisplayString}")>]
+[<ExcludeFromCodeCoverage>]
 type NameUid =
   NameUid of Uid:int
   with
@@ -35,6 +36,7 @@ type NameUid =
 [<Struct>]
 [<StructuralEquality; StructuralComparison>]
 [<StructuredFormatDisplay("{DisplayString}")>]
+[<ExcludeFromCodeCoverage>]
 type TypeUid =
   TypeUid of int
   with
@@ -632,6 +634,7 @@ type IFunctionDescriptor =
 /// Represents a single resolved node in protocol AST.
 [<StructuralEquality; NoComparison>]
 [<StructuredFormatDisplay("{DisplayString}")>]
+[<ExcludeFromCodeCoverage>]
 type ResolvedNode =
   /// Represents lambda expression node.
   | ResolvedLambda     of Type:Type * Arg:ResolvedNode * Body:ResolvedNode

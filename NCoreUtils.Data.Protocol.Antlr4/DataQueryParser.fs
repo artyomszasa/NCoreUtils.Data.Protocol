@@ -78,6 +78,8 @@ module private DataQueryParserHelpers =
             |> raise
           | [ name ] ->
             match name.GetText () with
+            | "false" -> Constant "false"
+            | "true" -> Constant "true"
             | "null" -> Constant null
             | name -> Identifier name
           | root :: names ->

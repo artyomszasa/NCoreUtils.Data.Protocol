@@ -55,7 +55,7 @@ namespace NCoreUtils.Data.Protocol.Linq
             if (typeof(T).IsAssignableFrom(typeof(TResult)))
             {
                 var res = await Source.ExecuteReductionAsync<TSource>(executor, reduction, cancellationToken);
-                return (T)(object)(await Selector(res));
+                return (T)(object)(await Selector(res))!;
             }
             return await Source.ExecuteReductionAsync<T>(executor, reduction, cancellationToken);
         }

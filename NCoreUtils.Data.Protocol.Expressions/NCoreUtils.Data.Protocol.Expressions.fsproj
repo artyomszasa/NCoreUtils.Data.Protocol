@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.1.0-alpha8</Version>
+    <Version>3.1.0</Version>
     <NoWarn>FS2003;NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="ExpressionParser.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -12,6 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.1" />
-    <PackageReference Include="NCoreUtils.Linq.Abstractions" Version="3.1.0-alpha8" />
+    <PackageReference Include="NCoreUtils.Linq.Abstractions" Version="3.1.0" />
   </ItemGroup>
 </Project>

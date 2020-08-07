@@ -8,9 +8,11 @@ namespace NCoreUtils.Data.Protocol.Linq
     {
         IAsyncEnumerable<T> ExecuteEnumerationAsync<T>(
             string target,
-            Ast.Node filter = null,
-            Ast.Node sortBy = null,
+            Ast.Node? filter = default,
+            Ast.Node? sortBy = default,
             bool isDescending = false,
+            IReadOnlyList<string>? fields = default,
+            IReadOnlyList<string>? includes = default,
             int offset = 0,
             int limit = 0);
 
@@ -31,8 +33,8 @@ namespace NCoreUtils.Data.Protocol.Linq
         Task<TResult> ExecuteReductionAsync<TSource, TResult>(
             string target,
             string reduction,
-            Ast.Node filter = null,
-            Ast.Node sortBy = null,
+            Ast.Node? filter = default,
+            Ast.Node? sortBy = default,
             bool isDescending = false,
             int offset = 0,
             int limit = 0,

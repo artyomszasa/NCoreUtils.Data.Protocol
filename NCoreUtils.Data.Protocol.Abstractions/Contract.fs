@@ -2,6 +2,7 @@ namespace NCoreUtils.Data
 
 open NCoreUtils.Data.Protocol.Ast
 open System
+open System.Diagnostics.CodeAnalysis
 open System.Linq.Expressions
 open System.Runtime.Serialization
 
@@ -9,6 +10,7 @@ open System.Runtime.Serialization
 [<Serializable>]
 type ProtocolException =
   inherit Exception
+  [<ExcludeFromCodeCoverage>]
   new () = { inherit Exception () }
   new (message : string) = { inherit Exception (message) }
   new (message : string, innerException) = { inherit Exception (message, innerException) }

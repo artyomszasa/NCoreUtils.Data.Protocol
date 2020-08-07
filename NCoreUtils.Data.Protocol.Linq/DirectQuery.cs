@@ -13,9 +13,9 @@ namespace NCoreUtils.Data.Protocol.Linq
 
     class DirectQuery<T> : Query<T>
     {
-        public Ast.Node Filter { get; }
+        public Ast.Node? Filter { get; }
 
-        public Ast.Node SortBy { get; }
+        public Ast.Node? SortBy { get; }
 
         public bool IsDescending { get; }
 
@@ -27,8 +27,8 @@ namespace NCoreUtils.Data.Protocol.Linq
 
         public DirectQuery(
             IQueryProvider provider,
-            Ast.Node filter = null,
-            Ast.Node sortBy = null,
+            Ast.Node? filter = default,
+            Ast.Node? sortBy = default,
             bool isDescending = false,
             int offset = 0,
             int limit = -1)
@@ -47,6 +47,8 @@ namespace NCoreUtils.Data.Protocol.Linq
                 Filter,
                 SortBy,
                 IsDescending,
+                default,
+                default,
                 Offset,
                 Limit);
 

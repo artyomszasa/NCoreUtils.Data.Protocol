@@ -1,6 +1,7 @@
 namespace NCoreUtils.Data
 
 open System
+open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open System.Runtime.Serialization
 
@@ -9,31 +10,42 @@ type TypeRef =
 
   val private typeName : string
 
-  member this.Type = Type.GetType (this.typeName, true)
+  member this.Type =
+    Type.GetType (this.typeName, true)
 
+  [<ExcludeFromCodeCoverage>]
   new (``type`` : Type) =
-    if isNull ``type`` then nullArg "type"
+    if isNull ``type`` then
+      nullArg "type"
     { typeName = ``type``.AssemblyQualifiedName }
 
-  override this.ToString () = this.Type.ToString ()
+  override this.ToString () =
+    this.Type.ToString ()
 
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-  member this.Equals (other : TypeRef) = this.Type.Equals other.Type
+  member this.Equals (other : TypeRef) =
+    this.Type.Equals other.Type
 
   interface IEquatable<TypeRef> with
-    member this.Equals other = this.Equals other
+    [<ExcludeFromCodeCoverage>]
+    member this.Equals other =
+      this.Equals other
 
+  [<ExcludeFromCodeCoverage>]
   override this.Equals obj =
     match obj with
     | null -> false
     | :? TypeRef as other -> this.Equals other
     | _ -> false
 
-  override this.GetHashCode () = this.Type.GetHashCode ()
+  [<ExcludeFromCodeCoverage>]
+  override this.GetHashCode () =
+    this.Type.GetHashCode ()
 
 /// Represents type constraint mismatch detials.
 [<Struct>]
 [<StructuralEquality; NoComparison>]
+[<ExcludeFromCodeCoverage>]
 type TypeConstriantMismatchReason =
   /// Examined type is missing some constrainted attribute.
   | MissingMember of MemberName:string

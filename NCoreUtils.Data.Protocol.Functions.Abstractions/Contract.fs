@@ -1,6 +1,7 @@
 namespace NCoreUtils.Data.Protocol
 
 open System
+open System.Diagnostics.CodeAnalysis
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Linq.Expressions
@@ -20,16 +21,22 @@ type FunctionDescriptor =
   /// <param name="createExpression">Function used to create expression that represents function invocation.</param>
   static member Create (name, resultType, argumentTypes, createExpression) =
     ExplicitFunctionDescriptor (name, resultType, argumentTypes, createExpression) :> FunctionDescriptor
+
   val private name          : string
+
   val private resultType    : Type
+
   val private argumentTypes : ImmutableArray<Type>
 
   /// Gets function name.
   member this.Name          with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.name
+
   /// Gets function result type.
   member this.ResultType    with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.resultType
+
   /// Gets function argument types.
   member this.ArgumentTypes with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = this.argumentTypes
+
   /// <summary>
   /// Initializes new instance of function descriptor from the specified arguments.
   /// </summary>
@@ -42,12 +49,14 @@ type FunctionDescriptor =
     { name          = name
       resultType    = resultType
       argumentTypes = if argumentTypes.IsDefault then ImmutableArray.Empty else argumentTypes }
+
   /// <summary>
   /// Creates expression that represents function invocation defined by the actual descriptor instance.
   /// </summary>
   /// <param name="arguments">Function arguments.</param>
   /// <returns>Expression that represents function invocation.</returns>
   abstract CreateExpression : arguments:IReadOnlyList<Expression> -> Expression
+
   interface IFunctionDescriptor with
     member this.Name          = this.name
     member this.ResultType    = this.resultType
@@ -56,9 +65,17 @@ type FunctionDescriptor =
 
 and
   [<Sealed>]
-  private ExplicitFunctionDescriptor (name : string, resultType : Type, argumentTypes : ImmutableArray<Type>, createExpression : Func<IReadOnlyList<Expression>, Expression>) =
-    inherit FunctionDescriptor (name, resultType, argumentTypes)
-    override __.CreateExpression arguments = createExpression.Invoke arguments
+  private ExplicitFunctionDescriptor =
+    inherit FunctionDescriptor
+
+    val private createExpression : Func<IReadOnlyList<Expression>, Expression>
+
+    new (name : string, resultType : Type, argumentTypes : ImmutableArray<Type>, createExpression : Func<IReadOnlyList<Expression>, Expression>) =
+      if isNull createExpression then ArgumentNullException "createExpression" |> raise
+      { inherit FunctionDescriptor (name, resultType, argumentTypes)
+        createExpression = createExpression }
+
+    override this.CreateExpression arguments = this.createExpression.Invoke arguments
 
 /// Defines functionality to resolve function invocations in data queries.
 type IFunctionDescriptorResolver =
@@ -90,12 +107,16 @@ type IFunctionMatcher =
   /// <returns>Matched function or <c>None</c></returns>
   abstract MatchFunction : expression:Expression * next:Func<ValueOption<FunctionMatch>> -> ValueOption<FunctionMatch>
 
+module private RetNull =
+
+  let descriptor = Func<IFunctionDescriptor> (fun () -> null)
+
+  let matcher = Func<ValueOption<FunctionMatch>> (fun () -> ValueNone)
+
 /// Defines extensions methods for function resolvation.
 [<AbstractClass; Sealed>]
 [<Extension>]
-type FunctionDescriptorResolverExtensions private () =
-
-  static let retNull = Func<IFunctionDescriptor> (fun () -> null)
+type FunctionDescriptorResolverExtensions =
 
   /// <summary>
   /// Attempts to resolve function invocation from the specified arguments.
@@ -108,13 +129,11 @@ type FunctionDescriptorResolverExtensions private () =
   [<Extension>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   static member ResolveFunction (resolver : IFunctionDescriptorResolver, name, resultTypeConstraints, argumentTypeConstraints) =
-    resolver.ResolveFunction (name, resultTypeConstraints, argumentTypeConstraints, retNull)
+    resolver.ResolveFunction (name, resultTypeConstraints, argumentTypeConstraints, RetNull.descriptor)
 
 [<AbstractClass; Sealed>]
 [<Extension>]
-type FunctionMatcherExtensions private () =
-
-  static let retNone = Func<ValueOption<FunctionMatch>> (fun () -> ValueNone)
+type FunctionMatcherExtensions =
 
   /// <summary>
   /// Matches expression against supported functions.
@@ -125,4 +144,4 @@ type FunctionMatcherExtensions private () =
   [<Extension>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
   static member MatchFunction (matcher : IFunctionMatcher, expression) =
-    matcher.MatchFunction (expression, retNone)
+    matcher.MatchFunction (expression, RetNull.matcher)

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -57,7 +58,7 @@ namespace NCoreUtils.Data.Protocol.Linq
         {
             protected override object DoInvoke(QueryProvider self, Expression expression)
             {
-                return self.ExecuteReduction<T>(expression);
+                return self.ExecuteReduction<T>(expression)!;
             }
         }
 
@@ -66,7 +67,7 @@ namespace NCoreUtils.Data.Protocol.Linq
                 .GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
                 .First(m => m.Name == "CreateDerivedQuery");
 
-        static bool TryExtractQueryableCall(Expression expression, out MethodInfo method, out IReadOnlyList<Expression> arguments)
+        static bool TryExtractQueryableCall(Expression expression, [NotNullWhen(true)] out MethodInfo? method, [NotNullWhen(true)] out IReadOnlyList<Expression>? arguments)
         {
             if (expression is MethodCallExpression methodExpression)
             {
@@ -82,7 +83,7 @@ namespace NCoreUtils.Data.Protocol.Linq
             return false;
         }
 
-        static bool TryExtractEnumeratonElementType(Type type, out Type elementType)
+        static bool TryExtractEnumeratonElementType(Type type, [NotNullWhen(true)] out Type? elementType)
         {
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
             {
@@ -109,7 +110,7 @@ namespace NCoreUtils.Data.Protocol.Linq
                 throw new ArgumentNullException(nameof(source));
             }
             var result = await source;
-            return (TResult)(object)result;
+            return (TResult)(object)result!;
         }
 
         static Query CreateDerivedQuery<TBase, TDerived>(Query source)

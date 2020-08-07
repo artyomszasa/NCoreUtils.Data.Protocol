@@ -11,21 +11,16 @@ open System.Globalization
 module ValueOption = Microsoft.FSharp.Core.ValueOption
 
 [<AutoOpen>]
-module private Helpers =
+module internal Helpers =
 
-  let c (node : Node) = Expression.Constant node :> Expression
-
-  let (|CExpr|) (expression : Expression) =
-    match expression with
-    | :? ConstantExpression as cexpr when cexpr.Type = typeof<Node> -> cexpr.Value :?> Node
-    | _ -> invalidOpf "%A is not a valid ast node." expression
-
+  [<CompiledName("MapToImmutable")>]
   let mapToImmutable f (args : IReadOnlyList<Expression>) =
     let builder = ImmutableArray.CreateBuilder args.Count
     for e in args do
       builder.Add (f e)
     builder.ToImmutable ()
 
+  [<CompiledName("TryAsBoxedConstant")>]
   let rec tryBoxedConst (expression : Expression) =
     match expression with
     | :? ConstantExpression as cexpr -> Some struct (cexpr.Type, cexpr.Value)
@@ -85,12 +80,12 @@ module ExpressionToAstVisitor =
           | null | "" -> (this.Supply + 1, sprintf "p%d" this.Supply)
           | name      -> (this.Supply,     name)
         (name', { Supply = supply'; Mapping = this.Mapping.Add (parameter, name') })
-      member this.Item
-        with get parameter =
-          let mutable name = Unchecked.defaultof<_>
-          match this.Mapping.TryGetValue (parameter, &name) with
-          | true -> name
-          | _    -> invalidOpf "Parameter %A not found in the context." parameter
+      // member this.Item
+      //   with get parameter =
+      //     let mutable name = Unchecked.defaultof<_>
+      //     match this.Mapping.TryGetValue (parameter, &name) with
+      //     | true -> name
+      //     | _    -> invalidOpf "Parameter %A not found in the context." parameter
 
   module Context =
 

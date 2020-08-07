@@ -1,10 +1,12 @@
 namespace NCoreUtils.Data.Protocol.TypeInference
 
 open System
+open System.Diagnostics.CodeAnalysis
 open System.Collections.Concurrent
 open System.Linq.Expressions
 open System.Reflection
 
+[<ExcludeFromCodeCoverage>]
 type internal DefaultProperty =
   { Property : PropertyInfo }
   with

@@ -1,10 +1,12 @@
 namespace NCoreUtils.Data.Protocol
 
+open System.Diagnostics.CodeAnalysis
 open System.Reflection
 
 /// Represents member lookup result.
 [<Struct>]
 [<StructuralEquality; NoComparison>]
+[<ExcludeFromCodeCoverage>]
 type Members =
   /// Represents property match.
   | PropertyMember of Property:PropertyInfo
@@ -32,6 +34,11 @@ module Members =
       match xs |> Array.tryPick (function | :? PropertyInfo as p -> Some p | _ -> None) with
       | Some p -> PropertyMember p
       | _ ->
-      match xs |> Array.tryPick (function | :? FieldInfo as p -> Some p | _ -> None) with
-      | Some f -> FieldMember f
-      | _      -> NoMember
+        let field =
+          Array.pick
+            (fun (o : MemberInfo) ->
+              match o with
+              | :? FieldInfo as p -> Some p
+              | _ -> None
+            ) xs
+        FieldMember field

@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
-    <Version>3.1.0-alpha8</Version>
+    <Nullable>enable</Nullable>
+    <Version>3.1.0-rc00</Version>
     <NoWarn>NU5105</NoWarn>
   </PropertyGroup>
   <ItemGroup>
@@ -11,5 +12,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NCoreUtils.Extensions.Expressions" Version="1.0.6" />
+    <PackageReference Include="Nullable" Version="1.2.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.Linq.Async" Version="4.1.1" />
   </ItemGroup>
 </Project>

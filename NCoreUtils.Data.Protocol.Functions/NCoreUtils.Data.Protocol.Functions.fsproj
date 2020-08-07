@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.1.0-alpha8</Version>
+    <Version>3.1.0</Version>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.Functions</PackageId>
@@ -31,6 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.1" />
-    <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="3.1.0-alpha0" />
+    <PackageReference Include="NCoreUtils.FSharp.DependencyInjection" Version="3.1.0" />
   </ItemGroup>
 </Project>

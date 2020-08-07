@@ -9,6 +9,8 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open NCoreUtils.Data.Protocol.TypeInference
 open NCoreUtils.Data
+open System.Collections.Immutable
+open System.Collections.Generic
 
 [<StructuralEquality; NoComparison>]
 type SubItem = {
@@ -38,9 +40,8 @@ type private DummyLogger<'T> () =
     member __.Log(_: LogLevel, _: EventId, _: 'TState, _: exn, _: System.Func<'TState,exn,string>) =
       ()
 
-
-let private createBuilder () =
-  let cirBuilder =
+let private createBuilderWith addFunctions addServices =
+  let cirBuilder : FunctionDescriptorResolverBuilder =
     FunctionDescriptorResolverBuilder()
       .Add<CommonFunctions.StringLength>()
       .Add<CommonFunctions.StringToLower>()
@@ -49,21 +50,29 @@ let private createBuilder () =
       .Add<CommonFunctions.CollectionContains>()
       .Add<CommonFunctions.CollectionAny>()
       .Add<CommonFunctions.CollectionAll>()
+    |> addFunctions
 
   let services =
-    ServiceCollection()
-      .AddSingleton<CommonFunctions.StringLength>()
-      .AddSingleton<CommonFunctions.StringToLower>()
-      .AddSingleton<CommonFunctions.StringToUpper>()
-      .AddSingleton<CommonFunctions.StringContains>()
-      .AddSingleton<CommonFunctions.CollectionContains>()
-      .AddSingleton<CommonFunctions.CollectionAny>()
-      .AddSingleton<CommonFunctions.CollectionAll>()
-      .BuildServiceProvider()
+    let services =
+      ServiceCollection()
+        .AddSingleton<CommonFunctions.StringLength>()
+        .AddSingleton<CommonFunctions.StringToLower>()
+        .AddSingleton<CommonFunctions.StringToUpper>()
+        .AddSingleton<CommonFunctions.StringContains>()
+        .AddSingleton<CommonFunctions.CollectionContains>()
+        .AddSingleton<CommonFunctions.CollectionAny>()
+        .AddSingleton<CommonFunctions.CollectionAll>()
+    let services': IServiceCollection = addServices services
+    services'.BuildServiceProvider()
 
+  let resolver = cirBuilder.Build services
+  Assert.Null (resolver.ResolveFunction ("non-existent-function", TypeVariable.empty, [| |]))
   let parser = DataQueryParser ()
-  let inferrer = TypeInferrer (cirBuilder.Build services)
+  let inferrer = TypeInferrer resolver
   DataQueryExpressionBuilder(parser, inferrer, new DummyLogger<DataQueryExpressionBuilder>()) :> IDataQueryExpressionBuilder
+
+let private createBuilder () =
+  createBuilderWith id id
 
 [<Fact>]
 let ``member access`` () =
@@ -174,11 +183,14 @@ let ``nullable`` () =
 let ``non-nullable`` () =
   let builder = createBuilder ()
   let raw = "o => o.num = null"
-  Assert.Throws<ProtocolTypeConstraintMismatchException>
-    (fun () ->
-      let fn = (builder.BuildExpression(typeof<Item>, raw) :?> Expression<System.Func<Item, bool>>).Compile ()
-      fn.Invoke { Num = 0; Str = "AbC"; Sub = Unchecked.defaultof<_> } |> ignore
-    ) |> ignore
+  let exn =
+    Assert.Throws<ProtocolException>
+      (fun () ->
+        let fn = (builder.BuildExpression(typeof<Item>, raw) :?> Expression<System.Func<Item, bool>>).Compile ()
+        fn.Invoke { Num = 0; Str = "AbC"; Sub = Unchecked.defaultof<_> } |> ignore
+      )
+  Assert.IsType<ProtocolTypeConstraintMismatchException>(exn.InnerException)
+  |> ignore
 
 
 [<Fact>]
@@ -251,11 +263,48 @@ let ``collection any`` () =
 let ``collection all`` () =
   let builder = createBuilder ()
   let raw = "o => seed => every(o.sub, v => v.name = seed)"
-  let fn = (builder.BuildExpression(typeof<Item>, raw) :?> Expression<System.Func<Item, System.Func<string, bool>>>).Compile ()
+  let fn = (builder.BuildExpression(typeof<Item>, raw) :?> Expression<Func<Item, Func<string, bool>>>).Compile ()
   let item0 = { Num = Unchecked.defaultof<_>; Str = Unchecked.defaultof<_>; Sub = [| { Name = "xxx" } |] }
   let item1 = { Num = Unchecked.defaultof<_>; Str = Unchecked.defaultof<_>; Sub = [| { Name = "xxx" }; { Name = "yyy" } |] }
   Assert.True (fn.Invoke(item0).Invoke "xxx")
   Assert.False (fn.Invoke(item1).Invoke "xxx")
+
+[<Fact>]
+let ``explicit function descriptor`` () =
+  let myAddResolver =
+    let retc = Func<_, _> (fun (es : IReadOnlyList<Expression>) -> Expression.Constant 2 :> Expression)
+    Assert.Throws<ArgumentNullException> (fun () -> FunctionDescriptor.Create (Unchecked.defaultof<_>, typeof<int>, Unchecked.defaultof<_>, retc) |> ignore) |> ignore
+    Assert.Throws<ArgumentNullException> (fun () -> FunctionDescriptor.Create ("test", Unchecked.defaultof<_>, Unchecked.defaultof<_>, retc) |> ignore) |> ignore
+    Assert.Throws<ArgumentNullException> (fun () -> FunctionDescriptor.Create ("test", typeof<int>, Unchecked.defaultof<_>, Unchecked.defaultof<_>) |> ignore) |> ignore
+    Assert.False (FunctionDescriptor.Create("test", typeof<int>, Unchecked.defaultof<_>, retc).ArgumentTypes.IsDefault)
+    let myAdd =
+      FunctionDescriptor.Create (
+        "xxxadd",
+        typeof<int>,
+        ImmutableArray.Create (typeof<int>, typeof<int>),
+        (fun es -> Expression.Add (es.[0], es.[1]) :> Expression)
+      )
+    Assert.Equal (typeof<int>, myAdd.ResultType)
+    Assert.Equal (2, myAdd.ArgumentTypes.Length)
+    Assert.Equal (typeof<int>, myAdd.ArgumentTypes.[0])
+    Assert.Equal (typeof<int>, myAdd.ArgumentTypes.[0])
+    Assert.Equal (myAdd.Name, (myAdd :> IFunctionDescriptor).Name)
+    { new IFunctionDescriptorResolver with
+      member __.ResolveFunction (name, _, _, next) =
+        match StringComparer.OrdinalIgnoreCase.Equals (myAdd.Name, name) with
+        | true -> myAdd :> IFunctionDescriptor
+        | _    -> next.Invoke ()
+    }
+  let builder =
+    createBuilderWith
+      (fun b -> b.Resolvers.Add (myAddResolver.GetType()); b)
+      (fun s -> s.AddSingleton (myAddResolver.GetType(), myAddResolver))
+  let raw = "o => xxxadd(o.num, o.num)"
+  let fn = (builder.BuildExpression(typeof<Item>, raw) :?> Expression<Func<Item, int>>).Compile ()
+  let item0 = { Num = 1; Str = Unchecked.defaultof<_>; Sub = [| { Name = "xxx" } |] }
+  let item1 = { Num = 2; Str = Unchecked.defaultof<_>; Sub = [| { Name = "xxx" } |] }
+  Assert.Equal (2, fn.Invoke item0)
+  Assert.Equal (4, fn.Invoke item1)
 
 [<Fact>]
 let ``null arguments check`` () =

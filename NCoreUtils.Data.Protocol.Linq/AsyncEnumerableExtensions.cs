@@ -15,7 +15,7 @@ namespace NCoreUtils.Data.Protocol.Linq
                 _source = source;
             }
 
-            public TTarget Current => (TTarget)(object)_source.Current;
+            public TTarget Current => (TTarget)(object)_source.Current!;
 
             public ValueTask DisposeAsync() => _source.DisposeAsync();
 
