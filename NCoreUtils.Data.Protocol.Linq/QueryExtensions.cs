@@ -27,11 +27,11 @@ namespace NCoreUtils.Data.Protocol.Linq
             }
             if (boxedPredicate is Expression<Func<T, bool>> predicate)
             {
-                return ((Query<T>)source.Where(predicate));
+                return ((Query<T>)Queryable.Where(source, predicate));
             }
             if (boxedPredicate is Expression<Func<T, int, bool>> indexedPredicate)
             {
-                return ((Query<T>)source.Where(indexedPredicate));
+                return ((Query<T>)Queryable.Where(source, indexedPredicate));
             }
             throw new InvalidOperationException($"Invalid argument (expecting predicate for {typeof(T)}): {expression}.");
         }

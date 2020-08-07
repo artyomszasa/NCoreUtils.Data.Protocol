@@ -177,22 +177,53 @@ type DataQueryExpressionBuilder =
       let body = adapt arg node
       Node.Lambda (arg, body)
 
-  abstract BuildExpression: rootType:Type * input:string -> Expression
-
   /// <summary>
   /// Parses and processes specified query creating LINQ expression with respect to the root argument type.
   /// </summary>
   /// <param name="rootType">Type of the root argument in the expression.</param>
   /// <param name="input">Raw query to parse and process.</param>
   /// <returns>LINQ Expression representation of the input query.</returns>
+  abstract BuildExpression: rootType:Type * input:string -> Expression
+
+  /// <summary>
+  /// Creates LINQ expression from the resolved internal expression.
+  /// </summary>
+  /// <param name="resolvedExpression">Resolved internal expression.</param>
+  /// <returns>LINQ Expression representation of the resolved expression.</returns>
+  abstract CreateExpression: resolvedExpression:ResolvedNode -> Expression
+
+  /// <summary>
+  /// Parses raw input creating internal expression.
+  /// </summary>
+  /// <param name="input">String that contains the expression to parse.</param>
+  /// <returns>Internal expression.</returns>
+  abstract ParseExpression: input:string -> Node
+
+  /// <summary>
+  /// Inters and validates types in the specified internal expression.
+  /// </summary>
+  /// <param name="rootType">Type of the root argument in the expression.</param>
+  /// <param name="expression">Internal expression without type information.</param>
+  /// <returns>Internal expression with resolved type information.</returns>
+  abstract ResolveExpression: rootType:Type * expression:Node -> ResolvedNode
+
   default this.BuildExpression (rootType, input) =
     try
-      let expression = this.Parser.ParseQuery input |> this.AdaptLegacy
-      this.Inferrer.InferTypes (rootType, expression)
-      |> toExpression this.Inferrer.PropertyResolver
+      let rawExpression = this.ParseExpression input
+      let resolvedExpression = this.ResolveExpression (rootType, rawExpression)
+      this.CreateExpression resolvedExpression
     with exn ->
       ProtocolException (sprintf "Failed to build expression for \"%s\" with root type %A" input rootType, exn)
       |> raise
+
+  default this.CreateExpression resolvedExpression =
+    toExpression this.inferrer.PropertyResolver resolvedExpression
+
+  default this.ParseExpression input =
+    this.Parser.ParseQuery input |> this.AdaptLegacy
+
+  default this.ResolveExpression (rootType, expression) =
+    this.Inferrer.InferTypes (rootType, expression)
 
   interface IDataQueryExpressionBuilder with
     member this.BuildExpression (rootType, input) =
