@@ -67,7 +67,11 @@ module private DataQueryParserHelpers =
           | _ -> base.VisitExpr context
         override this.VisitCall context =
           let name = context.IDENT().GetText ()
-          let args = context.args().expr () |> Array.map this.VisitExpr
+          let args =
+            match context.args () with
+            | null        -> Seq.empty
+            | argsContext ->
+              argsContext.expr () |> Seq.filter (isNull >> not) |> Seq.map this.VisitExpr
           Call (name, args.ToImmutableArray ())
         override __.VisitIdent context =
           let idents = context.IDENT ()
