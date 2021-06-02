@@ -352,12 +352,13 @@ module internal TypeInferenceHelpers =
           UnresolvedMember (uid, instance', name)
         )
       | KnownType instanceType ->
+        match propertyResolver.TryResolve (instanceType, name) with
+        | ValueSome p ->
+          struct (TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name))
+        | ValueNone ->
+        // fallback for compatibility
         match Members.getMember name instanceType with
-        | NoMember ->
-          match propertyResolver.TryResolve (instanceType, name) with
-          | ValueNone -> sprintf "Type %A has no member %s" instanceType name |> ProtocolTypeInferenceException |> raise
-          | ValueSome p ->
-            struct (TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name))
+        | NoMember -> sprintf "Type %A has no member %s" instanceType name |> ProtocolTypeInferenceException |> raise
         | PropertyMember p ->
           struct (TypeInferenceContext.applyConstraint uid (KnownType p.PropertyType) ctx', UnresolvedMember (uid, instance', name))
         | FieldMember f ->

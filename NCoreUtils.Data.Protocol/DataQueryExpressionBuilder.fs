@@ -90,13 +90,13 @@ module private DataQueryExpressionBuilderHelpers =
       desc.CreateExpression args'
     | ResolvedMember (_, instance, name) ->
       let inst = createExpression propertyResolver ps instance
+      match propertyResolver.TryResolve (inst.Type, name) with
+      | ValueSome p      -> p.CreateExpression inst
+      | ValueNone        ->
       match Members.getMember name inst.Type with
       | PropertyMember p -> Expression.Property (inst, p) :> _
       | FieldMember f    -> Expression.Field    (inst, f) :> _
-      | NoMember         ->
-      match propertyResolver.TryResolve (inst.Type, name) with
-      | ValueNone        -> failwithf "Type %A has no member %s" inst.Type name
-      | ValueSome p      -> p.CreateExpression inst
+      | NoMember         -> failwithf "Type %A has no member %s" inst.Type name
     | ResolvedBinary (_, left, op, right) ->
       let l = createExpression propertyResolver ps left
       let r = createExpression propertyResolver ps right
