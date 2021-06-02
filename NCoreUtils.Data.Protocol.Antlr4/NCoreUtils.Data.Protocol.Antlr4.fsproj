@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.1.0</Version>
+    <Version>3.1.0.5</Version>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.Antlr4</PackageId>
@@ -26,7 +26,7 @@
     <Compile Include="DataQueryParser.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.1" />
+    <PackageReference Update="FSharp.Core" Version="4.7.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Grammar\NCoreUtils.Data.Protocol.Grammar.csproj" />

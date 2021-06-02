@@ -89,7 +89,7 @@ module TypeInferenceContext =
   /// <returns>Concrete type for the specified type UID.</returns>
   [<Pure>]
   [<CompiledName("InstantiateType")>]
-  let instantiateType uid ctx =
+  let instantiateType (propertyResolver : IPropertyResolver) uid ctx =
     match getAllConstraints uid ctx with
     | KnownType ty -> ty
     | UnknownType c ->
@@ -102,10 +102,9 @@ module TypeInferenceContext =
             let struct (owner, memberName) = c.MemberOf.[0]
             match getAllConstraints owner ctx with
             | KnownType ty ->
-              match Members.getMember memberName ty with
-              | NoMember -> sprintf "Type %A has no member %s" ty memberName |> ProtocolTypeInferenceException |> raise
-              | PropertyMember p -> ValueSome p.PropertyType
-              | FieldMember    f -> ValueSome f.FieldType
+              match propertyResolver.TryResolve (ty, memberName) with
+              | ValueNone   -> sprintf "Type %A has no member %s" ty memberName |> ProtocolTypeInferenceException |> raise
+              | ValueSome p -> ValueSome p.PropertyType
             | _ -> ValueNone
           | _ -> ValueNone
         match isMember with
@@ -163,8 +162,8 @@ type TypeInferenceContext with
   /// <returns>Concrete type for the specified type UID.</returns>
   [<Pure>]
   [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-  member this.InstantiateType typeUid =
-    TypeInferenceContext.instantiateType typeUid this
+  member this.InstantiateType (propertyResolver, typeUid) =
+    TypeInferenceContext.instantiateType propertyResolver typeUid this
 
 // *********** LOCAL ALIASES ************************************************
 
@@ -375,12 +374,12 @@ module internal TypeInferenceHelpers =
     collectConstraints propertyResolver functionResolver node ctx'
 
   [<CompiledName("Resolve")>]
-  let resolve rootType node ctx =
+  let resolve propertyResolver rootType node ctx =
     let ctx' =
       match node with
       | UnresolvedLambda (_, arg, _) -> TypeInferenceContext.applyConstraint arg.TypeUid (KnownType rootType) ctx
       | _                            -> ctx
-    UnresolvedNode.resolve (fun typeUid -> TypeInferenceContext.instantiateType typeUid ctx') node
+    UnresolvedNode.resolve (fun typeUid -> TypeInferenceContext.instantiateType propertyResolver typeUid ctx') node
 
 /// Default type inferrer for data query protocol.
 type TypeInferrer =
@@ -409,7 +408,7 @@ type TypeInferrer =
       let exprX = TypeInferenceHelpers.idfy expr
       let initialContext = TypeInferenceHelpers.collectIds exprX
       TypeInferenceHelpers.collectConstraintsRoot rootType this.PropertyResolver this.FunctionResolver exprX initialContext
-    TypeInferenceHelpers.resolve rootType unresolvedExpr context
+    TypeInferenceHelpers.resolve this.PropertyResolver rootType unresolvedExpr context
 
   interface ITypeInferrer with
     member this.PropertyResolver = this.PropertyResolver

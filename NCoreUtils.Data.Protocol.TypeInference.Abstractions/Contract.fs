@@ -168,6 +168,7 @@ module TypeConstraints =
       typeof<decimal>
       typeof<single>
       typeof<float>
+      typeof<DateTimeOffset>
       typeof<Nullable<int8>>
       typeof<Nullable<int16>>
       typeof<Nullable<int32>>
@@ -178,7 +179,8 @@ module TypeConstraints =
       typeof<Nullable<uint64>>
       typeof<Nullable<decimal>>
       typeof<Nullable<single>>
-      typeof<Nullable<float>> ]
+      typeof<Nullable<float>>
+      typeof<Nullable<DateTimeOffset>> ]
     |> ImmutableHashSet.CreateRange
 
   let private nullableTypedefs =
@@ -190,6 +192,11 @@ module TypeConstraints =
   [<Pure>]
   let private isNullable (ty : Type) =
     ty.IsGenericType && (ty.GetGenericTypeDefinition () |> nullableTypedefs.Contains)
+
+  /// Checks whether a specified type is enum or nullable enum.
+  [<Pure>]
+  let private isEnum (ty : Type) =
+    ty.IsEnum || (isNullable ty && ty.GetGenericArguments().[0].IsEnum)
 
   /// Gets empty type constraints.
   [<CompiledName("Empty")>]
@@ -315,7 +322,7 @@ module TypeConstraints =
     match numericity.HasValue with
     | false -> ValueNone
     | true ->
-      match numericity.Value, numericTypes.Contains candidateType with
+      match numericity.Value, (numericTypes.Contains candidateType || isEnum candidateType) with
       | true, false -> ValueSome { TargetType = TypeRef candidateType; Reason = NumericConstraint }
       | false, true -> ValueSome { TargetType = TypeRef candidateType; Reason = NonNumericConstraint }
       | _           -> ValueNone

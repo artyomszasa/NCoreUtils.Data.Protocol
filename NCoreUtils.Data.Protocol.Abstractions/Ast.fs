@@ -171,6 +171,7 @@ module Node =
       | Member (inst, name) ->
         sprintf "%s.%s" (impl true inst) name
       | Constant null -> "null"
+      | Constant ""   -> "\"\""
       | Constant v    ->
         match isNum v with
         | true -> v
