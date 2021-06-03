@@ -52,6 +52,11 @@ module private DataQueryExpressionBuilderHelpers =
       match value with
       | null | "" -> Guid.Empty       :> obj
       | _         -> Guid.Parse value :> obj
+    | t when t = typeof<decimal> ->
+      match value with
+      | null | "" -> 0.0m             :> obj
+      | _         ->
+        Decimal.Parse(value, Globalization.CultureInfo.InvariantCulture) :> obj
     | _ ->
       // default
       Convert.ChangeType (value, target, Globalization.CultureInfo.InvariantCulture)

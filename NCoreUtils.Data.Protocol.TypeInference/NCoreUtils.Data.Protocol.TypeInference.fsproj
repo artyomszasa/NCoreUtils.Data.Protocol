@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>3.1.0.7</Version>
+    <Version>3.1.0.8</Version>
     <RootNamespace>NCoreUtils.Data.Protocol.TypeInference</RootNamespace>
     <!-- NuGet -->
     <PackageId>NCoreUtils.Data.Protocol.TypeInference</PackageId>
