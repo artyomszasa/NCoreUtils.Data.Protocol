@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Grammar\NCoreUtils.Data.Protocol.Grammar.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
+  </PropertyGroup>
+</Project>

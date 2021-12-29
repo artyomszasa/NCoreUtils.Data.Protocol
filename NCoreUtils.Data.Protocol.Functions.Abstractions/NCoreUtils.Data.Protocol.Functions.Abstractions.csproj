@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.TypeInference.Abstractions\NCoreUtils.Data.Protocol.TypeInference.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,7 @@
+.vs
+.vscode
+.ionide
+
+NCoreUtils*/obj
+NCoreUtils*/bin
+NCoreUtils.Data.Protocol.Grammar/.antlr
