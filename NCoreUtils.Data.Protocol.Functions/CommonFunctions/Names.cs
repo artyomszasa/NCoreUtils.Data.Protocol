@@ -20,6 +20,8 @@ public static class Names
 
     public const string Any = "any";
 
+    public const string DateTimeOffset = "dateTimeOffset";
+
     public const string Every = "every";
 
     public const string All = "all";

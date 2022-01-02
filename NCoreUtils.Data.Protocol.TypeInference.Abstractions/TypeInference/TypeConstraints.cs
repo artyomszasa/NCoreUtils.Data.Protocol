@@ -3,18 +3,80 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Text;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
 public partial record TypeConstraints(
     ImmutableHashSet<CaseInsensitive> Members,
     ImmutableHashSet<Type> Interfaces,
+    [property: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    [param: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     Type? Base,
     bool? IsNumeric,
     bool? IsNullable,
     bool? IsLambda,
     ImmutableList<(TypeUid TypeUid, string MemberName)> MemberOf
 );
+
+public partial record TypeConstraints
+{
+    public override string ToString()
+    {
+        var builder = new StringBuilder();
+        builder.Append('{');
+        var first = true;
+        if (Base is not null)
+        {
+            builder.Append(":")
+                .Append(Base.Name);
+        }
+        if (IsNumeric.HasValue)
+        {
+            AppendSeparator();
+            builder.Append(IsNumeric.Value ? "num" : "non-num");
+        }
+        if (IsNullable.HasValue)
+        {
+            AppendSeparator();
+            builder.Append(IsNullable.Value ? "null" : "non-null");
+        }
+        if (IsLambda.HasValue)
+        {
+            AppendSeparator();
+            builder.Append(IsLambda.Value ? "lambda" : "non-lambda");
+        }
+        foreach (var member in Members)
+        {
+            AppendSeparator();
+            builder.AppendFormat("member({0})", member.Value);
+        }
+        foreach (var @interface in Interfaces)
+        {
+            AppendSeparator();
+            builder.AppendFormat(":{0}", @interface.Name);
+        }
+        foreach (var memberOf in MemberOf)
+        {
+            AppendSeparator();
+            builder.AppendFormat("memberOf({0}, {1})", memberOf.TypeUid, memberOf.MemberName);
+        }
+        builder.Append('}');
+        return builder.ToString();
+
+        void AppendSeparator()
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                builder.Append(", ");
+            }
+        }
+    }
+}
 
 public partial record TypeConstraints
 {

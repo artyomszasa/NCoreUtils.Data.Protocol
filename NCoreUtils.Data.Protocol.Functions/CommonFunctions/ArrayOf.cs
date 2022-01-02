@@ -10,6 +10,8 @@ public class ArrayOf : IFunction
 {
     [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026",
         Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
+    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2070",
+        Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
     public static ArrayOfDescriptor CreateDescritor(Type elementType, int size)
         => (ArrayOfDescriptor)Activator.CreateInstance(
             typeof(ArrayOfDescriptor<>).MakeGenericType(elementType),
@@ -36,6 +38,22 @@ public class ArrayOf : IFunction
         return default;
     }
 
+    private static bool TryGetArgumentType(
+        IReadOnlyList<TypeVariable> argumentTypeConstraints,
+        [MaybeNullWhen(false)] out Type elementType)
+    {
+        foreach (var argTypeConstraints in argumentTypeConstraints)
+        {
+            if (argTypeConstraints.TryGetExactType(out var type))
+            {
+                elementType = type;
+                return true;
+            }
+        }
+        elementType = default;
+        return false;
+    }
+
     public bool TryResolveFunction(
         string name,
         TypeVariable resultTypeConstraints,
@@ -44,25 +62,8 @@ public class ArrayOf : IFunction
     {
         if (StringComparer.InvariantCultureIgnoreCase.Equals(Names.Array, name))
         {
-            var maybeElementType = resultTypeConstraints.Match(
-                type => Helpers.TryGetElementType(type, out var elementType)
-                    ? elementType.Just()
-                    : default,
-                constraints => Helpers.TryGetElementType(constraints, out var elementType)
-                    ? elementType.Just()
-                    : default
-            ).Supply(() =>
-            {
-                foreach (var argTypeConstraints in argumentTypeConstraints)
-                {
-                    if (argTypeConstraints.TryGetExactType(out var type))
-                    {
-                        return ((Type)type).Just();
-                    }
-                }
-                return default;
-            });
-            if (maybeElementType.TryGetValue(out var elementType) && elementType is not null)
+            if (Helpers.TryGetElementType(resultTypeConstraints, out var elementType)
+                || TryGetArgumentType(argumentTypeConstraints, out elementType))
             {
                 descriptor = CreateDescritor(elementType, argumentTypeConstraints.Count);
                 return true;

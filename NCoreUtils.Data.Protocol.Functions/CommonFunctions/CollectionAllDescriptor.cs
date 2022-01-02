@@ -13,7 +13,11 @@ public abstract class CollectionAllDescriptor : IFunctionDescriptor
 {
     protected abstract MethodInfo MethodAll { get; }
 
-    public Type ResultType => typeof(bool);
+    public Type ResultType
+    {
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        get => typeof(bool);
+    }
 
     public abstract ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 
@@ -31,6 +35,8 @@ public sealed class CollectionAllDescriptor<T> : CollectionAllDescriptor
 
     private static readonly MethodInfo _methodAll;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "Type preservation are handled in factory methods.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "System.Delegate is explicitely preserved.")]
     static CollectionAllDescriptor()
     {
         _argumentTypes = new ReadOnlyConstraintedTypeListBuilder

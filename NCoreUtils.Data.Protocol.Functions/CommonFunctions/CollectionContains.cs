@@ -30,6 +30,7 @@ public sealed class CollectionContains : IFunction
         return default;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "TypeVariable.Match is hiding attributes.")]
     public bool TryResolveFunction(
         string name,
         TypeVariable resultTypeConstraints,
@@ -38,15 +39,7 @@ public sealed class CollectionContains : IFunction
     {
         if ((Eqi(Names.Contains, name) || Eqi(Names.Includes, name)) && argumentTypeConstraints.Count == 2)
         {
-            var maybeElementType = argumentTypeConstraints[0].Match(
-                type => Helpers.TryGetElementType(type, out var elementType)
-                    ? elementType.Just()
-                    : default,
-                constraints => Helpers.TryGetElementType(constraints, out var elementType)
-                    ? elementType.Just()
-                    : default
-            );
-            if (maybeElementType.TryGetValue(out var elementType) && elementType is not null)
+            if (Helpers.TryGetElementType(argumentTypeConstraints[0], out var elementType))
             {
                 descriptor = CollectionContainsDescriptor.GetOrCreate(elementType);
                 return true;

@@ -21,6 +21,9 @@ public abstract class CollectionOperationWithLambda<TDescriptor> : IFunction
 
     protected abstract bool MatchName(string name);
 
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Delegate))]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "System.Delegate is explicitely preserved.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "System.Delegate is explicitely preserved.")]
     internal CollectionOperationWithLambda() { }
 
     private TDescriptor GetOrCreateDescriptorFor(Type itemType)
@@ -52,15 +55,7 @@ public abstract class CollectionOperationWithLambda<TDescriptor> : IFunction
     {
         if (MatchName(name) && argumentTypeConstraints.Count == 2)
         {
-            var maybeElementType = argumentTypeConstraints[0].Match(
-                type => Helpers.TryGetElementType(type, out var elementType)
-                    ? elementType.Just()
-                    : default,
-                constraints => Helpers.TryGetElementType(constraints, out var elementType)
-                    ? elementType.Just()
-                    : default
-            );
-            if (maybeElementType.TryGetValue(out var elementType) && elementType is not null)
+            if (Helpers.TryGetElementType(argumentTypeConstraints[0], out var elementType))
             {
                 descriptor = GetOrCreateDescriptorFor(elementType);
                 return true;

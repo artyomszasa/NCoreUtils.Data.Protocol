@@ -45,3 +45,19 @@ public interface INodeRefVisitor<TArg, TResult>
 
     TResult VisitMember(Member member, ref TArg arg);
 }
+
+public interface INodeRefVisitor<TArg1, TArg2, TResult>
+    where TArg1 : struct
+{
+    TResult VisitBinary(Binary binary, ref TArg1 arg1, TArg2 arg2);
+
+    TResult VisitCall(Call call, ref TArg1 arg1, TArg2 arg2);
+
+    TResult VisitConstant(Constant constant, ref TArg1 arg1, TArg2 arg2);
+
+    TResult VisitIdentifier(Identifier identifier, ref TArg1 arg1, TArg2 arg2);
+
+    TResult VisitLambda(Lambda lambda, ref TArg1 arg1, TArg2 arg2);
+
+    TResult VisitMember(Member member, ref TArg1 arg1, TArg2 arg2);
+}

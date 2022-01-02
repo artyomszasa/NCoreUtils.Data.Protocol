@@ -18,6 +18,8 @@ public abstract class CollectionContainsDescriptor : IFunctionDescriptor
 
     [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026",
             Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
+    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2070",
+            Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
     private static CollectionContainsDescriptor DoCreate(Type itemType)
         => (CollectionContainsDescriptor)Activator
             .CreateInstance(typeof(CollectionContainsDescriptor<>).MakeGenericType(itemType), false)!;
@@ -27,7 +29,11 @@ public abstract class CollectionContainsDescriptor : IFunctionDescriptor
 
     protected abstract MethodInfo MethodContains { get; }
 
-    public Type ResultType => typeof(bool);
+    public Type ResultType
+    {
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        get => typeof(bool);
+    }
 
     public abstract ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace NCoreUtils.Data.Protocol.TypeInference;
+namespace NCoreUtils.Data.Protocol;
 
 /// <summary>
 /// Represents errors that thrown when raw data query is semantically invalid.

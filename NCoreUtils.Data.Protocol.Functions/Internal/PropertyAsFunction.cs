@@ -20,7 +20,7 @@ public sealed class PropertyAsFunction : IFunction
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
         [MaybeNullWhen(false)] out IFunctionDescriptor descriptor)
     {
-        if (StringComparer.InvariantCultureIgnoreCase.Equals(Descriptor.Name)
+        if (StringComparer.InvariantCultureIgnoreCase.Equals(name, Descriptor.Name)
             && argumentTypeConstraints.Count == 1
             && argumentTypeConstraints[0].IsCompatible(Descriptor.ArgumentTypes[0])
             && resultTypeConstraints.IsCompatible(Descriptor.ResultType))

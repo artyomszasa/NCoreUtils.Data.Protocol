@@ -16,7 +16,7 @@ public interface IDataQueryExpressionBuilder
     /// <param name="input">Raw query to parse and process.</param>
     /// <returns>LINQ Expression representation of the input query.</returns>
     LambdaExpression BuildExpression(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type rootType,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
         string input
     );
 }

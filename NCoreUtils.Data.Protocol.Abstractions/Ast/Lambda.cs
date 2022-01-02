@@ -27,6 +27,10 @@ public sealed class Lambda : Node
         where TArg : struct
         => visitor.VisitLambda(this, ref arg);
 
+    public override TResult Accept<TArg1, TArg2, TResult>(INodeRefVisitor<TArg1, TArg2, TResult> visitor, ref TArg1 arg1, TArg2 arg2)
+        where TArg1 : struct
+        => visitor.VisitLambda(this, ref arg1, arg2);
+
     public override TResult Accept<TArg1, TArg2, TResult>(INodeVisitor<TArg1, TArg2, TResult> visitor, TArg1 arg1, TArg2 arg2)
         => visitor.VisitLambda(this, arg1, arg2);
 

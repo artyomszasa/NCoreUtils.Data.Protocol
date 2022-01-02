@@ -11,7 +11,12 @@ public sealed class PropertyAsFunctionDescriptor : IFunctionDescriptor
 {
     public PropertyInfo Property { get; }
 
-    public Type ResultType => Property.PropertyType;
+    public Type ResultType
+    {
+        [UnconditionalSuppressMessage("Trimmer", "IL2073", Justification = "handled in ctor.")]
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        get => Property.PropertyType;
+    }
 
     public ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 

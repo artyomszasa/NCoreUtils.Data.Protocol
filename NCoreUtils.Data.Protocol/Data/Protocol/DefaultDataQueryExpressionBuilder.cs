@@ -48,11 +48,15 @@ public class DefaultDataQueryExpressionBuilder : IDataQueryExpressionBuilder
     /// <param name="rootType">Type of the root argument in the expression.</param>
     /// <param name="expression">Internal expression without type information.</param>
     /// <returns>Internal expression with resolved type information.</returns>
-    protected virtual Lambda<Type> ResolveExpression(Type rootType, Lambda expression)
+    protected virtual Lambda<Type> ResolveExpression(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
+        Lambda expression)
         => Inferrer.InferTypes(rootType, expression);
 
     /// <inheritdoc />
-    public LambdaExpression BuildExpression([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type rootType, string input)
+    public LambdaExpression BuildExpression(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
+        string input)
     {
         try
         {

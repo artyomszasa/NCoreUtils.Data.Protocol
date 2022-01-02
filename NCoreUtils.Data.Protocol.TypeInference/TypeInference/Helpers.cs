@@ -33,50 +33,57 @@ public static class Helpers
             => throw new InvalidOperationException();
     }
 
-    internal sealed class TypingVisitor : INodeRefVisitor<int, Node<TypeUid>>
+    internal sealed class TypingVisitor : INodeRefVisitor<int, ImmutableDictionary<UniqueString, TypeUid>, Node<TypeUid>>
     {
         public static TypingVisitor Singleton { get; } = new TypingVisitor();
 
         private TypingVisitor() { }
 
-        private IReadOnlyList<Node<TypeUid>> VisitCollection(IReadOnlyList<Node> nodes, ref int arg)
+        private IReadOnlyList<Node<TypeUid>> VisitCollection(IReadOnlyList<Node> nodes, ref int arg, ImmutableDictionary<UniqueString, TypeUid> args)
         {
             var result = new Node<TypeUid>[nodes.Count];
             for (var i = 0; i < result.Length; ++i)
             {
-                result[i] = nodes[i].Accept(this, ref arg);
+                result[i] = nodes[i].Accept(this, ref arg, args);
             }
             return result;
         }
 
-        public Node<TypeUid> VisitBinary(Binary binary, ref int arg) => Node<TypeUid>.Binary(
+        public Node<TypeUid> VisitBinary(Binary binary, ref int arg, ImmutableDictionary<UniqueString, TypeUid> args) => Node<TypeUid>.Binary(
             new TypeUid(arg++),
-            binary.Left.Accept(this, ref arg),
+            binary.Left.Accept(this, ref arg, args),
             binary.Operation,
-            binary.Right.Accept(this, ref arg)
+            binary.Right.Accept(this, ref arg, args)
         );
 
-        public Node<TypeUid> VisitCall(Call call, ref int arg) => Node<TypeUid>.Call(
+        public Node<TypeUid> VisitCall(Call call, ref int arg, ImmutableDictionary<UniqueString, TypeUid> args) => Node<TypeUid>.Call(
             new TypeUid(arg++),
             new UnresolvedFunction(call.Name),
-            VisitCollection(call.Arguments, ref arg)
+            VisitCollection(call.Arguments, ref arg, args)
         );
 
-        public Node<TypeUid> VisitConstant(Constant constant, ref int arg)
+        public Node<TypeUid> VisitConstant(Constant constant, ref int arg, ImmutableDictionary<UniqueString, TypeUid> args)
             => Node<TypeUid>.Constant(new TypeUid(arg++), constant.RawValue);
 
-        public Node<TypeUid> VisitIdentifier(Identifier identifier, ref int arg)
-             => Node<TypeUid>.Identifier(new TypeUid(arg++), identifier.Value);
+        public Node<TypeUid> VisitIdentifier(Identifier identifier, ref int arg, ImmutableDictionary<UniqueString, TypeUid> args)
+            => Node<TypeUid>.Identifier(
+                args.TryGetValue(identifier.Value, out var uid) ? uid : new TypeUid(arg++),
+                identifier.Value
+            );
 
-        public Node<TypeUid> VisitLambda(Lambda lambda, ref int arg) => Node<TypeUid>.Lambda(
-            new TypeUid(arg++),
-            Node<TypeUid>.Identifier(new TypeUid(arg++), lambda.Arg.Value),
-            lambda.Body.Accept(this, ref arg)
-        );
+        public Node<TypeUid> VisitLambda(Lambda lambda, ref int arg, ImmutableDictionary<UniqueString, TypeUid> args)
+        {
+            var argUid = new TypeUid(arg++);
+            return Node<TypeUid>.Lambda(
+                new TypeUid(arg++),
+                Node<TypeUid>.Identifier(argUid, lambda.Arg.Value),
+                lambda.Body.Accept(this, ref arg, args.Add(lambda.Arg.Value, argUid))
+            );
+        }
 
-        public Node<TypeUid> VisitMember(Member member, ref int arg) => Node<TypeUid>.Member(
+        public Node<TypeUid> VisitMember(Member member, ref int arg, ImmutableDictionary<UniqueString, TypeUid> args) => Node<TypeUid>.Member(
             new TypeUid(arg++),
-            member.Instance.Accept(this, ref arg),
+            member.Instance.Accept(this, ref arg, args),
             member.MemberName
         );
     }
@@ -118,7 +125,7 @@ public static class Helpers
     public static Node<TypeUid> Idfy(Node node)
     {
         var supply = 0;
-        return node.Accept(TypingVisitor.Singleton, ref supply);
+        return node.Accept(TypingVisitor.Singleton, ref supply, ImmutableDictionary<UniqueString, TypeUid>.Empty);
     }
 
     private static ImmutableDictionary<TypeUid, TypeVariable> CollectIds(ImmutableDictionary<TypeUid, TypeVariable> acc, Node<TypeUid> node)
@@ -293,6 +300,6 @@ public static class Helpers
         Lambda<TypeUid> node,
         out Node<TypeUid> result)
         => ctx
-            .ApplyConstraint(node.Type, new(rootType))
+            .ApplyConstraint(node.Arg.Type, new(rootType))
             .CollectConstraints(CollectConstraintsVisitor.Singleton, propertyResolver, functionResolver, node, out result);
 }

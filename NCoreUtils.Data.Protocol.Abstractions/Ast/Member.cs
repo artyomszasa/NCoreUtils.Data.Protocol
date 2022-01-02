@@ -31,6 +31,10 @@ public sealed class Member : Node
         where TArg : struct
         => visitor.VisitMember(this, ref arg);
 
+    public override TResult Accept<TArg1, TArg2, TResult>(INodeRefVisitor<TArg1, TArg2, TResult> visitor, ref TArg1 arg1, TArg2 arg2)
+        where TArg1 : struct
+        => visitor.VisitMember(this, ref arg1, arg2);
+
     public override TResult Accept<TArg1, TArg2, TResult>(INodeVisitor<TArg1, TArg2, TResult> visitor, TArg1 arg1, TArg2 arg2)
         => visitor.VisitMember(this, arg1, arg2);
 

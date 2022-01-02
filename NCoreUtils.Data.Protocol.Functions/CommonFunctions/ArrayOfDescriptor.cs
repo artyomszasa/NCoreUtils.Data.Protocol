@@ -11,7 +11,7 @@ public abstract class ArrayOfDescriptor : IFunctionDescriptor
 {
     public abstract Type ElementType { get; }
 
-    public abstract Type ResultType { get; }
+    public abstract Type ResultType { [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] get; }
 
     public abstract ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 
@@ -27,7 +27,11 @@ public sealed class ArrayOfDescriptor<[DynamicallyAccessedMembers(DynamicallyAcc
 {
     public override Type ElementType => typeof(T);
 
-    public override Type ResultType => typeof(T[]);
+    public override Type ResultType
+    {
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        get => typeof(T[]);
+    }
 
     public override ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 

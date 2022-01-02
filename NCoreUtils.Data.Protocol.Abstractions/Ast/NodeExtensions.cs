@@ -119,7 +119,7 @@ public static class NodeExtensions
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int VisitBinary(Binary binary, bool complex)
-            => binary.Accept(this, true) + 1 + binary.Operation.GetString().Length + 1
+            => binary.Left.Accept(this, true) + 1 + binary.Operation.GetString().Length + 1
                 + binary.Right.Accept(this, true) + (complex ? 2 : 0);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

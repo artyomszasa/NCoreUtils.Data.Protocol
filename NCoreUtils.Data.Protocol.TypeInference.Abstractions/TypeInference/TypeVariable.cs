@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
@@ -45,33 +46,49 @@ public struct TypeVariable
         => new(TypeConstraints.IsMemberOf(ownerType, memberName));
 
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    internal Type? Type { get; }
+    private readonly TypeConstraints? _constraints;
 
-    internal TypeConstraints? Constraints { get; }
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    public Type? Type { get; }
+
+    public TypeConstraints? Constraints
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => IsResolved
+            ? _constraints
+            : _constraints ?? TypeConstraints.Empty;
+    }
+
+    [MemberNotNullWhen(true, nameof(Type))]
+    [MemberNotNullWhen(false, nameof(Constraints))]
+    public bool IsResolved
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => Type is not null;
+    }
 
     public TypeVariable([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
     {
         Type = type;
-        Constraints = default;
+        _constraints = default;
     }
 
     public TypeVariable(TypeConstraints constraints)
     {
         Type = default;
-        Constraints = constraints;
+        _constraints = constraints;
     }
 
-    public T Match<T>(
-        Func<Type, T> visitType,
-        Func<TypeConstraints, T> visitConstraints)
-    {
-        if (Type is not null)
-        {
-            return visitType(Type);
-        }
-        return visitConstraints(Constraints ?? TypeConstraints.Empty);
-    }
+    // public T Match<T>(
+    //     Func<Type, T> visitType,
+    //     Func<TypeConstraints, T> visitConstraints)
+    // {
+    //     if (Type is not null)
+    //     {
+    //         return visitType(Type);
+    //     }
+    //     return visitConstraints(Constraints ?? TypeConstraints.Empty);
+    // }
 
     public bool TryGetExactType(out ConstraintedType type)
     {
@@ -83,4 +100,7 @@ public struct TypeVariable
         type = default;
         return false;
     }
+
+    public override string ToString()
+        => IsResolved ? Type.Name : Constraints.ToString();
 }

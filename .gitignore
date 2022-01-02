@@ -5,3 +5,5 @@
 NCoreUtils*/obj
 NCoreUtils*/bin
 NCoreUtils.Data.Protocol.Grammar/.antlr
+NCoreUtils.Data.Protocol.Unit/report
+NCoreUtils.Data.Protocol.Unit/coverage.opencover.xml

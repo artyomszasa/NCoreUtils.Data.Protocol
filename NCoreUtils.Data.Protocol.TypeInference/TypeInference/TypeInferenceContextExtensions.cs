@@ -18,12 +18,26 @@ public static class TypeInferenceContextExtensions
 
         public static ConstraintedType String { get; } = new ConstraintedType(typeof(string));
 
+        [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Used internally")]
+        internal static ConstraintedType Unchecked(Type type)
+            => new(type);
+
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
         public Type? Type { get; }
 
         public ConstraintedType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
             => Type = type;
     }
+
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    private static Type GetCommonType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type a, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type b)
+        => a.Equals(b)
+            ? a
+            : a.IsAssignableFrom(b)
+                ? b
+                : b.IsAssignableFrom(a)
+                    ? a
+                    : throw new ProtocolTypeInferenceException($"Type {a} is not compatible to type {b}.");
 
     /// <summary>
     /// Creates new type inference context with the specified type variable.
@@ -95,51 +109,44 @@ public static class TypeInferenceContextExtensions
 
     public static Maybe<ConstraintedType> MaybeInstantiateType(this TypeInferenceContext ctx, IPropertyResolver propertyResolver, TypeUid uid)
     {
-        return ctx.GetAllConstraints(uid).Match(
-            type => new ConstraintedType(type).Just(),
-            constraints =>
+        var variable = ctx.GetAllConstraints(uid);
+        if (variable.IsResolved)
+        {
+            return new ConstraintedType(variable.Type).Just();
+        }
+        var constraints = variable.Constraints;
+        if (constraints.Base is not null)
+        {
+            return new ConstraintedType(constraints.Base).Just();
+        }
+        if (constraints.MemberOf.Count > 0)
+        {
+            using var enumerator = constraints.MemberOf.Choose(MaybeInstantiateMemberType).GetEnumerator();
+            if (enumerator.MoveNext())
             {
-                if (constraints.Base is not null)
+                var memberType = (Type)enumerator.Current;
+                while (enumerator.MoveNext())
                 {
-                    return new ConstraintedType(constraints.Base).Just();
+                    memberType = GetCommonType(memberType, enumerator.Current);
                 }
-                if (constraints.MemberOf.Count > 0)
-                {
-                    using var enumerator = constraints.MemberOf.Choose(MaybeInstantiateMemberType).GetEnumerator();
-                    if (enumerator.MoveNext())
-                    {
-                        var memberType = enumerator.Current!;
-                        while (enumerator.MoveNext())
-                        {
-                            memberType = GetCommonType(memberType, enumerator.Current!);
-                        }
-                        return new ConstraintedType(memberType).Just();
-                    }
-                }
-                if (constraints.Interfaces.Count == 1)
-                {
-                    return constraints.Interfaces.MaybeFirst().Map(type => new ConstraintedType(type!));
-                }
-                if (constraints.IsNumeric == true && (!constraints.IsNullable.HasValue || !constraints.IsNullable.Value))
-                {
-                    return ConstraintedType.Int32.Just();
-                }
-                return ConstraintedType.String.Just();
+                return new ConstraintedType(memberType).Just();
             }
-        );
+        }
+        if (constraints.Interfaces.Count == 1)
+        {
+            return constraints.Interfaces.MaybeFirst().Map(type => ConstraintedType.Unchecked(type!));
+        }
+        if (constraints.IsNumeric == true && (!constraints.IsNullable.HasValue || !constraints.IsNullable.Value))
+        {
+            return ConstraintedType.Int32.Just();
+        }
+        return ConstraintedType.String.Just();
 
-        Maybe<Type> MaybeInstantiateMemberType((TypeUid OwnerUid, string MemberName) m)
+
+
+        Maybe<ConstraintedType> MaybeInstantiateMemberType((TypeUid OwnerUid, string MemberName) m)
             => ctx.MaybeInstantiateType(propertyResolver, m.OwnerUid)
-                .Map(ownerType => propertyResolver.ResolveProperty(ownerType!, m.MemberName).PropertyType);
-
-        static Type GetCommonType(Type a, Type b)
-            => a.Equals(b)
-                ? a
-                : a.IsAssignableFrom(b)
-                    ? b
-                    : b.IsAssignableFrom(a)
-                        ? a
-                        : throw new ProtocolTypeInferenceException($"Type {a} is not compatible to type {b}.");
+                .Map(ownerType => new ConstraintedType(propertyResolver.ResolveProperty(ownerType!, m.MemberName).PropertyType));
     }
 
     public static Type InstantiateType(this TypeInferenceContext ctx, IPropertyResolver propertyResolver, TypeUid uid)

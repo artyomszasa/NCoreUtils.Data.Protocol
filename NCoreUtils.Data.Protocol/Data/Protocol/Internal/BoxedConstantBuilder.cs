@@ -20,13 +20,13 @@ public abstract class BoxedConstantBuilder
     private static BoxedConstantBuilder Create(Type type)
         => (BoxedConstantBuilder)Activator.CreateInstance(typeof(BoxedConstantBuilder<>).MakeGenericType(type), true)!;
 
-    public static Expression BuildExpression(object value, Type type)
+    public static Expression BuildExpression(object? value, Type type)
         => Cache.GetOrAdd(type, Factory)
             .BuildExpression(value);
 
     internal BoxedConstantBuilder() { }
 
-    protected abstract Expression BuildExpression(object value);
+    protected abstract Expression BuildExpression(object? value);
 }
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
@@ -47,6 +47,6 @@ public sealed class BoxedConstantBuilder<T> : BoxedConstantBuilder
             ValueProperty
         );
 
-    protected override Expression BuildExpression(object value)
-        => BuildExpression((T)value);
+    protected override Expression BuildExpression(object? value)
+        => BuildExpression((T)value!);
 }

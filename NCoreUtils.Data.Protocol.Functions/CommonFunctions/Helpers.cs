@@ -7,7 +7,10 @@ namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
 internal static class Helpers
 {
-    private static bool TryGetEnumerableElementType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type, [MaybeNullWhen(false)] out Type elementType)
+    [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "Interface types handled separately.")]
+    private static bool TryGetEnumerableElementType(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type,
+        [MaybeNullWhen(false)] out Type elementType)
     {
         if (type.IsInterface)
         {
@@ -45,6 +48,7 @@ internal static class Helpers
         return TryGetEnumerableElementType(type, out elementType);
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Interface types are preserved if they appear in constraints.")]
     public static bool TryGetElementType(TypeConstraints constraints, [MaybeNullWhen(false)] out Type elementType)
     {
         if (constraints.Base is not null)
@@ -62,4 +66,13 @@ internal static class Helpers
         elementType = default;
         return false;
     }
+
+    public static bool TryGetElementType(
+        in TypeVariable variable,
+        [MaybeNullWhen(false)] out Type elementType)
+        => variable switch
+        {
+            { IsResolved: true, Type: var type } => TryGetElementType(type, out elementType),
+            { IsResolved: false, Constraints: var constraints } => TryGetElementType(constraints, out elementType)
+        };
 }

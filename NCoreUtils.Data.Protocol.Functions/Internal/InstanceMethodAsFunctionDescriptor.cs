@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using NCoreUtils.Data.Protocol.TypeInference;
@@ -10,12 +11,18 @@ public sealed class InstanceMethodAsFunctionDescriptor : IFunctionDescriptor
 {
     public MethodInfo Method { get; }
 
-    public Type ResultType => Method.ReturnType;
+    public Type ResultType
+    {
+        [UnconditionalSuppressMessage("Trimmer", "IL2073", Justification = "handled in ctor.")]
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        get => Method.ReturnType;
+    }
 
     public ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 
     public string Name { get; }
 
+    [RequiresUnreferencedCode("All affected types must be preserved by caller.")]
     public InstanceMethodAsFunctionDescriptor(MethodInfo method, Type? instanceType, string name)
     {
         var parameters = method.GetParameters();

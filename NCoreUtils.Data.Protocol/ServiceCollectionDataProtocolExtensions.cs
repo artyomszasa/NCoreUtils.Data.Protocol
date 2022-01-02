@@ -32,7 +32,8 @@ public static class ServiceCollectionDataProtocolExtensions
                 .AddAsSingletonService<CollectionContains>()
                 .AddAsSingletonService<CollectionAny>()
                 .AddAsSingletonService<CollectionAll>()
-                .AddAsSingletonService<ArrayOf>();
+                .AddAsSingletonService<ArrayOf>()
+                .AddAsSingletonService<DateTimeOffsetFun>();
         }
         configureFunctions?.Invoke(builder);
         services.TryAddScoped<IDataQueryExpressionBuilder, DefaultDataQueryExpressionBuilder>();
