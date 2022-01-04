@@ -28,7 +28,7 @@ public partial record TypeConstraints
         var first = true;
         if (Base is not null)
         {
-            builder.Append(":")
+            builder.Append(':')
                 .Append(Base.Name);
         }
         if (IsNumeric.HasValue)

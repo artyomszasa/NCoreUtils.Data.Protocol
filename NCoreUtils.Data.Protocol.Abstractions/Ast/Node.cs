@@ -120,11 +120,6 @@ public abstract class Node : IEquatable<Node>, IEmplaceable<Node>
 
     internal abstract int Accept(NodeExtensions.GetStringifiedSizeVisitor visitor, bool complex);
 
-    public abstract TResult Accept<TArg, TResult>(INodeVisitor<TArg, TResult> visitor, TArg arg);
-
-    public abstract TResult Accept<TArg, TResult>(INodeRefVisitor<TArg, TResult> visitor, ref TArg arg)
-        where TArg : struct;
-
     public abstract TResult Accept<TArg1, TArg2, TResult>(INodeRefVisitor<TArg1, TArg2, TResult> visitor, ref TArg1 arg1, TArg2 arg2)
         where TArg1 : struct;
 
