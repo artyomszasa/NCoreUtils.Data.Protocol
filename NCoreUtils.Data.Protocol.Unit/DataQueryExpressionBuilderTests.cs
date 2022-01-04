@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NCoreUtils.Data.Protocol.TypeInference;
 using Xunit;
 
 namespace NCoreUtils.Data.Protocol.Unit;
@@ -187,6 +188,102 @@ public class DataQueryExpressionBuilderTests : IDisposable
         Assert.Equal(expected, expression.Compile()(new(utcTicks.HasValue ? (DateTimeOffset?)new DateTimeOffset(utcTicks.Value, TimeSpan.Zero) : default)));
     });
 
+    [Theory]
+    [InlineData("o => lower(o.str) = \"xasd\"", "xasd", true)]
+    [InlineData("o => lower(o.str) = \"xasd\"", "XaSd", true)]
+    [InlineData("o => lower(o.str) = \"xasd\"", "XASD", true)]
+    [InlineData("o => lower(o.str) = \"xasd\"", "xasD", true)]
+    [InlineData("o => lower(o.str) = \"xasd\"", "xas", false)]
+    [InlineData("o => o.str != null && lower(o.str) = \"xasd\"", null, false)]
+    public void StringToLowerTests(string raw, string? value, bool expected) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var expression = (Expression<Func<Item, bool>>)builder.BuildExpression(typeof(Item), raw);
+        Assert.Equal(expected, expression.Compile()(Item.FromString(value)));
+    });
+
+    [Theory]
+    [InlineData("o => upper(o.str) = \"XASD\"", "xasd", true)]
+    [InlineData("o => upper(o.str) = \"XASD\"", "XaSd", true)]
+    [InlineData("o => upper(o.str) = \"XASD\"", "XASD", true)]
+    [InlineData("o => upper(o.str) = \"XASD\"", "xasD", true)]
+    [InlineData("o => upper(o.str) = \"XASD\"", "xas", false)]
+    [InlineData("o => o.str != null && lower(o.str) = \"XASD\"", null, false)]
+    public void StringToUpperTests(string raw, string? value, bool expected) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var expression = (Expression<Func<Item, bool>>)builder.BuildExpression(typeof(Item), raw);
+        Assert.Equal(expected, expression.Compile()(Item.FromString(value)));
+    });
+
+    [Theory]
+    [InlineData("o => seed => contains(o.sub, seed)")]
+    [InlineData("o => seed => includes(o.sub, seed)")]
+    public void CollectionContains(string raw) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var expression = (Expression<Func<Item, Func<SubItem, bool>>>)builder.BuildExpression(typeof(Item), raw);
+        var item = new Item(default, default, new [] { new SubItem("xxx")  });
+        var fn = expression.Compile();
+        Assert.True(fn(item)(new SubItem("xxx")));
+        Assert.False(fn(item)(new SubItem("yyy")));
+    });
+
+    [Theory]
+    [InlineData("o => seed => some(o.sub, e => e.name = seed)")]
+    [InlineData("o => seed => any(o.sub, e => e.name = seed)")]
+    public void CollectionAny(string raw) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var expression = (Expression<Func<Item, Func<string, bool>>>)builder.BuildExpression(typeof(Item), raw);
+        var item = new Item(default, default, new [] { new SubItem("xxx")  });
+        var fn = expression.Compile();
+        Assert.True(fn(item)("xxx"));
+        Assert.False(fn(item)("yyy"));
+    });
+
+    [Theory]
+    [InlineData("o => seed => every(o.sub, v => v.name = seed)")]
+    [InlineData("o => seed => all(o.sub, v => v.name = seed)")]
+    public void CollectionAll(string raw) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var expression = (Expression<Func<Item, Func<string, bool>>>)builder.BuildExpression(typeof(Item), raw);
+        var itemTrue = new Item(default, default, new [] { new SubItem("xxx")  });
+        var itemFalse = new Item(default, default, new [] { new SubItem("xxx"), new SubItem("yyy")  });
+        var fn = expression.Compile();
+        Assert.True(fn(itemTrue)("xxx"));
+        Assert.False(fn(itemFalse)("xxx"));
+    });
+
+    [Theory]
+    [InlineData("includes")]
+    [InlineData("contains")]
+    public void ArrayFun(string includesFunctionName) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        // string
+        {
+            var expression = (Expression<Func<string, bool>>)builder.BuildExpression(typeof(string), $"s => {includesFunctionName}(array(\"a\", \"b\", \"c\"), s)");
+            var fn = expression.Compile();
+            Assert.True(fn("a"));
+            Assert.True(fn("b"));
+            Assert.True(fn("c"));
+            Assert.False(fn("d"));
+        }
+        // int
+        {
+            var expression = (Expression<Func<int, bool>>)builder.BuildExpression(typeof(int), $"s => {includesFunctionName}(array(\"0\", 1, 2), s)");
+            var fn = expression.Compile();
+            Assert.True(fn(0));
+            Assert.True(fn(1));
+            Assert.True(fn(2));
+            Assert.False(fn(3));
+        }
+        // enum
+        {
+            var expression = (Expression<Func<AOrB, bool>>)builder.BuildExpression(typeof(AOrB), $"s => {includesFunctionName}(array(\"a\", \"b\"), s)");
+            var fn = expression.Compile();
+            Assert.True(fn(AOrB.A));
+            Assert.True(fn(AOrB.B));
+            Assert.False(fn((AOrB)255));
+        }
+    });
+
     #endregion
 
     #region negative
@@ -197,6 +294,22 @@ public class DataQueryExpressionBuilderTests : IDisposable
         var exn = Assert.Throws<ProtocolException>(() => builder.BuildExpression(typeof(Item), "e => e.num = e.str"));
         Assert.NotNull(exn.InnerException);
         Assert.IsType<ProtocolTypeInferenceException>(exn.InnerException);
+    });
+
+    [Fact]
+    public void NonNullable() => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var exn = Assert.Throws<ProtocolException>(() => builder.BuildExpression(typeof(Item), "e => e.num = null"));
+        Assert.NotNull(exn.InnerException);
+        Assert.IsType<ProtocolTypeConstraintMismatchException>(exn.InnerException);
+    });
+
+    [Fact]
+    public void NestedNonNullable() => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var exn = Assert.Throws<ProtocolException>(() => builder.BuildExpression(typeof(Item), "e => e.num = null"));
+        Assert.NotNull(exn.InnerException);
+        Assert.IsType<ProtocolTypeConstraintMismatchException>(exn.InnerException);
     });
 
     #endregion

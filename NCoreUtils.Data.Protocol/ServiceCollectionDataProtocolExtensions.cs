@@ -26,7 +26,7 @@ public static class ServiceCollectionDataProtocolExtensions
         {
             builder
                 .AddAsSingletonService<StringLength>()
-                .AddAsSingletonService<StringConatins>()
+                .AddAsSingletonService<StringContains>()
                 .AddAsSingletonService<StringToLower>()
                 .AddAsSingletonService<StringToUpper>()
                 .AddAsSingletonService<CollectionContains>()

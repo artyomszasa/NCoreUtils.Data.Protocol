@@ -18,11 +18,14 @@ public class DefaultTypeInferer : ITypeInferrer
         FunctionResolver = functionResolver ?? throw new ArgumentNullException(nameof(functionResolver));
     }
 
+    protected virtual Func<TypeUid, Type> CreateResolver(TypeInferenceContext context)
+        => typeUid => context.InstantiateType(PropertyResolver, typeUid);
+
     public virtual Lambda<Type> InferTypes([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType, Lambda expression)
     {
         var typedExpression = (Lambda<TypeUid>)Helpers.Idfy(expression);
         var initialContext = Helpers.CollectIds(typedExpression);
         var context = initialContext.CollectConstraintsRoot(rootType, PropertyResolver, FunctionResolver, typedExpression, out var lambda);
-        return (Lambda<Type>)lambda.Resolve(typeUid => context.InstantiateType(PropertyResolver, typeUid));
+        return (Lambda<Type>)lambda.Resolve(CreateResolver(context));
     }
 }

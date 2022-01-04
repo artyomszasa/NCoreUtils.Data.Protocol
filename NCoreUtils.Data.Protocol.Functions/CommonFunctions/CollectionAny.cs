@@ -9,9 +9,14 @@ namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
 public sealed class CollectionAny : CollectionOperationWithLambda<CollectionAnyDescriptor>
 {
-    private static readonly MethodInfo _genericMethodDefinition = ReflectionHelpers
-        .GetMethod<IEnumerable<int>, Func<int, bool>, bool>(Enumerable.Any)
-        .GetGenericMethodDefinition();
+    private static readonly MethodInfo _genericMethodDefinition;
+
+    static CollectionAny()
+    {
+        _genericMethodDefinition = ReflectionHelpers
+            .GetMethod<IEnumerable<int>, Func<int, bool>, bool>(Enumerable.Any)
+            .GetGenericMethodDefinition();
+    }
 
     protected override MethodInfo GenericMethodDefinition => _genericMethodDefinition;
 

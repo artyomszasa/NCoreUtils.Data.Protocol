@@ -39,16 +39,16 @@ public sealed class Call : Node
     public override TResult Accept<TArg1, TArg2, TResult>(INodeVisitor<TArg1, TArg2, TResult> visitor, TArg1 arg1, TArg2 arg2)
         => visitor.VisitCall(this, arg1, arg2);
 
-    public override int GetHashCode()
-    {
-        var builder = new HashCode();
-        builder.Add(HashTags.Call);
-        builder.Add(StringComparer.InvariantCultureIgnoreCase.GetHashCode(Name));
-        builder.Add(Arguments.Count);
-        foreach (var arg in Arguments)
-        {
-            builder.Add(arg);
-        }
-        return builder.ToHashCode();
-    }
+    // public override int GetHashCode()
+    // {
+    //     var builder = new HashCode();
+    //     builder.Add(HashTags.Call);
+    //     builder.Add(StringComparer.InvariantCultureIgnoreCase.GetHashCode(Name));
+    //     builder.Add(Arguments.Count);
+    //     foreach (var arg in Arguments)
+    //     {
+    //         builder.Add(arg);
+    //     }
+    //     return builder.ToHashCode();
+    // }
 }

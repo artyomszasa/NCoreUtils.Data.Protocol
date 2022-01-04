@@ -138,7 +138,7 @@ public static class Helpers
     public static TypeInferenceContext CollectIds(Node<TypeUid> node)
         => new(
             CollectIds(ImmutableDictionary<TypeUid, TypeVariable>.Empty, node),
-            ImmutableDictionary<TypeUid, ImmutableList<TypeUid>>.Empty
+            ImmutableDictionary<TypeUid, ImmutableHashSet<Substitution>>.Empty
         );
 
     private static TypeInferenceContext ApplyIf(this TypeInferenceContext ctx, bool condition, Func<TypeInferenceContext, TypeInferenceContext> action)
@@ -147,6 +147,62 @@ public static class Helpers
             true => action(ctx),
             _ => ctx
         };
+
+    private sealed class PullDownConstraintsVisitor : ITypedNodeVisitor<TypeUid, TypeInferenceContext, IPropertyResolver, TypeInferenceContext>
+    {
+        public static PullDownConstraintsVisitor Singleton { get; } = new();
+
+        private PullDownConstraintsVisitor() { }
+
+        public TypeInferenceContext VisitBinary(Binary<TypeUid> binary, TypeInferenceContext ctx, IPropertyResolver propertyResolver)
+        {
+            var (uid, left, op, right) = (binary.Type, binary.Left, binary.Operation, binary.Right);
+            return ctx
+                .ApplyIf(BooleanResultOperations.Contains(op), ctx => ctx.ApplyConstraint(uid, TypeVariable.Boolean))
+                .ApplyIf(NumericResultOperation.Contains(op), ctx => ctx.ApplyConstraint(uid, TypeVariable.Numeric))
+                .ApplyIf(NumericArgOperation.Contains(op), ctx => ctx
+                    .ApplyConstraint(left.Type, TypeVariable.Numeric)
+                    .ApplyConstraint(right.Type, TypeVariable.Numeric)
+                )
+                .Substitute(left.Type, TypeRelation.SameAs, right.Type)
+                .Substitute(right.Type, TypeRelation.SameAs, left.Type)
+                .PullDownConstraints(this, propertyResolver, left)
+                .PullDownConstraints(this, propertyResolver, right);
+        }
+
+        public TypeInferenceContext VisitCall(Call<TypeUid> call, TypeInferenceContext ctx, IPropertyResolver propertyResolver)
+            => call.Arguments.Aggregate(ctx, (context, node) => node.Accept(this, context, propertyResolver));
+
+        public TypeInferenceContext VisitConstant(Constant<TypeUid> constant, TypeInferenceContext ctx, IPropertyResolver propertyResolver)
+            => constant.RawValue is null
+                ? ctx.ApplyConstraint(constant.Type, TypeVariable.Nullable)
+                : ctx;
+
+        public TypeInferenceContext VisitIdentifier(Identifier<TypeUid> identifier, TypeInferenceContext ctx, IPropertyResolver propertyResolver)
+            => ctx;
+
+        public TypeInferenceContext VisitLambda(Lambda<TypeUid> lambda, TypeInferenceContext ctx, IPropertyResolver propertyResolver)
+            => lambda.Body
+                .Accept(this, ctx, propertyResolver)
+                .ApplyConstraint(lambda.Type, TypeVariable.Lambda)
+                .Substitute(lambda.Type, TypeRelation.ArgOf, lambda.Arg.Type)
+                .Substitute(lambda.Type, TypeRelation.ResultOf, lambda.Body.Type);
+
+
+        public TypeInferenceContext VisitMember(Member<TypeUid> member, TypeInferenceContext ctx, IPropertyResolver propertyResolver)
+        {
+            var (uid, instance, name) = (member.Type, member.Instance, member.MemberName);
+            var ctx1 = instance.Accept(this, ctx, propertyResolver);
+            if (ctx1.GetAllConstraints(instance.Type).TryGetExactType(out var instanceType))
+            {
+                var property = propertyResolver.ResolveProperty(instanceType, name);
+                return ctx1.ApplyConstraint(uid, new(property.PropertyType));
+            }
+            return ctx1
+                .ApplyConstraint(instance.Type, TypeVariable.HasMember(name))
+                .ApplyConstraint(uid, TypeVariable.IsMemberOf(instance.Type, name));
+        }
+    }
 
     private sealed class CollectConstraintsVisitor : ITypedNodeVisitor1Out<TypeUid, TypeInferenceContext, IPropertyResolver, IFunctionDescriptorResolver, Node<TypeUid>, TypeInferenceContext>
     {
@@ -163,18 +219,116 @@ public static class Helpers
         {
             var (uid, left, op, right) = (binary.Type, binary.Left, binary.Operation, binary.Right);
             var ctx1 = ctx
-                .ApplyIf(BooleanResultOperations.Contains(op), ctx => ctx.ApplyConstraint(uid, TypeVariable.Boolean))
-                .ApplyIf(NumericResultOperation.Contains(op), ctx => ctx.ApplyConstraint(uid, TypeVariable.Numeric))
-                .ApplyIf(NumericArgOperation.Contains(op), ctx => ctx
-                    .ApplyConstraint(left.Type, TypeVariable.Numeric)
-                    .ApplyConstraint(right.Type, TypeVariable.Numeric)
-                )
-                .Substitute(left.Type, right.Type)
-                .Substitute(right.Type, left.Type)
                 .CollectConstraints(this, propertyResolver, functionResolver, left, out var newLeft)
                 .CollectConstraints(this, propertyResolver, functionResolver, right, out var newRight);
             result = Node<TypeUid>.Binary(uid, newLeft, op, newRight);
             return ctx1;
+        }
+
+        private TypeInferenceContext TryVisitCallUsingFunctionDescriptor(
+            string functionName,
+            TypeVariable resultTypeConstraints,
+            IReadOnlyList<TypeVariable> argumentTypeConstraints,
+            IReadOnlyList<IFunctionDescriptor> descCandidates,
+            int index,
+            TypeUid uid,
+            IReadOnlyList<Node<TypeUid>> arguments,
+            TypeInferenceContext ctx,
+            IPropertyResolver propertyResolver,
+            IFunctionDescriptorResolver functionResolver,
+            out Node<TypeUid> result)
+        {
+            if (index >= descCandidates.Count)
+            {
+                // If none of candidates could been successfully applyied resolved with both inherited and gained attributes --> fail
+                Exn.UnableToResolveCall(functionName, resultTypeConstraints, argumentTypeConstraints);
+            }
+            var desc = descCandidates[index];
+            try
+            {
+                var ctx1 = ApplyDescriptor(ctx, desc, uid, arguments);
+                var newArguments = new Node<TypeUid>[arguments.Count];
+                for (var i = 0; i < newArguments.Length; ++i)
+                {
+                    ctx1 = ctx1.CollectConstraints(this, propertyResolver, functionResolver, arguments[i], out newArguments[i]);
+                }
+                if (desc is null)
+                {
+                    var newResultTypeConstraints = ctx1.GetAllConstraints(uid);
+                    // FIXME: pool
+                    var newArgumentTypeConstraints = newArguments.MapToArray(arg => ctx1.GetAllConstraints(arg.Type));
+                    // If function have not been resolved using inherited attributes retry with gained attributes
+                    desc = functionResolver.ResolveFunction(functionName, newResultTypeConstraints, newArgumentTypeConstraints);
+                    if (desc is null)
+                    {
+                        // If function still could not be resolved with both inherited and gained attributes --> try next
+                        // NOTE: orignal constraints and type variables are passed!
+                        return TryVisitCallUsingFunctionDescriptor(
+                            functionName,
+                            resultTypeConstraints,
+                            argumentTypeConstraints,
+                            descCandidates,
+                            index + 1,
+                            uid,
+                            arguments,
+                            ctx,
+                            propertyResolver,
+                            functionResolver,
+                            out result
+                        );
+                    }
+                    ctx1 = ApplyDescriptor(ctx1, desc, uid, newArguments);
+                }
+                result = Node<TypeUid>.Call(uid, desc, newArguments);
+                return ctx1;
+            }
+            catch (ProtocolTypeInferenceException)
+            {
+                // candidate could not be processed --> try next
+                // NOTE: orignal constraints and type variables are passed!
+                return TryVisitCallUsingFunctionDescriptor(
+                    functionName,
+                    resultTypeConstraints,
+                    argumentTypeConstraints,
+                    descCandidates,
+                    index + 1,
+                    uid,
+                    arguments,
+                    ctx,
+                    propertyResolver,
+                    functionResolver,
+                    out result
+                );
+            }
+
+            static TypeInferenceContext ApplyDescriptor(TypeInferenceContext ctx, IFunctionDescriptor desc, TypeUid resultUid, IReadOnlyList<Node<TypeUid>> arguments)
+            {
+                var ctx1 = ctx;
+                ctx1 = ctx1.ApplyConstraint(resultUid, new(desc.ResultType));
+                for (var i = 0; i < arguments.Count; ++i)
+                {
+                    var arg = arguments[i];
+                    var argType = desc.ArgumentTypes[i];
+                    ctx1 = ctx1.ApplyConstraint(arg.Type, new(argType));
+                    // handle lambda arguments
+                    if (argType.IsConstructedGenericType && argType.GetGenericTypeDefinition() == typeof(Func<,>))
+                    {
+                        var genericTypes = argType.GetGenericArguments();
+                        var genericArgType = genericTypes[0];
+                        var genericResType = genericTypes[1];
+                        if (arg is not Lambda<TypeUid> lambda)
+                        {
+                            // method above will always throw but there is no way to tell compiler so
+                            // see: https://github.com/dotnet/csharplang/issues/739
+                            return Exn.LambdaArgumentExpected(i, desc);
+                        }
+                        ctx1 = ctx1
+                            .ApplyConstraint(lambda.Arg.Type, TypeVariable.UncheckedType(genericArgType))
+                            .ApplyConstraint(lambda.Body.Type, TypeVariable.UncheckedType(genericResType));
+                    }
+                }
+                return ctx1;
+            }
         }
 
         public TypeInferenceContext VisitCall(
@@ -186,43 +340,36 @@ public static class Helpers
         {
             var (uid, udesc, arguments) = (call.Type, call.Descriptor, call.Arguments);
             var ctx1 = ctx;
-            var newArguments = new Node<TypeUid>[arguments.Count];
-            for (var i = 0; i < newArguments.Length; ++i)
+            // try resolve arguments with
+            // try resolve function call early --> if inherited attributes allow this then type substitution can be
+            // performed prior infering types of arguments. This can be usefull if arguments resolvation depends on the
+            // inherited attributes.
+            var resultTypeConstraints = ctx.GetAllConstraints(uid);
+            var argumentTypeConstraints = arguments.MapToArray(arg => ctx.GetAllConstraints(arg.Type));
+            // FIXME: pool
+            var descCandidates = new List<IFunctionDescriptor>();
+            if (functionResolver is IAmbigousFunctionDescriptorResolver ambigousFunctionResolver)
             {
-                ctx1 = ctx1.CollectConstraints(this, propertyResolver, functionResolver, arguments[i], out newArguments[i]);
+                ambigousFunctionResolver.TryResolveAllMatchingFunctions(udesc.Name, resultTypeConstraints, argumentTypeConstraints, descCandidates);
             }
-            var resultTypeConstraints = ctx1.GetAllConstraints(uid);
-            var argumentsTypeConstraints = newArguments.MapToArray(arg => ctx1.GetAllConstraints(arg.Type));
-            var desc = functionResolver.ResolveFunction(udesc.Name, resultTypeConstraints, argumentsTypeConstraints);
-            if (desc is null)
+            else if (functionResolver.TryResolveFunction(udesc.Name, resultTypeConstraints, argumentTypeConstraints, out var desc))
             {
-                Exn.UnableToResolveCall(udesc.Name, resultTypeConstraints, argumentsTypeConstraints);
+                descCandidates.Add(desc);
             }
-            ctx1 = ctx1.ApplyConstraint(uid, new(desc.ResultType));
-            for (var i = 0; i < newArguments.Length; ++i)
-            {
-                var arg = newArguments[i];
-                var argType = desc.ArgumentTypes[i];
-                ctx1 = ctx1.ApplyConstraint(arg.Type, new(argType));
-                // handle lambda arguments
-                if (argType.IsConstructedGenericType && argType.GetGenericTypeDefinition() == typeof(Func<,>))
-                {
-                    var genericTypes = argType.GetGenericArguments();
-                    var genericArgType = genericTypes[0];
-                    var genericResType = genericTypes[1];
-                    if (arg is not Lambda<TypeUid> lambda)
-                    {
-                        // method above will always throw but there is no way to tell compiler so
-                        // see: https://github.com/dotnet/csharplang/issues/739
-                        return Exn.LambdaArgumentExpected(i, desc, out result);
-                    }
-                    ctx1 = ctx1
-                        .ApplyConstraint(lambda.Arg.Type, TypeVariable.UncheckedType(genericArgType))
-                        .ApplyConstraint(lambda.Body.Type, TypeVariable.UncheckedType(genericResType));
-                }
-            }
-            result = Node<TypeUid>.Call(uid, desc, newArguments);
-            return ctx1;
+
+            return TryVisitCallUsingFunctionDescriptor(
+                udesc.Name,
+                resultTypeConstraints,
+                argumentTypeConstraints,
+                descCandidates,
+                0,
+                uid,
+                arguments,
+                ctx,
+                propertyResolver,
+                functionResolver,
+                out result
+            );
         }
 
         public TypeInferenceContext VisitConstant(
@@ -233,9 +380,7 @@ public static class Helpers
             out Node<TypeUid> result)
         {
             result = constant;
-            return constant.RawValue is null
-                ? ctx.ApplyConstraint(constant.Type, TypeVariable.Nullable)
-                : ctx;
+            return ctx;
         }
 
         public TypeInferenceContext VisitIdentifier(
@@ -258,7 +403,7 @@ public static class Helpers
         {
             var ctx1 = lambda.Body.Accept(this, ctx, propertyResolver, functionResolver, out var newBody);
             result = Node<TypeUid>.Lambda(lambda.Type, lambda.Arg, newBody);
-            return ctx1.ApplyConstraint(lambda.Type, TypeVariable.Lambda);
+            return ctx1;
         }
 
         public TypeInferenceContext VisitMember(
@@ -276,9 +421,7 @@ public static class Helpers
                 var property = propertyResolver.ResolveProperty(instanceType, name);
                 return ctx1.ApplyConstraint(uid, new(property.PropertyType));
             }
-            return ctx1
-                .ApplyConstraint(newInstance.Type, TypeVariable.HasMember(name))
-                .ApplyConstraint(uid, TypeVariable.IsMemberOf(newInstance.Type, name));
+            return ctx1;
         }
     }
 
@@ -292,6 +435,14 @@ public static class Helpers
         out Node<TypeUid> result)
         => node.Accept(visitor, ctx, propertyResolver, functionResolver, out result);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static TypeInferenceContext PullDownConstraints(
+        this TypeInferenceContext ctx,
+        PullDownConstraintsVisitor visitor,
+        IPropertyResolver propertyResolver,
+        Node<TypeUid> node)
+        => node.Accept(visitor, ctx, propertyResolver);
+
     public static TypeInferenceContext CollectConstraintsRoot(
         this TypeInferenceContext ctx,
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
@@ -301,5 +452,6 @@ public static class Helpers
         out Node<TypeUid> result)
         => ctx
             .ApplyConstraint(node.Arg.Type, new(rootType))
+            .PullDownConstraints(PullDownConstraintsVisitor.Singleton, propertyResolver, node)
             .CollectConstraints(CollectConstraintsVisitor.Singleton, propertyResolver, functionResolver, node, out result);
 }

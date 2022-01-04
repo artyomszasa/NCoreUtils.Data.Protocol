@@ -12,7 +12,8 @@ public static class TypeConstraintsExtensions
             && TypeConstraints.CheckInterfaces(constraints.Interfaces, candidateType, out error)
             && TypeConstraints.CheckBaseType(constraints.Base, candidateType, out error)
             && TypeConstraints.CheckNumericity(constraints.IsNumeric, candidateType, out error)
-            && TypeConstraints.CheckNullability(constraints.IsNullable, candidateType, out error)
+            // NOTE: lambda is marked as non-nullable but represented by nullable Func<,> type in CLR.
+            && ((constraints.IsLambda.HasValue && constraints.IsLambda.Value) || TypeConstraints.CheckNullability(constraints.IsNullable, candidateType, out error))
             && TypeConstraints.CheckLambda(constraints.IsLambda, candidateType, out error);
 
     [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]

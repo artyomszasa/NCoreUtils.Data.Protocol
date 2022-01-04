@@ -65,12 +65,13 @@ public static class TypeInferenceContextExtensions
     public static TypeInferenceContext Substitute(
         this TypeInferenceContext ctx,
         TypeUid a,
+        TypeRelation relation,
         TypeUid b)
         => ctx with
         {
             Substitutions = ctx.Substitutions.SetItem(a, ctx.Substitutions.TryGetValue(a, out var l)
-                ? l.Insert(0, b)
-                : ImmutableList.Create(b))
+                ? l.Add(new(relation, b))
+                : ImmutableHashSet.Create(new Substitution(relation, b)))
         };
 
     /// <summary>
@@ -84,21 +85,25 @@ public static class TypeInferenceContextExtensions
         var v0 = ctx.Types.GetOrDefault(uid, TypeVariable.Empty);
         if (ctx.Substitutions.TryGetValue(uid, out var substitutions))
         {
-            var processedUids = new HashSet<TypeUid> { uid };
-            var toMerge = new Queue<TypeUid>(substitutions);
-            while (toMerge.TryDequeue(out var uidNext))
+            var processedSubstitutions = new HashSet<Substitution> { new(TypeRelation.SameAs, uid) };
+            var toMerge = new Queue<Substitution>(substitutions);
+            while (toMerge.TryDequeue(out var next))
             {
-                if (processedUids.Add(uidNext))
+                if (processedSubstitutions.Add(next))
                 {
-                    if (ctx.Types.TryGetValue(uidNext, out var v))
+                    var (relation, uidNext) = next;
+                    if (relation == TypeRelation.SameAs)
                     {
-                        v0 = v0.Merge(v);
-                    }
-                    if (ctx.Substitutions.TryGetValue(uidNext, out substitutions))
-                    {
-                        foreach (var substitution in substitutions)
+                        if (ctx.Types.TryGetValue(uidNext, out var v))
                         {
-                            toMerge.Enqueue(substitution);
+                            v0 = v0.Merge(v);
+                        }
+                        if (ctx.Substitutions.TryGetValue(uidNext, out substitutions))
+                        {
+                            foreach (var substitution in substitutions)
+                            {
+                                toMerge.Enqueue(substitution);
+                            }
                         }
                     }
                 }
@@ -107,6 +112,9 @@ public static class TypeInferenceContextExtensions
         return v0;
     }
 
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Delegate))]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only known types are used to create Func<,>.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "Only known types are used to create Func<,>.")]
     public static Maybe<ConstraintedType> MaybeInstantiateType(this TypeInferenceContext ctx, IPropertyResolver propertyResolver, TypeUid uid)
     {
         var variable = ctx.GetAllConstraints(uid);
@@ -115,6 +123,25 @@ public static class TypeInferenceContextExtensions
             return new ConstraintedType(variable.Type).Just();
         }
         var constraints = variable.Constraints;
+        if (constraints.IsLambda.HasValue && constraints.IsLambda.Value)
+        {
+            // lambda type if instantiated from its argument and result types
+            if (!ctx.Substitutions.TryGetValue(uid, out var substitutions))
+            {
+                throw new ProtocolTypeInferenceException($"Lamnda type {uid} expected to have substitutions.");
+            }
+            if (!substitutions.TryGetFirst(subs => subs.Relation == TypeRelation.ArgOf, out var argSubs))
+            {
+                throw new ProtocolTypeInferenceException($"Lamnda type {uid} expected to have argument substitution.");
+            }
+            if (!substitutions.TryGetFirst(subs => subs.Relation == TypeRelation.ResultOf, out var resultSubs))
+            {
+                throw new ProtocolTypeInferenceException($"Lamnda type {uid} expected to have argument substitution.");
+            }
+            var argType = ctx.InstantiateType(propertyResolver, argSubs.Target);
+            var resultType = ctx.InstantiateType(propertyResolver, resultSubs.Target);
+            return new ConstraintedType(typeof(Func<,>).MakeGenericType(argType, resultType)).Just();
+        }
         if (constraints.Base is not null)
         {
             return new ConstraintedType(constraints.Base).Just();

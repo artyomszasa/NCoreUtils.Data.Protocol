@@ -29,6 +29,6 @@ public sealed class Constant : Node
     public override TResult Accept<TArg1, TArg2, TResult>(INodeVisitor<TArg1, TArg2, TResult> visitor, TArg1 arg1, TArg2 arg2)
         => visitor.VisitConstant(this, arg1, arg2);
 
-    public override int GetHashCode()
-        => HashCode.Combine(HashTags.Constant, RawValue?.GetHashCode() ?? 0);
+    // public override int GetHashCode()
+    //     => HashCode.Combine(HashTags.Constant, RawValue?.GetHashCode() ?? 0);
 }

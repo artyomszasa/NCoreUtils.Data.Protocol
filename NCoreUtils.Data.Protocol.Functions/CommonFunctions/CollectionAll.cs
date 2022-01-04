@@ -9,9 +9,14 @@ namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
 public sealed class CollectionAll : CollectionOperationWithLambda<CollectionAllDescriptor>
 {
-    private static readonly MethodInfo _genericMethodDefinition = ReflectionHelpers
-        .GetMethod<IEnumerable<int>, Func<int, bool>, bool>(Enumerable.All)
-        .GetGenericMethodDefinition();
+    private static readonly MethodInfo _genericMethodDefinition;
+
+    static CollectionAll()
+    {
+        _genericMethodDefinition = ReflectionHelpers
+            .GetMethod<IEnumerable<int>, Func<int, bool>, bool>(Enumerable.All)
+            .GetGenericMethodDefinition();
+    }
 
     protected override MethodInfo GenericMethodDefinition => _genericMethodDefinition;
 
@@ -23,6 +28,6 @@ public sealed class CollectionAll : CollectionOperationWithLambda<CollectionAllD
         => (CollectionAllDescriptor)Activator.CreateInstance(typeof(CollectionAllDescriptor<>).MakeGenericType(itemType), false)!;
 
     protected override bool MatchName(string name)
-        => StringComparer.InvariantCultureIgnoreCase.Equals(Names.Some, name)
-            || StringComparer.InvariantCultureIgnoreCase.Equals(Names.Any, name);
+        => StringComparer.InvariantCultureIgnoreCase.Equals(Names.Every, name)
+            || StringComparer.InvariantCultureIgnoreCase.Equals(Names.All, name);
 }

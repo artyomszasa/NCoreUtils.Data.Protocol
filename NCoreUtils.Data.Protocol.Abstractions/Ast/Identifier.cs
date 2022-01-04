@@ -29,6 +29,6 @@ public sealed class Identifier : Node
     public override TResult Accept<TArg1, TArg2, TResult>(INodeVisitor<TArg1, TArg2, TResult> visitor, TArg1 arg1, TArg2 arg2)
         => visitor.VisitIdentifier(this, arg1, arg2);
 
-    public override int GetHashCode()
-        => HashCode.Combine(HashTags.Identifier, Value.GetHashCode());
+    // public override int GetHashCode()
+    //     => HashCode.Combine(HashTags.Identifier, Value.GetHashCode());
 }

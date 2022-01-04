@@ -7,5 +7,5 @@ public sealed class StringToLower : FunctionWrapper
 {
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(string))]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Handled by dynamic dependency")]
-    public StringToLower() : base(FunctionFactory.FromInstanceMethod(Names.Length, (string s) => s.ToLower())) { }
+    public StringToLower() : base(FunctionFactory.FromInstanceMethod(Names.Lower, (string s) => s.ToLower())) { }
 }

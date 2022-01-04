@@ -39,7 +39,8 @@ public sealed class CollectionContains : IFunction
     {
         if ((Eqi(Names.Contains, name) || Eqi(Names.Includes, name)) && argumentTypeConstraints.Count == 2)
         {
-            if (Helpers.TryGetElementType(argumentTypeConstraints[0], out var elementType))
+            var elementType = argumentTypeConstraints[1].TryGetExactType(out var exactType) ? (Type)exactType : default;
+            if (elementType is not null || Helpers.TryGetElementType(argumentTypeConstraints[0], out elementType))
             {
                 descriptor = CollectionContainsDescriptor.GetOrCreate(elementType);
                 return true;

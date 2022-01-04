@@ -21,7 +21,11 @@ public abstract class CollectionAllDescriptor : IFunctionDescriptor
 
     public abstract ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 
-    public string Name => Names.Every;
+    public string Name
+    {
+        [ExcludeFromCodeCoverage]
+        get => Names.Every;
+    }
 
     internal CollectionAllDescriptor() { }
 
