@@ -19,6 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol\NCoreUtils.Data.Protocol.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Linq.DependencyInjection\NCoreUtils.Data.Protocol.Linq.DependencyInjection.csproj" />
   </ItemGroup>
   <!-- **** -->
   <ItemGroup>

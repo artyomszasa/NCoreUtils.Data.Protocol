@@ -53,15 +53,22 @@ public class DefaultDataQueryExpressionBuilder : IDataQueryExpressionBuilder
         Lambda expression)
         => Inferrer.InferTypes(rootType, expression);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Parses and processes specified query creating LINQ expression with respect to the root argument type.
+    /// </summary>
+    /// <param name="rootType">Type of the root argument in the expression.</param>
+    /// <param name="input">Raw query to parse and process.</param>
+    /// <param name="rawExpression">If input could be successfully parsed stores raw expression.</param>
+    /// <returns>LINQ Expression representation of the input query.</returns>
     public LambdaExpression BuildExpression(
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
-        string input)
+        string input,
+        out Node rawExpression)
     {
         try
         {
             Logger.LogTrace("Processing expression {Expression} with root type {RootType}.", input, rootType);
-            var rawExpression = ParseExpression(input);
+            rawExpression = ParseExpression(input);
             if (rawExpression is not Lambda rawLambda)
             {
                 throw new ArgumentException($"Specified input defines non-lambda expression: {rawExpression}.");
@@ -77,4 +84,10 @@ public class DefaultDataQueryExpressionBuilder : IDataQueryExpressionBuilder
             );
         }
     }
+
+    /// <inheritdoc />
+    public LambdaExpression BuildExpression(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
+        string input)
+        => BuildExpression(rootType, input, out var _);
 }

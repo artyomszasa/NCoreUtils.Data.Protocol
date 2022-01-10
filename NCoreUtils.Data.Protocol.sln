@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCoreUtils.Data.Protocol.Ex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCoreUtils.Data.Protocol.Linq", "NCoreUtils.Data.Protocol.Linq\NCoreUtils.Data.Protocol.Linq.csproj", "{1856116A-A462-4821-9B94-2BE0F8399D82}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCoreUtils.Data.Protocol.Linq.DependencyInjection", "NCoreUtils.Data.Protocol.Linq.DependencyInjection\NCoreUtils.Data.Protocol.Linq.DependencyInjection.csproj", "{DB39C7DD-9494-4BCD-B9FE-66D07260A0D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,5 +86,9 @@ Global
 		{1856116A-A462-4821-9B94-2BE0F8399D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1856116A-A462-4821-9B94-2BE0F8399D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1856116A-A462-4821-9B94-2BE0F8399D82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB39C7DD-9494-4BCD-B9FE-66D07260A0D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB39C7DD-9494-4BCD-B9FE-66D07260A0D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB39C7DD-9494-4BCD-B9FE-66D07260A0D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB39C7DD-9494-4BCD-B9FE-66D07260A0D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

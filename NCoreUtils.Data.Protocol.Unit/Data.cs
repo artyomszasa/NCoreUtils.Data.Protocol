@@ -20,3 +20,13 @@ public partial record Item
 
     public static Item FromString(string? strValue) => new(default, strValue, Array.Empty<SubItem>());
 }
+
+public class BaseEntity
+{
+    public string? String { get; set; }
+}
+
+public class DerivedEntity : BaseEntity
+{
+    public int I32 { get; set; }
+}

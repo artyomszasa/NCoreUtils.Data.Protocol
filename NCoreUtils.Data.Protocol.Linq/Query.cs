@@ -39,6 +39,8 @@ namespace NCoreUtils.Data.Protocol.Linq
 
         public abstract Query ApplyLimit(int limit);
 
+        public abstract Query ApplyWhere(Expression expression);
+
         public abstract Query ApplySelect(LambdaExpression expression);
     }
 
@@ -86,6 +88,9 @@ namespace NCoreUtils.Data.Protocol.Linq
 
         public IEnumerator<T> GetEnumerator()
             => Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
+
+        public override Query ApplyWhere(Expression expression)
+            => QueryExtensions.Where<T>(this, expression);
 
         [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only preserved type can be supplied.")]
         [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Whole class is marked as preserved.")]

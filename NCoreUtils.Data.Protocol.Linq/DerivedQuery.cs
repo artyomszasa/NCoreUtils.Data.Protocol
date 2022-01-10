@@ -18,7 +18,7 @@ namespace NCoreUtils.Data.Protocol.Linq
             Lambda? sortBy = default,
             bool isDescending = false,
             int offset = 0,
-            int limit = -1)
+            int? limit = default)
             : base(provider, filter, sortBy, isDescending, offset, limit)
         { }
 

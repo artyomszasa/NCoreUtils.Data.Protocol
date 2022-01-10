@@ -23,7 +23,7 @@ namespace NCoreUtils.Data.Protocol.Linq
 
         public int Offset { get; }
 
-        public int Limit { get; }
+        public int? Limit { get; }
 
         public virtual string Target => string.Empty;
 
@@ -33,7 +33,7 @@ namespace NCoreUtils.Data.Protocol.Linq
             Lambda? sortBy = default,
             bool isDescending = false,
             int offset = 0,
-            int limit = -1)
+            int? limit = default)
             : base(provider)
         {
             Filter = filter;

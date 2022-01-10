@@ -103,9 +103,9 @@ namespace NCoreUtils.Data.Protocol.Linq
             }
             foreach (var itype in type.GetInterfaces())
             {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                if (itype.IsGenericType && itype.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 {
-                    elementType = type.GetGenericArguments()[0];
+                    elementType = itype.GetGenericArguments()[0];
                     return true;
                 }
             }
@@ -159,9 +159,17 @@ namespace NCoreUtils.Data.Protocol.Linq
             var asyncEnumerator = asyncEnumerable.GetAsyncEnumerator();
             try
             {
-                while (asyncEnumerator.MoveNextAsync().AsTask().Result)
+                while (Next(asyncEnumerator))
                 {
                     yield return asyncEnumerator.Current;
+                }
+
+                static bool Next(IAsyncEnumerator<T> asyncEnumerator)
+                {
+                    var tres = asyncEnumerator.MoveNextAsync();
+                    return tres.IsCompletedSuccessfully
+                        ? tres.Result
+                        : tres.AsTask().Result;
                 }
             }
             finally
@@ -280,13 +288,13 @@ namespace NCoreUtils.Data.Protocol.Linq
                             case nameof(Queryable.LastOrDefault):
                             case nameof(Queryable.Single):
                             case nameof(Queryable.SingleOrDefault):
-                                return query.Where(arguments[1]).ExecuteReductionAsync<T>(_executor, method.Name, cancellationToken);
+                                return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(_executor, method.Name, cancellationToken);
                             case nameof(Queryable.Count):
                                 // T must be int
-                                return TaskCast<int, T>(query.Where(arguments[1]).ExecuteReductionAsync<int>(_executor, method.Name, cancellationToken));
+                                return TaskCast<int, T>(query.ApplyWhere(arguments[1]).ExecuteReductionAsync<int>(_executor, method.Name, cancellationToken));
                             case nameof(Queryable.Any):
                                 // T must be bool
-                                return TaskCast<bool, T>(query.Where(arguments[1]).ExecuteReductionAsync<bool>(_executor, method.Name, cancellationToken));
+                                return TaskCast<bool, T>(query.ApplyWhere(arguments[1]).ExecuteReductionAsync<bool>(_executor, method.Name, cancellationToken));
                         }
                     }
                     throw new NotSupportedException($"Method {method} is not supported.");

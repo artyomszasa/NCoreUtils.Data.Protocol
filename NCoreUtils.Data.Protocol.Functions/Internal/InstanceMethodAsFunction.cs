@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Linq.Expressions;
 using NCoreUtils.Data.Protocol.TypeInference;
 
@@ -15,7 +16,14 @@ public class InstanceMethodAsFunction : IFunction
 
     public FunctionMatch MatchFunction(Expression expression)
     {
-        throw new NotImplementedException();
+        if (expression is MethodCallExpression call && call.Method == Descriptor.Method)
+        {
+            return new(
+                Descriptor.Name,
+                call.Arguments.Prepend(call.Object!).ToList()
+            );
+        }
+        return default;
     }
 
     public bool TryResolveFunction(

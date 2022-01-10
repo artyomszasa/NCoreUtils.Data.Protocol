@@ -14,7 +14,7 @@ namespace NCoreUtils.Data.Protocol.Linq
             IReadOnlyList<string>? fields = default,
             IReadOnlyList<string>? includes = default,
             int offset = 0,
-            int limit = 0);
+            int? limit = default);
 
         /// <summary>
         /// Executes reduction defined by the arguments.
@@ -37,7 +37,7 @@ namespace NCoreUtils.Data.Protocol.Linq
             Ast.Node? sortBy = default,
             bool isDescending = false,
             int offset = 0,
-            int limit = 0,
+            int? limit = default,
             CancellationToken cancellationToken = default);
     }
 }
