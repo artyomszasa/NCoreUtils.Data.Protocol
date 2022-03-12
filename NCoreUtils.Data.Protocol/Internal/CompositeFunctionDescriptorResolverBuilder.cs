@@ -14,7 +14,7 @@ public class CompositeFunctionDescriptorResolverBuilder
     public CompositeFunctionDescriptorResolverBuilder(IServiceCollection services)
         => Services = services ?? throw new ArgumentNullException(nameof(services));
 
-    public CompositeFunctionDescriptorResolverBuilder AddRegisteredService<T>()
+    public CompositeFunctionDescriptorResolverBuilder AddRegisteredService<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>()
         where T : class, IFunctionDescriptorResolver
     {
         FunctionDescriptorResolvers.Add(new ServiceFunctionDescriptorResolverDescriptor<T>());

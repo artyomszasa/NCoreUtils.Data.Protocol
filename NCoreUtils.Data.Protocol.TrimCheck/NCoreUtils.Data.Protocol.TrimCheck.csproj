@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol\NCoreUtils.Data.Protocol.csproj" />
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Linq\NCoreUtils.Data.Protocol.Linq.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Linq.DependencyInjection\NCoreUtils.Data.Protocol.Linq.DependencyInjection.csproj" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Abstractions" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Antlr4" />
@@ -13,6 +13,7 @@
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.TypeInference.Abstractions" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Expressions" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Linq" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Linq.DependencyInjection" />
   </ItemGroup>
 
   <PropertyGroup>

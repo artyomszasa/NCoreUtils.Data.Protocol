@@ -1,9 +1,10 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
-public sealed class ServiceFunctionDescriptorResolverDescriptor<T> : IFunctionDescriptorResolverDescriptor
+public sealed class ServiceFunctionDescriptorResolverDescriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : IFunctionDescriptorResolverDescriptor
     where T : class, IFunctionDescriptorResolver
 {
     public IFunctionDescriptorResolver GetOrCreate(IServiceProvider serviceProvider)

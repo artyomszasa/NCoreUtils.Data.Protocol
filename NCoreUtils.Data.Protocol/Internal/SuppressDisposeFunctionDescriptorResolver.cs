@@ -10,7 +10,7 @@ namespace NCoreUtils.Data.Protocol.Internal;
 /// disposing is handled by the DI container.
 /// </summary>
 /// <typeparam name="T">Type of the underlying function descriptor resolver.</typeparam>
-internal sealed class SuppressDisposeFunctionDescriptorResolver<T> : IFunctionDescriptorResolver
+internal sealed class SuppressDisposeFunctionDescriptorResolver<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : IFunctionDescriptorResolver
     where T : class, IFunctionDescriptorResolver
 {
     private T FunctionDescriptorResolver { get; }
