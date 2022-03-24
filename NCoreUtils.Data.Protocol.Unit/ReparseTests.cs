@@ -50,9 +50,10 @@ public class ReparseTests
     }
 
     [Theory]
-    [InlineData(typeof(int), "e => includes(array(1,2,3), e)")]
-    [InlineData(typeof(string), "e => includes(array(\"1\",\"2\",\"3\"), e)")]
-    [InlineData(typeof(AOrB), "e => includes(array(\"A\",\"B\"), e)")]
+    // [InlineData(typeof(int), "e => includes(array(1,2,3), e)")]
+    // [InlineData(typeof(string), "e => includes(array(\"1\",\"2\",\"3\"), e)")]
+    // [InlineData(typeof(AOrB), "e => includes(array(\"A\",\"B\"), e)")]
+    [InlineData(typeof(Item), "e => includes(array(1,2,3), e.Num) && e.Str = \"xxx\"")]
     public void ArrayOfTests(Type itemType, string raw)
     {
         using var _ = CreateExpressionBuilderAndParser(out var ebuilder, out var eparser);

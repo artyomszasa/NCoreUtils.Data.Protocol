@@ -76,6 +76,31 @@ public class ExpressionParser
                 right: Visit(expression.Right, ctx, functionMatcher)
             );
         }
+        if (expression.NodeType == ExpressionType.ArrayIndex
+            && expression.Left.TryExtractConstant(out var boxedArray) && boxedArray is Array array
+            && expression.Right.TryExtractConstant(out var boxedIndex) && boxedIndex is int index)
+        {
+            var itemValue = array.GetValue(index);
+            // string? rawItemValue;
+            // if (itemValue is null)
+            // {
+            //     rawItemValue = default;
+            // }
+            // else
+            // {
+            //     var type = itemValue.GetType();
+            //     if (type.IsEnum)
+            //     {
+            //         rawItemValue = Convert.ChangeType(itemValue, Enum.GetUnderlyingType(type)).ToString();
+            //     }
+            //     else
+            //     {
+            //         rawItemValue = itemValue.ToString();
+            //     }
+            // }
+            var rawItemValue = itemValue?.ToString();
+            return Node.Constant(rawItemValue);
+        }
         throw new NotSupportedException($"Unsupported binary operation {expression.NodeType}.");
     }
 
