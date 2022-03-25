@@ -19,8 +19,6 @@ internal static class Helpers
                 elementType = type.GetGenericArguments()[0];
                 return true;
             }
-            elementType = default;
-            return false;
         }
         foreach (var interfaceType in type.GetInterfaces())
         {
