@@ -10,8 +10,9 @@ public static class FunctionDescriptorResolverExtensions
 
     public static IFunctionDescriptor? ResolveFunction(
         this IFunctionDescriptorResolver resolver,
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints)
-        => resolver.ResolveFunction(name, resultTypeConstraints, argumentTypeConstraints, RetNull);
+        => resolver.ResolveFunction(util, name, resultTypeConstraints, argumentTypeConstraints, RetNull);
 }

@@ -9,27 +9,46 @@ namespace NCoreUtils.Data.Protocol.Unit;
 
 public class DataQueryExpressionBuilderTests : IDisposable
 {
-    private ServiceProvider ServiceProvider { get; }
+    private ServiceProvider ReflectionServiceProvider { get; }
+
+    private ServiceProvider PortableServiceProvider { get; }
 
     public DataQueryExpressionBuilderTests()
     {
-        ServiceProvider = new ServiceCollection()
+        ReflectionServiceProvider = new ServiceCollection()
             .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
             .AddDataQueryServices()
+            .BuildServiceProvider(true);
+
+        PortableServiceProvider = new ServiceCollection()
+            .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
+            .AddDataQueryServices(GeneratedContext.Singleton)
             .BuildServiceProvider(true);
     }
 
     protected void Scoped(Action<IServiceProvider> action)
     {
-        using var scope = ServiceProvider.CreateScope();
-        action(scope.ServiceProvider);
+        {
+            using var scope = ReflectionServiceProvider.CreateScope();
+            action(scope.ServiceProvider);
+        }
+        {
+            using var scope = PortableServiceProvider.CreateScope();
+            action(scope.ServiceProvider);
+        }
     }
 
     protected void Scoped<T>(Action<T> action)
         where T : class
     {
-        using var scope = ServiceProvider.CreateScope();
-        action(scope.ServiceProvider.GetRequiredService<T>());
+        {
+            using var scope = ReflectionServiceProvider.CreateScope();
+            action(scope.ServiceProvider.GetRequiredService<T>());
+        }
+        {
+            using var scope = PortableServiceProvider.CreateScope();
+            action(scope.ServiceProvider.GetRequiredService<T>());
+        }
     }
 
     #region positive
@@ -307,6 +326,7 @@ public class DataQueryExpressionBuilderTests : IDisposable
     [Fact]
     public void NestedNonNullable() => Scoped((IDataQueryExpressionBuilder builder) =>
     {
+        // FIXME
         var exn = Assert.Throws<ProtocolException>(() => builder.BuildExpression(typeof(Item), "e => e.num = null"));
         Assert.NotNull(exn.InnerException);
         Assert.IsType<ProtocolTypeConstraintMismatchException>(exn.InnerException);
@@ -318,6 +338,7 @@ public class DataQueryExpressionBuilderTests : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        ServiceProvider.Dispose();
+        ReflectionServiceProvider.Dispose();
+        PortableServiceProvider.Dispose();
     }
 }

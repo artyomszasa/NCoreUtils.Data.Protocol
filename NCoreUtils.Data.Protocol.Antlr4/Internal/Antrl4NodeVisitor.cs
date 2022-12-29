@@ -74,7 +74,7 @@ public sealed class Antrl4NodeVisitor : ProtocolBaseVisitor<Node>
         "<=" => BinaryOperation.LessThanOrEqual,
         ">=" => BinaryOperation.GreaterThanOrEqual,
         "+"  => BinaryOperation.Add,
-        "-"  => BinaryOperation.Substract,
+        "-"  => BinaryOperation.Subtract,
         "/"  => BinaryOperation.Divide,
         "*"  => BinaryOperation.Multiply,
         "%"  => BinaryOperation.Modulo,

@@ -1,10 +1,21 @@
+using System;
 using System.Linq.Expressions;
+using NCoreUtils.Data.Protocol.Internal;
 
-namespace NCoreUtils.Data.Protocol.Internal;
+namespace NCoreUtils.Data.Protocol;
 
-public partial class ExpressionBuilderVisitor
+public partial class ReflectionDataUtils : IDataUtils
 {
-    private static BinaryExpression CreateEqual(Expression left, Expression right)
+    public Expression CreateBoxedConstant(Type type, object? value)
+        => BoxedConstantBuilder.BuildExpression(value, type);
+
+    public Expression CreateAndAlso(Expression left, Expression right)
+        => Expression.AndAlso(left, right);
+
+    public Expression CreateOrElse(Expression left, Expression right)
+        => Expression.OrElse(left, right);
+
+    public Expression CreateEqual(Expression left, Expression right)
     {
         if (IsNullable(left.Type, out var ltype) && right.Type == ltype)
         {
@@ -23,7 +34,7 @@ public partial class ExpressionBuilderVisitor
         return Expression.Equal(left, right);
     }
 
-    private static BinaryExpression CreateNotEqual(Expression left, Expression right)
+    public Expression CreateNotEqual(Expression left, Expression right)
     {
         if (IsNullable(left.Type, out var ltype) && right.Type == ltype)
         {
@@ -42,7 +53,7 @@ public partial class ExpressionBuilderVisitor
         return Expression.NotEqual(left, right);
     }
 
-    private static BinaryExpression CreateGreaterThan(Expression left, Expression right)
+    public Expression CreateGreaterThan(Expression left, Expression right)
     {
         if (IsNullable(left.Type, out var ltype) && right.Type == ltype)
         {
@@ -61,7 +72,7 @@ public partial class ExpressionBuilderVisitor
         return Expression.GreaterThan(left, right);
     }
 
-    private static BinaryExpression CreateGreaterThanOrEqual(Expression left, Expression right)
+    public Expression CreateGreaterThanOrEqual(Expression left, Expression right)
     {
         if (IsNullable(left.Type, out var ltype) && right.Type == ltype)
         {
@@ -80,7 +91,7 @@ public partial class ExpressionBuilderVisitor
         return Expression.GreaterThanOrEqual(left, right);
     }
 
-    private static BinaryExpression CreateLessThan(Expression left, Expression right)
+    public Expression CreateLessThan(Expression left, Expression right)
     {
         if (IsNullable(left.Type, out var ltype) && right.Type == ltype)
         {
@@ -99,7 +110,7 @@ public partial class ExpressionBuilderVisitor
         return Expression.LessThan(left, right);
     }
 
-    private static BinaryExpression CreateLessThanOrEqual(Expression left, Expression right)
+    public Expression CreateLessThanOrEqual(Expression left, Expression right)
     {
         if (IsNullable(left.Type, out var ltype) && right.Type == ltype)
         {
@@ -117,4 +128,19 @@ public partial class ExpressionBuilderVisitor
         }
         return Expression.LessThanOrEqual(left, right);
     }
+
+    public Expression CreateAdd(Expression left, Expression right)
+        => Expression.Add(left, right);
+
+    public Expression CreateSubtract(Expression left, Expression right)
+        => Expression.Subtract(left, right);
+
+    public Expression CreateMultiply(Expression left, Expression right)
+        => Expression.Multiply(left, right);
+
+    public Expression CreateDivide(Expression left, Expression right)
+        => Expression.Divide(left, right);
+
+    public Expression CreateModulo(Expression left, Expression right)
+        => Expression.Modulo(left, right);
 }

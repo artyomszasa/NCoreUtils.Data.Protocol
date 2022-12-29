@@ -216,7 +216,7 @@ public static class NodeExtensions
         BinaryOperation.OrElse => "||",
         BinaryOperation.AndAlso => "&&",
         BinaryOperation.Add => "+",
-        BinaryOperation.Substract => "-",
+        BinaryOperation.Subtract => "-",
         BinaryOperation.Multiply => "*",
         BinaryOperation.Divide => "/",
         BinaryOperation.Modulo => "%",
@@ -251,7 +251,7 @@ public static class NodeExtensions
         return input.Length + counter;
     }
 
-    public static int CalculateStringifiedSize(this Node node)
+    internal static int CalculateStringifiedSize(this Node node)
         => node.Accept(GetStringifiedSizeVisitor.Singleton, false);
 
     public static void EmplaceTo(this Node node, ref SpanBuilder builder)

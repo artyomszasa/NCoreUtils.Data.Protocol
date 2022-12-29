@@ -5,7 +5,7 @@ using NCoreUtils.Data.Protocol;
 using NCoreUtils.Data.Protocol.CommonFunctions;
 using NCoreUtils.Data.Protocol.Internal;
 
-namespace NCoreUtils;
+namespace NCoreUtils.Internal;
 
 public static class ServiceCollectionDataProtocolExtensions
 {

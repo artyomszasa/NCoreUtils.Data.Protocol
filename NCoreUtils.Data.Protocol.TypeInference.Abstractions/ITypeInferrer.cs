@@ -8,6 +8,8 @@ namespace NCoreUtils.Data.Protocol;
 
 public interface ITypeInferrer
 {
+    IDataUtils Util { get; }
+
     IPropertyResolver PropertyResolver { get; }
 
     /// <summary>

@@ -20,11 +20,13 @@ internal sealed class SuppressDisposeFunctionDescriptorResolver<[DynamicallyAcce
             ?? throw new ArgumentNullException(nameof(functionDescriptorResolver));
 
     public bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
         [MaybeNullWhen(false)] out IFunctionDescriptor descriptor)
         => FunctionDescriptorResolver.TryResolveFunction(
+            util,
             name,
             resultTypeConstraints,
             argumentTypeConstraints,

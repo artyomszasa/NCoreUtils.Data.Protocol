@@ -8,7 +8,7 @@ using NCoreUtils.Data.Protocol.Ast;
 namespace NCoreUtils.Data.Protocol.Linq
 {
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    internal class DerivedQuery<TBase, TDerived> : DirectQuery<TDerived>
+    internal class DerivedQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TBase, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TDerived> : DirectQuery<TDerived>
     {
         public override string Target => typeof(TDerived).Name.ToLowerInvariant();
 

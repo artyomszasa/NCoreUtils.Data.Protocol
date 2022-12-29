@@ -16,14 +16,14 @@ public class CompositeFunctionMatcher : IFunctionMatcher
         FunctionMatchers = functionMatchers ?? throw new ArgumentNullException(nameof(functionMatchers));
     }
 
-    public FunctionMatch MatchFunction(Expression expression)
+    public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {
         foreach (var functionMatcherDescriptor in FunctionMatchers)
         {
             var functionMatcher = functionMatcherDescriptor.GetOrCreate(ServiceProvider);
             try
             {
-                var match = functionMatcher.MatchFunction(expression);
+                var match = functionMatcher.MatchFunction(utils, expression);
                 if (match.IsSuccess)
                 {
                     return match;

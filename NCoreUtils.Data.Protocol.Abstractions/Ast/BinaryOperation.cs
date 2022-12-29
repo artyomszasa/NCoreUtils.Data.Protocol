@@ -25,7 +25,7 @@ public enum BinaryOperation
   /// Represents an addition operation.
   Add                  = 8,
   /// Represents a substraction operation.
-  Substract            = 9,
+  Subtract            = 9,
   /// Represents a multiplication operation.
   Multiply             = 10,
   /// Represents a division operation.

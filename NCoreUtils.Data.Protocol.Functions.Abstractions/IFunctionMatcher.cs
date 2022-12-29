@@ -10,7 +10,8 @@ public interface IFunctionMatcher
     /// <summary>
     /// Matches expression against supported functions.
     /// </summary>
+    /// <param name="utils">Utility helper.</param>
     /// <param name="expression">Expression to match.</param>
     /// <returns>Function matching result.</returns>
-    FunctionMatch MatchFunction(Expression expression);
+    FunctionMatch MatchFunction(IDataUtils utils, Expression expression);
 }

@@ -2,148 +2,50 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using System.Reflection;
 using NCoreUtils.Data.Protocol.TypeInference;
 
 namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
 public class ArrayOf : IFunction
 {
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    private static readonly Type _gReadOnlyCollection = typeof(IReadOnlyCollection<>);
+    public static ArrayOfDescriptor CreateDescritor(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type arrayType,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type elementType,
+        int size)
+        => new(arrayType, elementType, size);
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    private static readonly Type _gEnumerable = typeof(IEnumerable<>);
-
-    private static bool IsInterfaceEnumerable(Type @interface, [MaybeNullWhen(false)] out Type elementType)
+    public FunctionMatch MatchEnumerableOrArray(IDataUtils utils, Expression expression)
     {
-        if (@interface.IsConstructedGenericType && @interface.GetGenericTypeDefinition() == _gEnumerable)
+        if (utils.IsArray(expression.Type, out var elementType) && expression.TryExtractConstant(out var boxed) && boxed is Array array)
         {
-            elementType = @interface.GetGenericArguments()[0];
-            return true;
-        }
-        elementType = default;
-        return false;
-    }
-
-    private static bool IsEnumerable(Type type, [MaybeNullWhen(false)] out Type elementType)
-    {
-        if (type.IsInterface)
-        {
-            return IsInterfaceEnumerable(type, out elementType);
-        }
-        foreach (var @interface in type.GetInterfaces())
-        {
-            if (IsInterfaceEnumerable(@interface, out var etype))
+            var length = array.GetLength(0);
+            var arrayExpression = Expression.Constant(array, elementType);
+            var arguments = new Expression[length];
+            for (var i = 0; i < arguments.Length; ++i)
             {
-                elementType = etype;
-                return true;
+                arguments[i] = Expression.ArrayIndex(arrayExpression, Expression.Constant(i, typeof(int)));
             }
+            return new(Names.Array, arguments);
         }
-        elementType = default;
-        return false;
-    }
-
-    private static bool IsInterfaceCollection(Type @interface, [MaybeNullWhen(false)] out Type elementType, [MaybeNullWhen(false)] out PropertyInfo countProperty)
-    {
-        if (@interface.IsConstructedGenericType && @interface.GetGenericTypeDefinition() == _gReadOnlyCollection)
+        if (utils.IsEnumerable(expression.Type, out elementType) && expression.TryExtractConstant(out boxed) && boxed is System.Collections.IEnumerable enumerable)
         {
-            elementType = @interface.GetGenericArguments()[0];
-            countProperty = @interface.GetProperty(nameof(IReadOnlyCollection<int>.Count), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                ?? throw new InvalidOperationException($"Unable to get Count property for {@interface}.");
-            return true;
-        }
-        elementType = default;
-        countProperty = default;
-        return false;
-    }
-
-    private static bool IsCollection(Type type, [MaybeNullWhen(false)] out Type elementType, [MaybeNullWhen(false)] out PropertyInfo countProperty)
-    {
-        if (type.IsInterface)
-        {
-            return IsInterfaceCollection(type, out elementType, out countProperty);
-        }
-        foreach (var @interface in type.GetInterfaces())
-        {
-            if (IsInterfaceCollection(@interface, out var etype, out var pcount))
+            var arguments = new List<Expression>();
+            foreach (var item in enumerable)
             {
-                elementType = etype;
-                countProperty = pcount;
-                return true;
+                arguments.Add(utils.CreateBoxedConstant(elementType, item));
             }
+            return new(Names.Array, arguments);
         }
-        elementType = default;
-        countProperty = default;
-        return false;
+        return default;
     }
 
-    private static bool IsCollectionLike([NotNullWhen(true)] object? source, [MaybeNullWhen(false)] out Type elementType, out int? length)
-    {
-        if (source is null)
-        {
-            elementType = default;
-            length = default;
-            return false;
-        }
-        var type = source.GetType();
-        if (IsCollection(type, out var etype, out var countProperty))
-        {
-            elementType = etype;
-            length = (int)countProperty.GetValue(source, null)!;
-            return true;
-        }
-        if (IsEnumerable(type, out etype))
-        {
-            elementType = etype;
-            length = default;
-            return true;
-        }
-        elementType = default;
-        length = default;
-        return false;
-    }
-
-    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026",
-        Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
-    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2070",
-        Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
-    public static ArrayOfDescriptor CreateDescritor(Type elementType, int size)
-        => (ArrayOfDescriptor)Activator.CreateInstance(
-            typeof(ArrayOfDescriptor<>).MakeGenericType(elementType),
-            new object[] { size }
-        )!;
-
-    public FunctionMatch MatchFunction(Expression expression)
+    public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {
         if (expression is NewArrayExpression newArrayExpression && expression.NodeType == ExpressionType.NewArrayInit)
         {
             return new(Names.Array, newArrayExpression.Expressions);
         }
-        if (expression.TryExtractConstant(out var boxed) && boxed is not string)
-        {
-            if (boxed is Array array)
-            {
-                var length = array.GetLength(0);
-                var arrayExpression = Expression.Constant(array, array.GetType());
-                var arguments = new Expression[length];
-                for (var i = 0; i < arguments.Length; ++i)
-                {
-                    arguments[i] = Expression.ArrayIndex(arrayExpression, Expression.Constant(i, typeof(int)));
-                }
-                return new(Names.Array, arguments);
-            }
-            else if (IsCollectionLike(boxed, out var elementType, out var nlength))
-            {
-                var arguments = nlength is int length ? new List<Expression>(length) : new List<Expression>();
-                foreach (var item in (System.Collections.IEnumerable)boxed)
-                {
-                    arguments.Add(Expression.Constant(item));
-                }
-                return new(Names.Array, arguments);
-            }
-        }
-        return default;
+        return MatchEnumerableOrArray(utils, expression);
     }
 
     private static bool TryGetArgumentType(
@@ -163,6 +65,7 @@ public class ArrayOf : IFunction
     }
 
     public bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -170,10 +73,14 @@ public class ArrayOf : IFunction
     {
         if (StringComparer.InvariantCultureIgnoreCase.Equals(Names.Array, name))
         {
-            if (Helpers.TryGetElementType(resultTypeConstraints, out var elementType)
+            if (resultTypeConstraints.TryGetElementType(util, out var elementType)
                 || TryGetArgumentType(argumentTypeConstraints, out elementType))
             {
-                descriptor = CreateDescritor(elementType, argumentTypeConstraints.Count);
+                descriptor = CreateDescritor(
+                    util.Ensure(util.GetArrayOfType(elementType)),
+                    util.Ensure(elementType),
+                    argumentTypeConstraints.Count
+                );
                 return true;
             }
         }

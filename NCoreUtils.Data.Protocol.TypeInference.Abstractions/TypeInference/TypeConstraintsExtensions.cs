@@ -1,25 +1,30 @@
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
 public static class TypeConstraintsExtensions
 {
-    public static bool Match(this TypeConstraints constraints, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type candidateType, out TypeConstriantMismatch error)
-        => TypeConstraints.CheckMembers(constraints.Members, candidateType, out error)
-            && TypeConstraints.CheckInterfaces(constraints.Interfaces, candidateType, out error)
-            && TypeConstraints.CheckBaseType(constraints.Base, candidateType, out error)
-            && TypeConstraints.CheckNumericity(constraints.IsNumeric, candidateType, out error)
+    public static bool Match(
+        this TypeConstraints constraints,
+        IDataUtils util,
+        Type candidateType,
+        out TypeConstriantMismatch error)
+        => TypeConstraints.CheckMembers(util, constraints.Members, candidateType, out error)
+            && TypeConstraints.CheckInterfaces(util, constraints.Interfaces, candidateType, out error)
+            && TypeConstraints.CheckBaseType(util, constraints.Base, candidateType, out error)
+            && TypeConstraints.CheckArithmeticity(util, constraints.IsNumeric, candidateType, out error)
             // NOTE: lambda is marked as non-nullable but represented by nullable Func<,> type in CLR.
-            && ((constraints.IsLambda.HasValue && constraints.IsLambda.Value) || TypeConstraints.CheckNullability(constraints.IsNullable, candidateType, out error))
-            && TypeConstraints.CheckLambda(constraints.IsLambda, candidateType, out error);
+            && ((constraints.IsLambda.HasValue && constraints.IsLambda.Value) || TypeConstraints.CheckNullability(util, constraints.IsNullable, candidateType, out error))
+            && TypeConstraints.CheckLambda(util, constraints.IsLambda, candidateType, out error);
 
-    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    public static Type Validate(this TypeConstraints constraints, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type candidateType)
+    public static Type Validate(
+        this TypeConstraints constraints,
+        IDataUtils util,
+        Type candidateType)
     {
-        if (constraints.Match(candidateType, out var error))
+        if (constraints.Match(util, candidateType, out var error))
         {
             return candidateType;
         }

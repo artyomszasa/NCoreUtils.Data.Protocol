@@ -7,7 +7,7 @@ public static class PropertyResolverExtensions
 {
     public static IProperty ResolveProperty(
         this IPropertyResolver resolver,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type instanceType,
+        Type instanceType,
         string name)
     {
         if (resolver.TryResolveProperty(instanceType, name, out var property))

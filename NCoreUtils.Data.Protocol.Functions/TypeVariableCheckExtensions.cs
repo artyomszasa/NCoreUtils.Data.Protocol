@@ -1,24 +1,23 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using NCoreUtils.Data.Protocol.TypeInference;
 
 namespace NCoreUtils.Data.Protocol;
 
 public static class TypeVariableCheckExtensions
 {
-    public static bool IsCompatible(this TypeVariable v, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type candidateType)
+    public static bool IsCompatible(this TypeVariable v, Type candidateType, IDataUtils util)
     {
         if (v.IsResolved)
         {
-            return v.Type.IsAssignableFrom(candidateType);
+            return util.IsAssignableFrom(candidateType, v.Type);
         }
-        return v.Constraints.Match(candidateType, out var _);
+        return v.Constraints.Match(util, candidateType, out var _);
     }
 
-    public static bool IsCompatible<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(this TypeVariable v)
-        => v.IsCompatible(typeof(T));
+    public static bool IsCompatible<T>(this TypeVariable v, IDataUtils util)
+        => v.IsCompatible(typeof(T), util);
 
 
-    public static bool IsStringCompatible(this TypeVariable v)
-        => v.IsCompatible<string>();
+    public static bool IsStringCompatible(this TypeVariable v, IDataUtils util)
+        => v.IsCompatible<string>(util);
 }

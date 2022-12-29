@@ -16,6 +16,6 @@ internal sealed class SuppressDisposeFunctionMatcher<T> : IFunctionMatcher
     public SuppressDisposeFunctionMatcher(T functionMatcherService)
         => FunctionMatcherService = functionMatcherService ?? throw new ArgumentNullException(nameof(functionMatcherService));
 
-    public FunctionMatch MatchFunction(Expression expression)
-        => FunctionMatcherService.MatchFunction(expression);
+    public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
+        => FunctionMatcherService.MatchFunction(utils, expression);
 }

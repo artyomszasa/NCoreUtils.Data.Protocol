@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ public partial class TestDataQueryExecutor : IDataQueryExecutor
 
     public List<ExecuteReductionData> ExecutedReductions { get; } = new();
 
-    public IAsyncEnumerable<T> ExecuteEnumerationAsync<T>(
+    public IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
         string target,
         Node? filter = null,
         Node? sortBy = null,
@@ -36,7 +37,7 @@ public partial class TestDataQueryExecutor : IDataQueryExecutor
         return Enumerable.Empty<T>().ToAsyncEnumerable();
     }
 
-    public Task<TResult> ExecuteReductionAsync<TSource, TResult>(
+    public Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
         string target,
         string reduction,
         Node? filter = null,

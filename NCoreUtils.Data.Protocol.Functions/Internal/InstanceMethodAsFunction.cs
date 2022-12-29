@@ -14,7 +14,7 @@ public class InstanceMethodAsFunction : IFunction
     public InstanceMethodAsFunction(InstanceMethodAsFunctionDescriptor descriptor)
         => Descriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
 
-    public FunctionMatch MatchFunction(Expression expression)
+    public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {
         if (expression is MethodCallExpression call && call.Method == Descriptor.Method)
         {
@@ -27,6 +27,7 @@ public class InstanceMethodAsFunction : IFunction
     }
 
     public bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -37,7 +38,7 @@ public class InstanceMethodAsFunction : IFunction
             descriptor = default;
             return false;
         }
-        if (!resultTypeConstraints.IsCompatible(Descriptor.ResultType))
+        if (!resultTypeConstraints.IsCompatible(Descriptor.ResultType, util))
         {
             descriptor = default;
             return false;
@@ -51,7 +52,7 @@ public class InstanceMethodAsFunction : IFunction
         {
             var constraints = argumentTypeConstraints[i];
             var type = Descriptor.ArgumentTypes[i];
-            if (!constraints.IsCompatible(type))
+            if (!constraints.IsCompatible(type, util))
             {
                 descriptor = default;
                 return false;

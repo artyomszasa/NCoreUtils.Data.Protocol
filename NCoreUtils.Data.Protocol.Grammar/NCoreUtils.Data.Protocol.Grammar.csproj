@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
     <NetStandardImplicitPackageVersion>2.0.3</NetStandardImplicitPackageVersion>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <Antlr4UseCSharpGenerator>True</Antlr4UseCSharpGenerator>
@@ -26,9 +26,5 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="6.0.0" />
-    <!--
-    <PackageReference Include="Microsoft.NETCore.Targets" Version="3.1.0" />
-    -->
   </ItemGroup>
 </Project>

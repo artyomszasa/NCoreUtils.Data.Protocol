@@ -57,15 +57,16 @@ public struct Substitution : IEquatable<Substitution>
 }
 
 public partial record TypeInferenceContext(
+    IDataUtils Util,
     ImmutableDictionary<TypeUid, TypeVariable> Types,
     ImmutableDictionary<TypeUid, ImmutableHashSet<Substitution>> Substitutions
 );
 
-public partial record TypeInferenceContext
-{
-    public static TypeInferenceContext Empty { get; } = new(
-        ImmutableDictionary<TypeUid, TypeVariable>.Empty,
-        ImmutableDictionary<TypeUid, ImmutableHashSet<Substitution>>.Empty
-    );
-}
+// public partial record TypeInferenceContext
+// {
+//     public static TypeInferenceContext Empty { get; } = new(
+//         ImmutableDictionary<TypeUid, TypeVariable>.Empty,
+//         ImmutableDictionary<TypeUid, ImmutableHashSet<Substitution>>.Empty
+//     );
+// }
 

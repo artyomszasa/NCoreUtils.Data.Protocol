@@ -15,6 +15,7 @@ public sealed class PropertyAsFunction : IFunction
         => Descriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
 
     public bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -22,8 +23,8 @@ public sealed class PropertyAsFunction : IFunction
     {
         if (StringComparer.InvariantCultureIgnoreCase.Equals(name, Descriptor.Name)
             && argumentTypeConstraints.Count == 1
-            && argumentTypeConstraints[0].IsCompatible(Descriptor.ArgumentTypes[0])
-            && resultTypeConstraints.IsCompatible(Descriptor.ResultType))
+            && argumentTypeConstraints[0].IsCompatible(Descriptor.ArgumentTypes[0], util)
+            && resultTypeConstraints.IsCompatible(Descriptor.ResultType, util))
         {
             descriptor = Descriptor;
             return true;
@@ -32,7 +33,7 @@ public sealed class PropertyAsFunction : IFunction
         return false;
     }
 
-    public FunctionMatch MatchFunction(Expression expression)
+    public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {
         if (expression is MemberExpression m
             && m.Expression is not null

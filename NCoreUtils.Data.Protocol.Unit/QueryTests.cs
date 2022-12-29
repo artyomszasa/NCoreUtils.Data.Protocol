@@ -32,6 +32,8 @@ public class QueryTests
 
     private static readonly IDataQueryParser qparser = new DefaultDataQueryParser();
 
+    private static readonly PortableDataUtils utils = new PortableDataUtils(GeneratedContext.Singleton);
+
     private static ServiceProviderAndScope CreateInMemoryDataExecutor(out InMemoryDataExecutor executor, Dictionary<string, object> data)
     {
         var serviceProvider = new ServiceCollection()
@@ -52,7 +54,7 @@ public class QueryTests
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -72,7 +74,7 @@ public class QueryTests
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -92,7 +94,7 @@ public class QueryTests
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -111,7 +113,7 @@ public class QueryTests
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<BaseEntity>(provider)
@@ -133,7 +135,7 @@ public class QueryTests
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -168,7 +170,7 @@ public class QueryTests
             }}
         });
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         var some = new DirectQuery<Item>(provider)
@@ -201,7 +203,7 @@ public class QueryTests
             }}
         });
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         Assert.Equal(10, DirectQuery.Create<Item>(provider).CountAsync(default).Result);
@@ -265,7 +267,7 @@ public class QueryTests
             }}
         });
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(new CommonFunctions.StringLength()),
+            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
             executor: executor
         );
         Assert.Equal(10, DirectQuery.Create<Item>(provider).Count());

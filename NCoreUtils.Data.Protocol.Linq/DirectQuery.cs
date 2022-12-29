@@ -9,11 +9,11 @@ namespace NCoreUtils.Data.Protocol.Linq
 {
     public static class DirectQuery
     {
-        public static Query<T> Create<T>(QueryProvider provider) => new DirectQuery<T>(provider);
+        public static Query<T> Create<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(QueryProvider provider) => new DirectQuery<T>(provider);
     }
 
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    internal class DirectQuery<T> : Query<T>
+    internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : Query<T>
     {
         public Lambda? Filter { get; }
 

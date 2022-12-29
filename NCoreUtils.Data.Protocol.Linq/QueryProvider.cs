@@ -124,7 +124,7 @@ namespace NCoreUtils.Data.Protocol.Linq
             return (TResult)(object)result!;
         }
 
-        static Query CreateDerivedQuery<TBase, TDerived>(Query source)
+        static Query CreateDerivedQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TBase, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TDerived>(Query source)
         {
             if (source is null)
             {

@@ -9,19 +9,6 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 /// </summary>
 public struct TypeVariable
 {
-    public struct ConstraintedType
-    {
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        public static implicit operator Type(ConstraintedType ctype)
-            => ctype.Type ?? throw new InvalidOperationException("Trying to get type from uninitialized container.");
-
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        public Type? Type { get; }
-
-        public ConstraintedType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
-            => Type = type;
-    }
-
     public static TypeVariable Empty { get; } = new(TypeConstraints.Empty);
 
     public static TypeVariable Boolean { get; } = new(typeof(bool));
@@ -31,10 +18,6 @@ public struct TypeVariable
     public static TypeVariable Nullable { get; } = new(TypeConstraints.Nullable);
 
     public static TypeVariable Lambda { get; } = new(TypeConstraints.Lambda);
-
-    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Only used internally.")]
-    internal static TypeVariable UncheckedType(Type type)
-        => new(type);
 
     public static TypeVariable HasMember(CaseInsensitive memberName)
         => new(TypeConstraints.HasMember(memberName));
@@ -48,7 +31,6 @@ public struct TypeVariable
 
     private readonly TypeConstraints? _constraints;
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     public Type? Type { get; }
 
     public TypeConstraints? Constraints
@@ -67,7 +49,7 @@ public struct TypeVariable
         get => Type is not null;
     }
 
-    public TypeVariable([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
+    public TypeVariable(Type type)
     {
         Type = type;
         _constraints = default;
@@ -79,22 +61,11 @@ public struct TypeVariable
         _constraints = constraints;
     }
 
-    // public T Match<T>(
-    //     Func<Type, T> visitType,
-    //     Func<TypeConstraints, T> visitConstraints)
-    // {
-    //     if (Type is not null)
-    //     {
-    //         return visitType(Type);
-    //     }
-    //     return visitConstraints(Constraints ?? TypeConstraints.Empty);
-    // }
-
-    public bool TryGetExactType(out ConstraintedType type)
+    public bool TryGetExactType([MaybeNullWhen(false)] out Type type)
     {
         if (Type is not null)
         {
-            type = new(Type);
+            type = Type;
             return true;
         }
         type = default;

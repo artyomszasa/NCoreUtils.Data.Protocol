@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using NCoreUtils.Data.Protocol.Internal;
+using NCoreUtils.Data.Protocol.TypeInference;
 
 namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
-public sealed class CollectionAny : CollectionOperationWithLambda<CollectionAnyDescriptor>
+public sealed class CollectionAny : CollectionOperationWithLambda
 {
     private static readonly MethodInfo _genericMethodDefinition;
 
@@ -22,10 +22,10 @@ public sealed class CollectionAny : CollectionOperationWithLambda<CollectionAnyD
 
     protected override string DefaultName => Names.Some;
 
-    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026",
-        Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
-    protected override CollectionAnyDescriptor CreateDescriptorFor(Type itemType)
-        => (CollectionAnyDescriptor)Activator.CreateInstance(typeof(CollectionAnyDescriptor<>).MakeGenericType(itemType), false)!;
+    public CollectionAny() : base(CollectionAnyUid) { }
+
+    protected override IFunctionDescriptor CreateDescriptorFor(IDataUtils util, Type itemType)
+        => new CollectionAnyDescriptor(util.GetEnumerableAnyMethod(itemType));
 
     protected override bool MatchName(string name)
         => StringComparer.InvariantCultureIgnoreCase.Equals(Names.Some, name)

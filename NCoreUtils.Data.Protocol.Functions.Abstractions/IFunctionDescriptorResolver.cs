@@ -18,6 +18,7 @@ public interface IFunctionDescriptorResolver
     /// <c>true</c> if the function has been resolved, <c>false</c> otherwise.
     /// </returns>
     bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -25,11 +26,12 @@ public interface IFunctionDescriptorResolver
     );
 
     IFunctionDescriptor ResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
         Func<IFunctionDescriptor> next)
-        => TryResolveFunction(name, resultTypeConstraints, argumentTypeConstraints, out var descriptor)
+        => TryResolveFunction(util, name, resultTypeConstraints, argumentTypeConstraints, out var descriptor)
             ? descriptor
             : next();
 }

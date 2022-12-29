@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.Linq
 {
     public interface IDataQueryExecutor
     {
-        IAsyncEnumerable<T> ExecuteEnumerationAsync<T>(
+        IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
             string target,
             Ast.Node? filter = default,
             Ast.Node? sortBy = default,
@@ -30,7 +31,7 @@ namespace NCoreUtils.Data.Protocol.Linq
         /// <typeparam name="TSource">Type of the source entity.</typeparam>
         /// <typeparam name="TResult">Type of the result.</typeparam>
         /// <returns>Reduction result.</returns>
-        Task<TResult> ExecuteReductionAsync<TSource, TResult>(
+        Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
             string target,
             string reduction,
             Ast.Node? filter = default,

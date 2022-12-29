@@ -8,7 +8,7 @@ namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
 public sealed class DateTimeOffsetFun : IFunction
 {
-    public FunctionMatch MatchFunction(Expression expression)
+    public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {
         if (expression.Type != typeof(DateTimeOffset))
         {
@@ -19,7 +19,7 @@ public sealed class DateTimeOffsetFun : IFunction
             return new(
                 Names.DateTimeOffset,
                 new Expression[] {
-                    Expression.Constant(value.UtcTicks, typeof(long))
+                    utils.CreateBoxedConstant(typeof(long), value.UtcTicks)
                 }
             );
         }
@@ -55,7 +55,7 @@ public sealed class DateTimeOffsetFun : IFunction
                 return new(
                     Names.DateTimeOffset,
                     new Expression[] {
-                        Expression.Constant(constantValue.UtcTicks, typeof(long))
+                        utils.CreateBoxedConstant(typeof(long), constantValue.UtcTicks)
                     }
                 );
             }
@@ -64,6 +64,7 @@ public sealed class DateTimeOffsetFun : IFunction
     }
 
     public bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -71,8 +72,8 @@ public sealed class DateTimeOffsetFun : IFunction
     {
         if (StringComparer.InvariantCultureIgnoreCase.Equals(name, Names.DateTimeOffset)
             && argumentTypeConstraints.Count == 1
-            && argumentTypeConstraints[0].IsCompatible<long>()
-            && resultTypeConstraints.IsCompatible<DateTimeOffset>())
+            && argumentTypeConstraints[0].IsCompatible<long>(util)
+            && resultTypeConstraints.IsCompatible<DateTimeOffset>(util))
         {
             descriptor = DateTimeOffsetDescriptor.Singleton;
             return true;

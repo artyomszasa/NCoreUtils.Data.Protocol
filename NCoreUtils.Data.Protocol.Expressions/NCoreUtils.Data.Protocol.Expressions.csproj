@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions.Abstractions\NCoreUtils.Data.Protocol.Functions.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.Extensions.Expressions" Version="6.0.1" />
-    <PackageReference Include="NCoreUtils.Linq.Abstractions" Version="6.0.0" />
+    <PackageReference Include="NCoreUtils.Extensions.Expressions" Version="7.0.0" />
+    <PackageReference Include="NCoreUtils.Linq.Abstractions" Version="7.0.0" />
   </ItemGroup>
 </Project>

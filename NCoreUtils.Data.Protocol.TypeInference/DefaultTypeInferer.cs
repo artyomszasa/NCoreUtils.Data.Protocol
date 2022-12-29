@@ -8,13 +8,19 @@ namespace NCoreUtils.Data.Protocol;
 
 public class DefaultTypeInferer : ITypeInferrer
 {
+    public IDataUtils Util { get; }
+
     public IPropertyResolver PropertyResolver { get; }
 
     public IFunctionDescriptorResolver FunctionResolver { get; }
 
-    public DefaultTypeInferer(IFunctionDescriptorResolver functionResolver, IPropertyResolver? propertyResolver = default)
+    public DefaultTypeInferer(
+        IDataUtils util,
+        IFunctionDescriptorResolver functionResolver,
+        IPropertyResolver? propertyResolver = default)
     {
-        PropertyResolver = propertyResolver ?? DefaultPropertyResolver.Singleton;
+        Util = util ?? throw new ArgumentNullException(nameof(util));
+        PropertyResolver = propertyResolver ?? DefaultPropertyResolver.For(util);
         FunctionResolver = functionResolver ?? throw new ArgumentNullException(nameof(functionResolver));
     }
 
@@ -24,7 +30,7 @@ public class DefaultTypeInferer : ITypeInferrer
     public virtual Lambda<Type> InferTypes([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType, Lambda expression)
     {
         var typedExpression = (Lambda<TypeUid>)Helpers.Idfy(expression);
-        var initialContext = Helpers.CollectIds(typedExpression);
+        var initialContext = Helpers.CollectIds(Util, typedExpression);
         var context = initialContext.CollectConstraintsRoot(rootType, PropertyResolver, FunctionResolver, typedExpression, out var lambda);
         return (Lambda<Type>)lambda.Resolve(CreateResolver(context));
     }

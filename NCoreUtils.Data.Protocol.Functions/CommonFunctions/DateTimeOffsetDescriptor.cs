@@ -16,6 +16,7 @@ public sealed class DateTimeOffsetDescriptor : IFunctionDescriptor
         .Add(typeof(long))
         .Build();
 
+    // FIXME
     private static readonly ConstructorInfo _dateTimeOffsetCtor = typeof(DateTimeOffset)
 #if NET6_0_OR_GREATER
         .GetConstructor(BindingFlags.Instance | BindingFlags.Public, new [] { typeof(long), typeof(TimeSpan) })

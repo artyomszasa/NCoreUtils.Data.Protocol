@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -30,7 +31,7 @@ public class ReparseTests
     {
         var serviceProvider = new ServiceCollection()
             .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
-            .AddDataQueryServices()
+            .AddDataQueryServices(GeneratedContext.Singleton)
             .AddDataQueryClientServices()
             .BuildServiceProvider(true);
         var scope = serviceProvider.CreateScope();
@@ -50,11 +51,11 @@ public class ReparseTests
     }
 
     [Theory]
-    // [InlineData(typeof(int), "e => includes(array(1,2,3), e)")]
-    // [InlineData(typeof(string), "e => includes(array(\"1\",\"2\",\"3\"), e)")]
-    // [InlineData(typeof(AOrB), "e => includes(array(\"A\",\"B\"), e)")]
+    [InlineData(typeof(int), "e => includes(array(1,2,3), e)")]
+    [InlineData(typeof(string), "e => includes(array(\"1\",\"2\",\"3\"), e)")]
+    [InlineData(typeof(AOrB), "e => includes(array(\"A\",\"B\"), e)")]
     [InlineData(typeof(Item), "e => includes(array(1,2,3), e.Num) && e.Str = \"xxx\"")]
-    public void ArrayOfTests(Type itemType, string raw)
+    public void ArrayOfTests([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type itemType, string raw)
     {
         using var _ = CreateExpressionBuilderAndParser(out var ebuilder, out var eparser);
         var expression = ebuilder.BuildExpression(itemType, raw, out var ast);

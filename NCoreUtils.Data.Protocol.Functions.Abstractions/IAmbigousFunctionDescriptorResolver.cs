@@ -8,6 +8,7 @@ public interface IAmbigousFunctionDescriptorResolver : IFunctionDescriptorResolv
     /// <summary>
     /// Attempt to resolve all potentially compatible functions based on the specified parameters.
     /// </summary>
+    /// <param name="util">Utility implementation.</param>
     /// <param name="name">Function name.</param>
     /// <param name="resultTypeConstraints">Deducted type or type constraints of the return type.</param>
     /// <param name="argumentTypeConstraints">Deducted types or type constraints of the argument types.</param>
@@ -16,6 +17,7 @@ public interface IAmbigousFunctionDescriptorResolver : IFunctionDescriptorResolv
     /// <c>true</c> if at least one potentially compatible function has been resolved, <c>false</c> otherwise.
     /// </returns>
     bool TryResolveAllMatchingFunctions(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,

@@ -2,11 +2,12 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using NCoreUtils.Memory;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public abstract class Node : IEquatable<Node>, IEmplaceable<Node>
+public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
 {
     private sealed class HashVisitor : INodeRefVisitor<int, ImmutableDictionary<UniqueString, int>, int>
     {
@@ -93,27 +94,35 @@ public abstract class Node : IEquatable<Node>, IEmplaceable<Node>
             _ => false
         };
 
+    [DebuggerStepThrough]
     public static Lambda Lambda(Identifier arg, Node body)
         => new(arg, body);
 
+    [DebuggerStepThrough]
     public static Binary Binary(Node left, BinaryOperation operation, Node right)
         => new(left, operation, right);
 
+    [DebuggerStepThrough]
     public static Call Call(string name, IReadOnlyList<Node> arguments)
         => new(name, arguments);
 
+    [DebuggerStepThrough]
     public static Call Call(string name, params Node[] arguments)
         => Call(name, (IReadOnlyList<Node>)arguments);
 
+    [DebuggerStepThrough]
     public static Member Member(Node instance, string memberName)
         => new(instance, memberName);
 
+    [DebuggerStepThrough]
     public static Constant Constant(string? rawValue)
         => new(rawValue);
 
+    [DebuggerStepThrough]
     public static Identifier Identifier(UniqueString value)
         => new(value);
 
+    [DebuggerStepThrough]
     internal Node() { }
 
     internal abstract void Accept(NodeExtensions.EmplaceVisitor visitor, bool complex, ref SpanBuilder builder);
@@ -138,21 +147,23 @@ public abstract class Node : IEquatable<Node>, IEmplaceable<Node>
     }
 
     public override string ToString()
-    {
-        var requiredSize = this.CalculateStringifiedSize();
-        var buffer = ArrayPool<char>.Shared.Rent(requiredSize);
-        try
-        {
-            var size = this.EmplaceTo(buffer);
-            return buffer.AsSpan()[..size].ToString();
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(buffer);
-        }
-    }
+        => this.ToStringUsingArrayPool();
 
     #region emplaceable
+
+    public int GetEmplaceBufferSize()
+        => this.CalculateStringifiedSize();
+
+#if !NET6_0_OR_GREATER
+    bool ISpanEmplaceable.TryGetEmplaceBufferSize(out int minimumBufferSize)
+    {
+        minimumBufferSize = this.CalculateStringifiedSize();
+        return true;
+    }
+
+    bool ISpanEmplaceable.TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider? provider)
+        => TryEmplace(destination, out charsWritten);
+#endif
 
     public int Emplace(Span<char> span)
     {
@@ -175,6 +186,9 @@ public abstract class Node : IEquatable<Node>, IEmplaceable<Node>
         used = default;
         return false;
     }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+        => ToString();
 
     #endregion
 }

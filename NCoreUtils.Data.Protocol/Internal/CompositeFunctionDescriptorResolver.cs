@@ -18,6 +18,7 @@ public class CompositeFunctionDescriptorResolver : IAmbigousFunctionDescriptorRe
     }
 
     public bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -28,7 +29,7 @@ public class CompositeFunctionDescriptorResolver : IAmbigousFunctionDescriptorRe
             var resolver = resolverDescriptor.GetOrCreate(ServiceProvider);
             try
             {
-                if (resolver.TryResolveFunction(name, resultTypeConstraints, argumentTypeConstraints, out var desc))
+                if (resolver.TryResolveFunction(util, name, resultTypeConstraints, argumentTypeConstraints, out var desc))
                 {
                     descriptor = desc;
                     return true;
@@ -44,6 +45,7 @@ public class CompositeFunctionDescriptorResolver : IAmbigousFunctionDescriptorRe
     }
 
     public bool TryResolveAllMatchingFunctions(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -57,9 +59,9 @@ public class CompositeFunctionDescriptorResolver : IAmbigousFunctionDescriptorRe
             {
                 if (resolver is IAmbigousFunctionDescriptorResolver ambigousResolver)
                 {
-                    hasMatch |= ambigousResolver.TryResolveAllMatchingFunctions(name, resultTypeConstraints, argumentTypeConstraints, descriptors);
+                    hasMatch |= ambigousResolver.TryResolveAllMatchingFunctions(util, name, resultTypeConstraints, argumentTypeConstraints, descriptors);
                 }
-                else if (resolver.TryResolveFunction(name, resultTypeConstraints, argumentTypeConstraints, out var desc))
+                else if (resolver.TryResolveFunction(util, name, resultTypeConstraints, argumentTypeConstraints, out var desc))
                 {
                     descriptors.Add(desc);
                     hasMatch = true;

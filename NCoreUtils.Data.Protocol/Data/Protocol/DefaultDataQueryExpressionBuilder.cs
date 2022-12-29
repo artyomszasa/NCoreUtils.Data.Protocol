@@ -32,7 +32,7 @@ public class DefaultDataQueryExpressionBuilder : IDataQueryExpressionBuilder
     /// <param name="resolvedExpression">Resolved internal expression.</param>
     /// <returns>LINQ Expression representation of the resolved expression.</returns>
     protected virtual LambdaExpression CreateExpression(Lambda<Type> resolvedExpression)
-        => ExpressionBuilderVisitor.Singleton.VisitLambda(resolvedExpression, Inferrer.PropertyResolver, new NameMap());
+        => ExpressionBuilderVisitor.For(Inferrer.Util).VisitLambda(resolvedExpression, Inferrer.PropertyResolver, new NameMap());
 
     /// <summary>
     /// Parses raw input creating internal expression.

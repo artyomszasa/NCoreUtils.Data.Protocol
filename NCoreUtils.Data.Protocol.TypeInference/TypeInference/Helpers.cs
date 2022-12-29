@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -107,7 +108,7 @@ public static class Helpers
         BinaryOperation.LessThan,
         BinaryOperation.LessThanOrEqual,
         BinaryOperation.Add,
-        BinaryOperation.Substract,
+        BinaryOperation.Subtract,
         BinaryOperation.Multiply,
         BinaryOperation.Divide,
         BinaryOperation.Modulo
@@ -116,7 +117,7 @@ public static class Helpers
     private static HashSet<BinaryOperation> NumericResultOperation { get; } = new()
     {
         BinaryOperation.Add,
-        BinaryOperation.Substract,
+        BinaryOperation.Subtract,
         BinaryOperation.Multiply,
         BinaryOperation.Divide,
         BinaryOperation.Modulo
@@ -135,8 +136,9 @@ public static class Helpers
                 CollectIds
             );
 
-    public static TypeInferenceContext CollectIds(Node<TypeUid> node)
+    public static TypeInferenceContext CollectIds(IDataUtils util, Node<TypeUid> node)
         => new(
+            util,
             CollectIds(ImmutableDictionary<TypeUid, TypeVariable>.Empty, node),
             ImmutableDictionary<TypeUid, ImmutableHashSet<Substitution>>.Empty
         );
@@ -206,9 +208,23 @@ public static class Helpers
 
     private sealed class CollectConstraintsVisitor : ITypedNodeVisitor1Out<TypeUid, TypeInferenceContext, IPropertyResolver, IFunctionDescriptorResolver, Node<TypeUid>, TypeInferenceContext>
     {
-        public static CollectConstraintsVisitor Singleton { get; } = new();
+        private static ConcurrentDictionary<IDataUtils, CollectConstraintsVisitor>? _instanceCache;
 
-        private CollectConstraintsVisitor() { }
+        private static Func<IDataUtils, CollectConstraintsVisitor>? _instanceFactory;
+
+        private static ConcurrentDictionary<IDataUtils, CollectConstraintsVisitor> InstanceCache
+            => _instanceCache ??= new();
+
+        private static Func<IDataUtils, CollectConstraintsVisitor> InstanceFactory
+            => _instanceFactory ??= static util => new(util);
+
+        public static CollectConstraintsVisitor For(IDataUtils util)
+            => (InstanceCache).GetOrAdd(util, InstanceFactory);
+
+        private IDataUtils Util { get; }
+
+        private CollectConstraintsVisitor(IDataUtils util)
+            => Util = util ?? throw new ArgumentNullException(nameof(util));
 
         public TypeInferenceContext VisitBinary(
             Binary<TypeUid> binary,
@@ -258,7 +274,7 @@ public static class Helpers
                     // FIXME: pool
                     var newArgumentTypeConstraints = newArguments.MapToArray(arg => ctx1.GetAllConstraints(arg.Type));
                     // If function have not been resolved using inherited attributes retry with gained attributes
-                    desc = functionResolver.ResolveFunction(functionName, newResultTypeConstraints, newArgumentTypeConstraints);
+                    desc = functionResolver.ResolveFunction(ctx.Util, functionName, newResultTypeConstraints, newArgumentTypeConstraints);
                     if (desc is null)
                     {
                         // If function still could not be resolved with both inherited and gained attributes --> try next
@@ -323,8 +339,8 @@ public static class Helpers
                             return Exn.LambdaArgumentExpected(i, desc);
                         }
                         ctx1 = ctx1
-                            .ApplyConstraint(lambda.Arg.Type, TypeVariable.UncheckedType(genericArgType))
-                            .ApplyConstraint(lambda.Body.Type, TypeVariable.UncheckedType(genericResType));
+                            .ApplyConstraint(lambda.Arg.Type, new TypeVariable(genericArgType))
+                            .ApplyConstraint(lambda.Body.Type, new TypeVariable(genericResType));
                     }
                 }
                 return ctx1;
@@ -350,9 +366,9 @@ public static class Helpers
             var descCandidates = new List<IFunctionDescriptor>();
             if (functionResolver is IAmbigousFunctionDescriptorResolver ambigousFunctionResolver)
             {
-                ambigousFunctionResolver.TryResolveAllMatchingFunctions(udesc.Name, resultTypeConstraints, argumentTypeConstraints, descCandidates);
+                ambigousFunctionResolver.TryResolveAllMatchingFunctions(Util, udesc.Name, resultTypeConstraints, argumentTypeConstraints, descCandidates);
             }
-            else if (functionResolver.TryResolveFunction(udesc.Name, resultTypeConstraints, argumentTypeConstraints, out var desc))
+            else if (functionResolver.TryResolveFunction(Util, udesc.Name, resultTypeConstraints, argumentTypeConstraints, out var desc))
             {
                 descCandidates.Add(desc);
             }
@@ -453,5 +469,5 @@ public static class Helpers
         => ctx
             .ApplyConstraint(node.Arg.Type, new(rootType))
             .PullDownConstraints(PullDownConstraintsVisitor.Singleton, propertyResolver, node)
-            .CollectConstraints(CollectConstraintsVisitor.Singleton, propertyResolver, functionResolver, node, out result);
+            .CollectConstraints(CollectConstraintsVisitor.For(ctx.Util), propertyResolver, functionResolver, node, out result);
 }

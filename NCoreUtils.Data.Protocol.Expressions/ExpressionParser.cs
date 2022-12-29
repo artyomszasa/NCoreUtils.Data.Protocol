@@ -20,31 +20,34 @@ public class ExpressionParser
         { ExpressionType.OrElse,             BinaryOperation.OrElse },
         { ExpressionType.AndAlso,            BinaryOperation.AndAlso },
         { ExpressionType.Add,                BinaryOperation.Add },
-        { ExpressionType.Subtract,           BinaryOperation.Substract },
+        { ExpressionType.Subtract,           BinaryOperation.Subtract },
         { ExpressionType.Multiply,           BinaryOperation.Multiply },
         { ExpressionType.Divide,             BinaryOperation.Divide },
         { ExpressionType.Modulo,             BinaryOperation.Modulo }
     };
 
-    protected static bool IsNullableHasValue(MemberExpression expression)
+    protected IDataUtils Utils { get; }
+
+    protected IFunctionMatcher FunctionMatcher { get; }
+
+    public ExpressionParser(IDataUtils utils, IFunctionMatcher functionMatcher)
+    {
+        Utils = utils ?? throw new ArgumentNullException(nameof(utils));
+        FunctionMatcher = functionMatcher ?? throw new ArgumentNullException(nameof(functionMatcher));
+    }
+
+    protected bool IsNullableHasValue(MemberExpression expression)
         => expression.Member.Name == nameof(Nullable<int>.HasValue)
             && expression.Expression is not null
-            && expression.Expression.Type.IsGenericType
-            && expression.Expression.Type.GetGenericTypeDefinition() == typeof(Nullable<>);
+            && Utils.IsNullable(expression.Type);
 
-    protected static Constant CreateConstant(object? value)
+    protected Constant CreateConstant(Type type, object? value)
         => value switch
         {
             null => Node.Constant(null),
             string s => Node.Constant(s),
-            IConvertible c => Node.Constant(c.ToString(CultureInfo.InvariantCulture)),
-            object any => Node.Constant(any.ToString())
+            object any => Node.Constant(Utils.Stringify(type, value))
         };
-
-    protected IFunctionMatcher FunctionMatcher { get; }
-
-    public ExpressionParser(IFunctionMatcher functionMatcher)
-        => FunctionMatcher = functionMatcher ?? throw new ArgumentNullException(nameof(functionMatcher));
 
     protected virtual Node VisitMember(MemberExpression node, UniqueStringMap ctx, IFunctionMatcher functionMatcher)
     {
@@ -98,7 +101,7 @@ public class ExpressionParser
             //         rawItemValue = itemValue.ToString();
             //     }
             // }
-            var rawItemValue = itemValue?.ToString();
+            var rawItemValue = Utils.Stringify(expression.Type, itemValue);
             return Node.Constant(rawItemValue);
         }
         throw new NotSupportedException($"Unsupported binary operation {expression.NodeType}.");
@@ -138,7 +141,7 @@ public class ExpressionParser
     protected virtual Node Visit(Expression expression, UniqueStringMap ctx, IFunctionMatcher functionMatcher)
     {
         // function call may match any node.
-        var match = functionMatcher.MatchFunction(expression);
+        var match = functionMatcher.MatchFunction(Utils, expression);
         if (match.IsSuccess)
         {
             return Node.Call(match.Name, match.Arguments.MapToArray(node => Visit(node, ctx, functionMatcher)));
@@ -146,7 +149,7 @@ public class ExpressionParser
         // check if can be handled as constant
         if (expression.TryExtractInstance(out var instance))
         {
-            return CreateConstant(instance);
+            return CreateConstant(expression.Type, instance);
         }
         // visit by type
         return expression switch

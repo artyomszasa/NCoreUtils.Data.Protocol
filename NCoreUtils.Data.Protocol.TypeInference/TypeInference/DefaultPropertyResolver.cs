@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
@@ -9,12 +8,11 @@ public class DefaultPropertyResolver : IPropertyResolver
 {
     private struct TypeAndPropertyName : IEquatable<TypeAndPropertyName>
     {
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
         public Type Type { get; }
 
         public string PropertyName { get; }
 
-        public TypeAndPropertyName([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type, string propertyName)
+        public TypeAndPropertyName(Type type, string propertyName)
         {
             Type = type;
             PropertyName = propertyName;
@@ -30,33 +28,42 @@ public class DefaultPropertyResolver : IPropertyResolver
             => HashCode.Combine(Type, PropertyName);
     }
 
-    private static ConcurrentDictionary<TypeAndPropertyName, IProperty?> Cache { get; } = new();
+    private static ConcurrentDictionary<IDataUtils, DefaultPropertyResolver>? _instanceCache;
 
-    private static Func<TypeAndPropertyName, IProperty?> Factory { get; } = GetProperty;
+    private static Func<IDataUtils, DefaultPropertyResolver>? _instanceFactory;
 
-    public static DefaultPropertyResolver Singleton { get; } = new DefaultPropertyResolver();
+    public static ConcurrentDictionary<IDataUtils, DefaultPropertyResolver> InstanceCache
+        => _instanceCache ??= new();
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Argument type has proper annotations in TryResolveProperty.")]
-    private static IProperty? GetProperty(TypeAndPropertyName args)
-    {
-        var prop = args.Type.GetProperty(args.PropertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy);
-        return prop is null ? default : new DefaultProperty(prop);
-    }
+    public static Func<IDataUtils, DefaultPropertyResolver> InstanceFactory
+        => _instanceFactory ??= static util => new(util);
 
-    private DefaultPropertyResolver() { }
+    public static DefaultPropertyResolver For(IDataUtils util)
+        => InstanceCache.GetOrAdd(util, InstanceFactory);
+
+    private ConcurrentDictionary<TypeAndPropertyName, IProperty> Cache { get; } = new();
+
+    public IDataUtils Util { get; }
+
+    private DefaultPropertyResolver(IDataUtils util)
+        => Util = util ?? throw new ArgumentNullException(nameof(util));
 
     public bool TryResolveProperty(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type instanceType,
+        Type instanceType,
         string propertyName,
         [MaybeNullWhen(false)] out IProperty property)
     {
-        var prop = Cache.GetOrAdd(new(instanceType, propertyName), Factory);
-        if (prop is null)
+        if (Cache.TryGetValue(new(instanceType, propertyName), out var prop))
         {
-            property = default;
-            return false;
+            property = prop;
+            return true;
         }
-        property = prop;
-        return true;
+        if (Util.TryGetProperty(instanceType, propertyName, out var propertyInfo))
+        {
+            property = Cache.GetOrAdd(new(instanceType, propertyName), new DefaultProperty(propertyInfo));
+            return true;
+        }
+        property = default;
+        return false;
     }
 }

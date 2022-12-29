@@ -8,36 +8,38 @@ using NCoreUtils.Data.Protocol.TypeInference;
 
 namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
-public abstract class CollectionOperationWithLambda<TDescriptor> : IFunction
-    where TDescriptor : IFunctionDescriptor
+public abstract class CollectionOperationWithLambda : IFunction
 {
-    private static ConcurrentDictionary<Type, TDescriptor> Cache { get; } = new();
+    protected const int CollectionAllUid = 0;
+
+    protected const int CollectionAnyUid = 1;
+
+    private static ConcurrentDictionary<(int Uid, IDataUtils Util, Type Type), IFunctionDescriptor> Cache { get; } = new();
+
+    private int Uid { get; }
 
     protected abstract MethodInfo GenericMethodDefinition { get; }
 
     protected abstract string DefaultName { get; }
 
-    protected abstract TDescriptor CreateDescriptorFor(Type itemType);
+    protected abstract IFunctionDescriptor CreateDescriptorFor(IDataUtils util, Type itemType);
 
     protected abstract bool MatchName(string name);
 
-    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Delegate))]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "System.Delegate is explicitely preserved.")]
-    [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "System.Delegate is explicitely preserved.")]
-    internal CollectionOperationWithLambda() { }
+    internal CollectionOperationWithLambda(int uid)
+        => Uid = uid;
 
-    private TDescriptor GetOrCreateDescriptorFor(Type itemType)
+    private IFunctionDescriptor GetOrCreateDescriptorFor(IDataUtils util, Type itemType)
     {
-        // avoid allocating Func<,> if the descriptor has already been populated.
-        if (Cache.TryGetValue(itemType, out var descriptor))
+        if (Cache.TryGetValue((Uid, util, itemType), out var descriptor))
         {
             return descriptor;
         }
-        return Cache.GetOrAdd(itemType, CreateDescriptorFor);
-
+        descriptor = CreateDescriptorFor(util, itemType);
+        return Cache.GetOrAdd((Uid, util, itemType), descriptor);
     }
 
-    public FunctionMatch MatchFunction(Expression expression)
+    public FunctionMatch MatchFunction(IDataUtils util, Expression expression)
     {
         if (expression is MethodCallExpression call && call.Method.IsConstructedGenericMethod
             && call.Method.GetGenericMethodDefinition() == GenericMethodDefinition)
@@ -48,6 +50,7 @@ public abstract class CollectionOperationWithLambda<TDescriptor> : IFunction
     }
 
     public bool TryResolveFunction(
+        IDataUtils util,
         string name,
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
@@ -55,9 +58,9 @@ public abstract class CollectionOperationWithLambda<TDescriptor> : IFunction
     {
         if (MatchName(name) && argumentTypeConstraints.Count == 2)
         {
-            if (Helpers.TryGetElementType(argumentTypeConstraints[0], out var elementType))
+            if (argumentTypeConstraints[0].TryGetElementType(util, out var elementType))
             {
-                descriptor = GetOrCreateDescriptorFor(elementType);
+                descriptor = GetOrCreateDescriptorFor(util, elementType);
                 return true;
             }
         }
