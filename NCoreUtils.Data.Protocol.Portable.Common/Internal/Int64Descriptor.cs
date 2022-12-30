@@ -15,6 +15,8 @@ public sealed class Int64Descriptor : ArithmeticTypeDescriptor
         public readonly long Value;
 
         public Box(long value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, long>>)(e => e.Value)).Body).Member;
@@ -75,6 +77,8 @@ public sealed class Int64Descriptor : ArithmeticTypeDescriptor
     public override MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<long>, Func<long, bool>, bool>(Enumerable.Any);
 
     public override MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<long>, Func<long, bool>, bool>(Enumerable.All);
+
+    public override MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<long>, long, bool>(Enumerable.Contains);
 
     public override void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<long>();

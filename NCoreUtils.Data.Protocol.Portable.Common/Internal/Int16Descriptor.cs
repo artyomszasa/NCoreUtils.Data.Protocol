@@ -15,6 +15,8 @@ public sealed class Int16Descriptor : ArithmeticTypeDescriptor
         public readonly short Value;
 
         public Box(short value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, short>>)(e => e.Value)).Body).Member;
@@ -107,6 +109,8 @@ public sealed class Int16Descriptor : ArithmeticTypeDescriptor
     public override MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<short>, Func<short, bool>, bool>(Enumerable.Any);
 
     public override MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<short>, Func<short, bool>, bool>(Enumerable.All);
+
+    public override MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<short>, short, bool>(Enumerable.Contains);
 
     public override void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<short>();

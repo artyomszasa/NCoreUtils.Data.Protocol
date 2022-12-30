@@ -15,6 +15,8 @@ public sealed class NullableInt32Descriptor : ArithmeticTypeDescriptor
         public readonly int? Value;
 
         public Box(int? value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, int?>>)(e => e.Value)).Body).Member;
@@ -94,6 +96,8 @@ public sealed class NullableInt32Descriptor : ArithmeticTypeDescriptor
     public override MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<int?>, Func<int?, bool>, bool>(Enumerable.Any);
 
     public override MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<int?>, Func<int?, bool>, bool>(Enumerable.All);
+
+    public override MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<int?>, int?, bool>(Enumerable.Contains);
 
     public override void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<int?>();

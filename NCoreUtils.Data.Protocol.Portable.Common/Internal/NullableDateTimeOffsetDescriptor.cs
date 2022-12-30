@@ -15,6 +15,8 @@ public sealed class NullableDateTimeOffsetDescriptor : ITypeDescriptor
         public readonly DateTimeOffset? Value;
 
         public Box(DateTimeOffset? value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, DateTimeOffset?>>)(e => e.Value)).Body).Member;
@@ -170,6 +172,8 @@ public sealed class NullableDateTimeOffsetDescriptor : ITypeDescriptor
     public MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<DateTimeOffset?>, Func<DateTimeOffset?, bool>, bool>(Enumerable.Any);
 
     public MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<DateTimeOffset?>, Func<DateTimeOffset?, bool>, bool>(Enumerable.All);
+
+    public MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<DateTimeOffset?>, DateTimeOffset?, bool>(Enumerable.Contains);
 
     public void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<DateTimeOffset?>();

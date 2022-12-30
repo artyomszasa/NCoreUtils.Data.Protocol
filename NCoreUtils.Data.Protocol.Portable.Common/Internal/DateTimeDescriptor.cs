@@ -15,6 +15,8 @@ public sealed class DateTimeDescriptor : ITypeDescriptor
         public readonly DateTime Value;
 
         public Box(DateTime value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, DateTime>>)(e => e.Value)).Body).Member;
@@ -153,6 +155,8 @@ public sealed class DateTimeDescriptor : ITypeDescriptor
     public MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<DateTime>, Func<DateTime, bool>, bool>(Enumerable.Any);
 
     public MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<DateTime>, Func<DateTime, bool>, bool>(Enumerable.All);
+
+    public MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<DateTime>, DateTime, bool>(Enumerable.Contains);
 
     public void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<DateTime>();

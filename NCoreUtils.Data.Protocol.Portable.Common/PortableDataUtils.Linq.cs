@@ -10,4 +10,7 @@ public partial class PortableDataUtils
 
     public MethodInfo GetEnumerableAllMethod(Type type)
         => GetDescriptor(type).EnumerableAllMethod;
+
+    public MethodInfo GetEnumerableContainsMethod(Type type)
+        => GetDescriptor(type).EnumerableContainsMethod;
 }

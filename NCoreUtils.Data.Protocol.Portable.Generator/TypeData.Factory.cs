@@ -69,9 +69,6 @@ public partial class TypeData
         var safeName = GetSafeName(symbol);
         var fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var nullName = symbol.IsValueType ? fullName : $"{fullName}?";
-        var properties = symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct
-            ? GetPropertiesRecursive(symbol)
-            : Array.Empty<IPropertySymbol>();
         var nullableType = symbol is INamedTypeSymbol namedSymbol && SymbolEqualityComparer.Default.Equals(namedSymbol.ConstructedFrom, nullableT)
             ? namedSymbol.TypeArguments[0]
             : default;
@@ -79,6 +76,9 @@ public partial class TypeData
         var argResType = symbol is INamedTypeSymbol named1Symbol && SymbolEqualityComparer.Default.Equals(named1Symbol.ConstructedFrom, func2T)
             ? (named1Symbol.TypeArguments[0], named1Symbol.TypeArguments[1])
             : default((ITypeSymbol Arg, ITypeSymbol Res)?);
+        var properties = (symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct) && elementType is null
+            ? GetPropertiesRecursive(symbol)
+            : Array.Empty<IPropertySymbol>();
         return new TypeData(symbol, name, safeName, fullName, nullName, properties, nullableType, elementType, argResType);
     }
 }

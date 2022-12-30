@@ -14,6 +14,8 @@ public sealed class BooleanDescriptor : ITypeDescriptor
         public readonly bool Value;
 
         public Box(bool value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private static IReadOnlyList<string> Truthy { get; } = new [] { "true", "on", "1" };
@@ -158,6 +160,8 @@ public sealed class BooleanDescriptor : ITypeDescriptor
     public MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<bool>, Func<bool, bool>, bool>(Enumerable.Any);
 
     public MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<bool>, Func<bool, bool>, bool>(Enumerable.All);
+
+    public MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<bool>, bool, bool>(Enumerable.Contains);
 
     public void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<bool>();

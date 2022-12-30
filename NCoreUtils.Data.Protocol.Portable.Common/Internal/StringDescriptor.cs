@@ -14,6 +14,8 @@ public sealed class StringDescriptor : ITypeDescriptor
         public readonly string? Value;
 
         public Box(string? value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, string?>>)(e => e.Value)).Body).Member;
@@ -137,6 +139,8 @@ public sealed class StringDescriptor : ITypeDescriptor
     public MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<string>, Func<string, bool>, bool>(Enumerable.Any);
 
     public MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<string>, Func<string, bool>, bool>(Enumerable.All);
+
+    public MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<string>, string, bool>(Enumerable.Contains);
 
     public void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<string>();

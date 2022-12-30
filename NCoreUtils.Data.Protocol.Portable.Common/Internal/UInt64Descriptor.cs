@@ -15,6 +15,8 @@ public sealed class UInt64Descriptor : ArithmeticTypeDescriptor
         public readonly ulong Value;
 
         public Box(ulong value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, ulong>>)(e => e.Value)).Body).Member;
@@ -75,6 +77,8 @@ public sealed class UInt64Descriptor : ArithmeticTypeDescriptor
     public override MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<ulong>, Func<ulong, bool>, bool>(Enumerable.Any);
 
     public override MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<ulong>, Func<ulong, bool>, bool>(Enumerable.All);
+
+    public override MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<ulong>, ulong, bool>(Enumerable.Contains);
 
     public override void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<ulong>();

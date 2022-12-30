@@ -42,7 +42,7 @@ public sealed class CollectionContains : IFunction
             var elementType = argumentTypeConstraints[1].TryGetExactType(out var exactType) ? (Type)exactType : default;
             if (elementType is not null || argumentTypeConstraints[0].TryGetElementType(util, out elementType))
             {
-                descriptor = CollectionContainsDescriptor.GetOrCreate(elementType);
+                descriptor = CollectionContainsDescriptor.GetOrCreate(util, elementType);
                 return true;
             }
         }

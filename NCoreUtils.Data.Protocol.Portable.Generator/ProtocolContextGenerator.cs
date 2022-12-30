@@ -124,12 +124,14 @@ namespace NCoreUtils.Data.Protocol
     private static void AddTargetType(
         Compilation compilation,
         ITypeSymbol symbol,
+        bool root,
         IDictionary<ITypeSymbol, TypeData> targetTypes,
         INamedTypeSymbol nullableT,
         INamedTypeSymbol enumerableT,
         INamedTypeSymbol func2T,
         HashSet<ITypeSymbol> builtin)
     {
+        if (root)
         {
             // add array type if not already present
             var arraySymbol = compilation.CreateArrayTypeSymbol(symbol);
@@ -142,6 +144,12 @@ namespace NCoreUtils.Data.Protocol
             if (!targetTypes.ContainsKey(enumerableSymbol))
             {
                 targetTypes.Add(enumerableSymbol, TypeData.Create(enumerableSymbol, nullableT, enumerableT, func2T));
+            }
+            // add predicate lambda type
+            var predicateSymbol = func2T.Construct(symbol, compilation.GetSpecialType(SpecialType.System_Boolean));
+            if (!targetTypes.ContainsKey(predicateSymbol))
+            {
+                targetTypes.Add(predicateSymbol, TypeData.Create(predicateSymbol, nullableT, enumerableT, func2T));
             }
         }
         if (builtin.Contains(symbol) || targetTypes.TryGetValue(symbol, out var data))
@@ -156,7 +164,7 @@ namespace NCoreUtils.Data.Protocol
             {
                 if (!data.IsNullable)
                 {
-                    AddTargetType(compilation, nullableT.Construct(symbol), targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, nullableT.Construct(symbol), true, targetTypes, nullableT, enumerableT, func2T, builtin);
                 }
             }
             else
@@ -166,7 +174,7 @@ namespace NCoreUtils.Data.Protocol
                     && baseType.SpecialType != SpecialType.System_Delegate
                     && baseType.SpecialType != SpecialType.System_MulticastDelegate)
                 {
-                    AddTargetType(compilation, baseType, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, baseType, true, targetTypes, nullableT, enumerableT, func2T, builtin);
                 }
             }
             if (data.IsEnumerable)
@@ -175,21 +183,21 @@ namespace NCoreUtils.Data.Protocol
                 if (!SymbolEqualityComparer.Default.Equals(symbol, enumerableSymbol))
                 {
                     // add IEnumerable<T> for types implementing it!
-                    AddTargetType(compilation, enumerableSymbol, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, enumerableSymbol, false, targetTypes, nullableT, enumerableT, func2T, builtin);
                 }
             }
             foreach (var prop in data.Properties)
             {
-                AddTargetType(compilation, prop.Type, targetTypes, nullableT, enumerableT, func2T, builtin);
+                AddTargetType(compilation, prop.Type, true, targetTypes, nullableT, enumerableT, func2T, builtin);
             }
         }
         else if (symbol is IArrayTypeSymbol arraySymbol)
         {
             data = TypeData.Create(symbol, nullableT, enumerableT, func2T);
             targetTypes.Add(symbol, data);
-            AddTargetType(compilation, arraySymbol.ElementType, targetTypes, nullableT, enumerableT, func2T, builtin);
+            AddTargetType(compilation, arraySymbol.ElementType, true, targetTypes, nullableT, enumerableT, func2T, builtin);
             // add IEnumerable<T> for array types!
-            AddTargetType(compilation, enumerableT.Construct(arraySymbol.ElementType), targetTypes, nullableT, enumerableT, func2T, builtin);
+            AddTargetType(compilation, enumerableT.Construct(arraySymbol.ElementType), false, targetTypes, nullableT, enumerableT, func2T, builtin);
         }
         else
         {
@@ -240,7 +248,7 @@ namespace NCoreUtils.Data.Protocol
             {
                 if (type0 is INamedTypeSymbol type)
                 {
-                    AddTargetType(compilation, type, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
+                    AddTargetType(compilation, type, true, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
                 }
                 else
                 {

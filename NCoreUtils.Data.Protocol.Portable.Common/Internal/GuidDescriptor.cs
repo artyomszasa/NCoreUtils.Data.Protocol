@@ -14,6 +14,8 @@ public sealed class GuidDescriptor : ITypeDescriptor
         public readonly Guid Value;
 
         public Box(Guid value) => Value = value;
+
+        public override string ToString() => $"{{{Value}}}";
     }
 
     private FieldInfo BoxValueField { get; } = (FieldInfo)((MemberExpression)((Expression<Func<Box, Guid>>)(e => e.Value)).Body).Member;
@@ -139,6 +141,8 @@ public sealed class GuidDescriptor : ITypeDescriptor
     public MethodInfo EnumerableAnyMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<Guid>, Func<Guid, bool>, bool>(Enumerable.Any);
 
     public MethodInfo EnumerableAllMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<Guid>, Func<Guid, bool>, bool>(Enumerable.All);
+
+    public MethodInfo EnumerableContainsMethod { get; } = ReflectionHelpers.GetMethod<IEnumerable<Guid>, Guid, bool>(Enumerable.Contains);
 
     public void Accept(IDataTypeVisitor visitor)
         => visitor.Visit<Guid>();

@@ -12,6 +12,8 @@ public partial class ReflectionDataUtils
 
     private static MethodInfo? _gAll;
 
+    private static MethodInfo? _gContains;
+
     public MethodInfo GetEnumerableAnyMethod(Type type)
     {
         _gAny ??= ReflectionHelpers.GetMethod<IEnumerable<int>, Func<int, bool>, bool>(Enumerable.Any).GetGenericMethodDefinition();
@@ -22,5 +24,11 @@ public partial class ReflectionDataUtils
     {
         _gAll ??= ReflectionHelpers.GetMethod<IEnumerable<int>, Func<int, bool>, bool>(Enumerable.All).GetGenericMethodDefinition();
         return _gAll.MakeGenericMethod(type);
+    }
+
+    public MethodInfo GetEnumerableContainsMethod(Type type)
+    {
+        _gContains ??= ReflectionHelpers.GetMethod<IEnumerable<int>, int, bool>(Enumerable.Contains).GetGenericMethodDefinition();
+        return _gContains.MakeGenericMethod(type);
     }
 }

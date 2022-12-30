@@ -176,7 +176,11 @@ internal class ProtocolContextEmitter
         private FieldInfo BoxValueField {{ get; }} = (FieldInfo)((MemberExpression)((Expression<global::System.Func<Box, {data.NullName}>>)(e => e.Value)).Body).Member;
 
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        public global::System.Type Type => typeof({data.FullName});
+        public global::System.Type Type
+        {{
+            {(data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL2026\")]" : string.Empty)}
+            get => typeof({data.FullName});
+        }}
 
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
         public global::System.Type ArrayOfType => typeof({data.FullName}[]);
@@ -288,6 +292,8 @@ internal class ProtocolContextEmitter
         public MethodInfo EnumerableAnyMethod {{ get; }} = GetMethod<global::System.Collections.Generic.IEnumerable<{data.FullName}>, global::System.Func<{data.FullName}, bool>, bool>(global::System.Linq.Enumerable.Any);
 
         public MethodInfo EnumerableAllMethod {{ get; }} = GetMethod<global::System.Collections.Generic.IEnumerable<{data.FullName}>, global::System.Func<{data.FullName}, bool>, bool>(global::System.Linq.Enumerable.All);
+
+        public MethodInfo EnumerableContainsMethod {{ get; }} = GetMethod<global::System.Collections.Generic.IEnumerable<{data.FullName}>, {data.FullName}, bool>(global::System.Linq.Enumerable.Contains);
 
         public void Accept(global::NCoreUtils.Data.Protocol.Internal.IDataTypeVisitor visitor)
             => visitor.Visit<{data.FullName}>();

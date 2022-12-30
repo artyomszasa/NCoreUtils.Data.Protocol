@@ -2,68 +2,49 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using NCoreUtils.Data.Protocol.Internal;
 using NCoreUtils.Data.Protocol.TypeInference;
 
 namespace NCoreUtils.Data.Protocol.CommonFunctions;
 
-public abstract class CollectionContainsDescriptor : IFunctionDescriptor
+public sealed class CollectionContainsDescriptor : IFunctionDescriptor
 {
-    private static ConcurrentDictionary<Type, CollectionContainsDescriptor> Cache { get; } = new();
+    private static ConcurrentDictionary<(IDataUtils Util, Type ElementType), CollectionContainsDescriptor> Cache { get; } = new();
 
-    private static Func<Type, CollectionContainsDescriptor> Factory { get; } = DoCreate;
+    private static CollectionContainsDescriptor DoCreate(IDataUtils util, Type elementType) => new(
+        methodContains: util.GetEnumerableContainsMethod(elementType),
+        enumerableType: util.Ensure(util.GetEnumerableOfType(elementType)),
+        elementType: util.Ensure(elementType)
+    );
 
-    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026",
-            Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
-    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2070",
-            Justification = "Only types passed by user can appear here therefore they are preserved anyway.")]
-    private static CollectionContainsDescriptor DoCreate(Type itemType)
-        => (CollectionContainsDescriptor)Activator
-            .CreateInstance(typeof(CollectionContainsDescriptor<>).MakeGenericType(itemType), false)!;
-
-    public static CollectionContainsDescriptor GetOrCreate(Type itemType)
-        => Cache.GetOrAdd(itemType, Factory);
-
-    protected abstract MethodInfo MethodContains { get; }
-
-    public Type ResultType
+    public static CollectionContainsDescriptor GetOrCreate(IDataUtils util, Type elementType)
     {
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        get => typeof(bool);
+        if (Cache.TryGetValue((util, elementType), out var descriptor))
+        {
+            return descriptor;
+        }
+        return Cache.GetOrAdd((util, elementType), DoCreate(util, elementType));
     }
 
-    public abstract ReadOnlyConstraintedTypeList ArgumentTypes { get; }
+    private MethodInfo MethodContains { get; }
+
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    public Type ResultType => typeof(bool);
+
+    public ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 
     public string Name => Names.Includes;
 
-    internal CollectionContainsDescriptor() { }
+    internal CollectionContainsDescriptor(
+        MethodInfo methodContains,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type enumerableType,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type elementType)
+    {
+        MethodContains = methodContains;
+        ArgumentTypes = new ReadOnlyConstraintedTypeListBuilder { enumerableType, elementType }.Build();
+    }
 
     public Expression CreateExpression(IReadOnlyList<Expression> arguments)
         => Expression.Call(MethodContains, arguments);
-}
-
-public sealed class CollectionContainsDescriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : CollectionContainsDescriptor
-{
-    private static readonly ReadOnlyConstraintedTypeList _argumentTypes;
-
-    private static readonly MethodInfo _methodContains;
-
-    static CollectionContainsDescriptor()
-    {
-        _argumentTypes = new ReadOnlyConstraintedTypeListBuilder
-        {
-            typeof(IEnumerable<T>),
-            typeof(T)
-        }.Build();
-        _methodContains = ReflectionHelpers.GetMethod<IEnumerable<T>, T, bool>(Enumerable.Contains);
-    }
-
-    protected override MethodInfo MethodContains
-        => _methodContains;
-
-    public override ReadOnlyConstraintedTypeList ArgumentTypes
-        => _argumentTypes;
 }

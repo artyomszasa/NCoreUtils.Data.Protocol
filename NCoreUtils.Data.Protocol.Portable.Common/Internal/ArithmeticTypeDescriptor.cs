@@ -150,5 +150,7 @@ public abstract class ArithmeticTypeDescriptor : ITypeDescriptor
 
     public abstract MethodInfo EnumerableAllMethod { get; }
 
+    public abstract MethodInfo EnumerableContainsMethod { get; }
+
     public abstract void Accept(IDataTypeVisitor visitor);
 }

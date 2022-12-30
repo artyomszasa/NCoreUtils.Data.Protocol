@@ -77,5 +77,7 @@ public interface ITypeDescriptor
 
     MethodInfo EnumerableAllMethod { get; }
 
+    MethodInfo EnumerableContainsMethod { get; }
+
     void Accept(IDataTypeVisitor visitor);
 }
