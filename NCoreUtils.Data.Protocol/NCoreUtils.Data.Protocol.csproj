@@ -1,14 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
+    <RootNamespace>NCoreUtils</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol.TypeInference\NCoreUtils.Data.Protocol.TypeInference.csproj" />
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Antlr4\NCoreUtils.Data.Protocol.Antlr4.csproj" />
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions\NCoreUtils.Data.Protocol.Functions.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(FxNugetVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(FxNugetVersion)" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Server.Common\NCoreUtils.Data.Protocol.Server.Common.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Client.Common\NCoreUtils.Data.Protocol.Client.Common.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Reflection.Common\NCoreUtils.Data.Protocol.Reflection.Common.csproj" />
   </ItemGroup>
 </Project>

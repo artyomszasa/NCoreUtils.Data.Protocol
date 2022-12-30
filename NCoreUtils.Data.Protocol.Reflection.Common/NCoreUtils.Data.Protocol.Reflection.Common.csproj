@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
+    <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NCoreUtils.Maybe" Version="3.0.0" />
+  </ItemGroup>
+</Project>

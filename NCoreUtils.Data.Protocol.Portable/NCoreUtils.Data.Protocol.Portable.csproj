@@ -1,17 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
-    <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <RootNamespace>NCoreUtils</RootNamespace>
   </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
-    <Compile Remove="CodeAnalysis\**" />
-    <Compile Remove="CompilerServices\**" />
-  </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol\NCoreUtils.Data.Protocol.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Portable.Generator.Internal\NCoreUtils.Data.Protocol.Portable.Generator.Internal.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Server.Common\NCoreUtils.Data.Protocol.Server.Common.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Client.Common\NCoreUtils.Data.Protocol.Client.Common.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Portable.Common\NCoreUtils.Data.Protocol.Portable.Common.csproj" />
   </ItemGroup>
 </Project>

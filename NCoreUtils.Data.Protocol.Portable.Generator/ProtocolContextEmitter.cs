@@ -128,6 +128,10 @@ internal class ProtocolContextEmitter
 
     private string EmitPropertyValues(TypeData data)
     {
+        if (data.IsEnumerable)
+        {
+            return string.Empty;
+        }
         return string.Join(",\n            ", data.Properties.Select(p => EmitPropertyValue(data, p)));
     }
 
@@ -284,6 +288,9 @@ internal class ProtocolContextEmitter
         public MethodInfo EnumerableAnyMethod {{ get; }} = GetMethod<global::System.Collections.Generic.IEnumerable<{data.FullName}>, global::System.Func<{data.FullName}, bool>, bool>(global::System.Linq.Enumerable.Any);
 
         public MethodInfo EnumerableAllMethod {{ get; }} = GetMethod<global::System.Collections.Generic.IEnumerable<{data.FullName}>, global::System.Func<{data.FullName}, bool>, bool>(global::System.Linq.Enumerable.All);
+
+        public void Accept(global::NCoreUtils.Data.Protocol.Internal.IDataTypeVisitor visitor)
+            => visitor.Visit<{data.FullName}>();
     }}";
     }
 
@@ -307,7 +314,7 @@ using System.Reflection;
 
 namespace {@namespace}
 {{
-{visibility} partial class {name} : global::NCoreUtils.Data.Protocol.Internal.IPortableDataContext
+{visibility} partial class {name} : global::NCoreUtils.Data.Protocol.IPortableDataContext
 {{
     {string.Join("\n\n    ", types.Select(EmitDescriptor))}
 
@@ -321,7 +328,7 @@ namespace {@namespace}
         {string.Join(",\n        ", lambdaTypes.Select(data => $"(typeof({data.ArgType}), typeof({data.ResType}), typeof(global::System.Func<{data.ArgType}, {data.ResType}>))"))}
     }};
 
-    public static global::NCoreUtils.Data.Protocol.Internal.IPortableDataContext Singleton {{ get; }} = new {name}();
+    public static global::NCoreUtils.Data.Protocol.IPortableDataContext Singleton {{ get; }} = new {name}();
 
     private static MethodInfo GetMethod<TArg1, TArg2, TResult>(global::System.Func<TArg1, TArg2, TResult> func)
         => func.Method;

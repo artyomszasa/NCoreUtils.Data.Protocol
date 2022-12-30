@@ -17,12 +17,12 @@ public class DataQueryExpressionBuilderTests : IDisposable
     {
         ReflectionServiceProvider = new ServiceCollection()
             .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
-            .AddDataQueryServices()
+            .AddDataQueryServerServices()
             .BuildServiceProvider(true);
 
         PortableServiceProvider = new ServiceCollection()
             .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
-            .AddDataQueryServices(GeneratedContext.Singleton)
+            .AddDataQueryServerServices(GeneratedContext.Singleton)
             .BuildServiceProvider(true);
     }
 

@@ -10,7 +10,8 @@ public sealed class ArrayOfDescriptor : IFunctionDescriptor
 {
     public Type ElementType { get; }
 
-    public Type ResultType { [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] get; }
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    public Type ResultType {  get; }
 
     public ReadOnlyConstraintedTypeList ArgumentTypes { get; }
 

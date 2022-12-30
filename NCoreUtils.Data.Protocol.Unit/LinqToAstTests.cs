@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NCoreUtils.Data.Protocol.Internal;
 using Xunit;
 
 namespace NCoreUtils.Data.Protocol.Unit;
@@ -66,24 +67,37 @@ public class LinqToAstTests
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    private static ServiceProviderAndScope CreateExpressionParser(out ExpressionParser expressionParser)
+    private static ServiceProviderAndScope CreateExpressionParser(IDataUtils util, out ExpressionParser expressionParser)
     {
         var serviceProvider = new ServiceCollection()
             .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
-            .AddDataQueryClientServices()
+            .AddCommonDataQueryClientServices()
+            .AddSingleton(util)
             .BuildServiceProvider(true);
         var scope = serviceProvider.CreateScope();
         expressionParser = scope.ServiceProvider.GetRequiredService<ExpressionParser>();
         return new(serviceProvider, scope);
     }
 
+    private void RunPortableAndReflection(Action<IDataUtils> action)
+    {
+        {
+            var util = new PortableDataUtils(GeneratedContext.Singleton);
+            action(util);
+        }
+        {
+            var util = new ReflectionDataUtils();
+            action(util);
+        }
+    }
+
     [Theory]
     [ClassData(typeof(ArrayOfCases))]
-    public void ArrayOfTests(Expression<Func<Item, bool>> expr, string expected)
+    public void ArrayOfTests(Expression<Func<Item, bool>> expr, string expected) => RunPortableAndReflection(util =>
     {
-        using var _ = CreateExpressionParser(out var parser);
+        using var _ = CreateExpressionParser(util, out var parser);
         var ast = parser.ParseExpression(expr);
         var actual = ast.ToString();
         Assert.Equal(expected, actual);
-    }
+    });
 }

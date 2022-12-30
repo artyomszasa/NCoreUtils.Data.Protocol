@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NCoreUtils.Data.Protocol.Internal;
 using NCoreUtils.Data.Protocol.Linq;
 using NCoreUtils.Linq;
 using Xunit;
@@ -32,13 +33,12 @@ public class QueryTests
 
     private static readonly IDataQueryParser qparser = new DefaultDataQueryParser();
 
-    private static readonly PortableDataUtils utils = new PortableDataUtils(GeneratedContext.Singleton);
-
-    private static ServiceProviderAndScope CreateInMemoryDataExecutor(out InMemoryDataExecutor executor, Dictionary<string, object> data)
+    private static ServiceProviderAndScope CreateInMemoryDataExecutor(IDataUtils util, out InMemoryDataExecutor executor, Dictionary<string, object> data)
     {
         var serviceProvider = new ServiceCollection()
             .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
-            .AddDataQueryServices()
+            .AddCommonDataQueryServerServices()
+            .AddSingleton(util)
             .AddTransient(serviceProvider => new InMemoryDataExecutor(
                 serviceProvider.GetRequiredService<IDataQueryExpressionBuilder>(),
                 data
@@ -49,12 +49,25 @@ public class QueryTests
         return new(serviceProvider, scope);
     }
 
+    private void RunPortableAndReflection(Action<IDataUtils> action)
+    {
+        {
+            var util = new PortableDataUtils(GeneratedContext.Singleton);
+            action(util);
+        }
+        {
+            var util = new ReflectionDataUtils();
+            action(util);
+        }
+    }
+
     [Fact]
-    public void SimpleSelect()
+    public void SimpleSelect() => RunPortableAndReflection(util =>
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -67,14 +80,15 @@ public class QueryTests
         Assert.Equal(qparser.ParseQuery("x => x.num > 32"), data.Filter);
         Assert.Equal(32, data.Offset);
         Assert.Equal(32, data.Limit);
-    }
+    });
 
     [Fact]
-    public void SimpleSelectSync()
+    public void SimpleSelectSync() => RunPortableAndReflection(util =>
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -87,14 +101,15 @@ public class QueryTests
         Assert.Equal(qparser.ParseQuery("x => x.num > 32"), data.Filter);
         Assert.Equal(32, data.Offset);
         Assert.Equal(32, data.Limit);
-    }
+    });
 
     [Fact]
-    public void CompoundSelect()
+    public void CompoundSelect() => RunPortableAndReflection(util =>
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -106,14 +121,15 @@ public class QueryTests
         Assert.Equal(data.Filter, qparser.ParseQuery("x => x.num > 32 && x.num < 128"));
         Assert.Equal(0, data.Offset);
         Assert.Null(data.Limit);
-    }
+    });
 
     [Fact]
-    public void DerivedSelect()
+    public void DerivedSelect() => RunPortableAndReflection(util =>
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<BaseEntity>(provider)
@@ -128,14 +144,15 @@ public class QueryTests
         Assert.Equal("derivedentity", data.Target);
         Assert.Equal(32, data.Offset);
         Assert.Equal(32, data.Limit);
-    }
+    });
 
     [Fact]
-    public void SimpleAny()
+    public void SimpleAny() => RunPortableAndReflection(util =>
     {
         var executor = new TestDataQueryExecutor();
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         var query = new DirectQuery<Item>(provider)
@@ -148,12 +165,12 @@ public class QueryTests
         Assert.Equal(qparser.ParseQuery("x => x.num"), data.SortBy);
         Assert.False(data.IsDescending);
         Assert.Equal("any", data.Reduction, true);
-    }
+    });
 
     [Fact]
-    public void SimpleFirstOrDefault()
+    public void SimpleFirstOrDefault() => RunPortableAndReflection(util =>
     {
-        using var serviceProvider = CreateInMemoryDataExecutor(out var executor, new()
+        using var serviceProvider = CreateInMemoryDataExecutor(util, out var executor, new()
         {
             { typeof(Item).Name.ToLowerInvariant(), new Item[]
             {
@@ -170,7 +187,8 @@ public class QueryTests
             }}
         });
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         var some = new DirectQuery<Item>(provider)
@@ -181,12 +199,12 @@ public class QueryTests
             .FirstOrDefaultAsync(e => e.Num > 10, default)
             .Result;
         Assert.Null(none);
-    }
+    });
 
     [Fact]
-    public void SimpleMappingSelect()
+    public void SimpleMappingSelect() => RunPortableAndReflection(util =>
     {
-        using var serviceProvider = CreateInMemoryDataExecutor(out var executor, new()
+        using var serviceProvider = CreateInMemoryDataExecutor(util, out var executor, new()
         {
             { typeof(Item).Name.ToLowerInvariant(), new Item[]
             {
@@ -203,7 +221,8 @@ public class QueryTests
             }}
         });
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         Assert.Equal(10, DirectQuery.Create<Item>(provider).CountAsync(default).Result);
@@ -245,12 +264,12 @@ public class QueryTests
             .FirstOrDefaultAsync(default)
             .Result;
         Assert.Equal(0, none);
-    }
+    });
 
     [Fact]
-    public void SimpleMappingSelectSync()
+    public void SimpleMappingSelectSync() => RunPortableAndReflection(util =>
     {
-        using var serviceProvider = CreateInMemoryDataExecutor(out var executor, new()
+        using var serviceProvider = CreateInMemoryDataExecutor(util, out var executor, new()
         {
             { typeof(Item).Name.ToLowerInvariant(), new Item[]
             {
@@ -267,7 +286,8 @@ public class QueryTests
             }}
         });
         var provider = new QueryProvider(
-            expressionParser: new ExpressionParser(utils, new CommonFunctions.StringLength()),
+            util: util,
+            expressionParser: new ExpressionParser(util, new CommonFunctions.StringLength()),
             executor: executor
         );
         Assert.Equal(10, DirectQuery.Create<Item>(provider).Count());
@@ -304,5 +324,5 @@ public class QueryTests
             .Select(e => e.Num)
             .FirstOrDefault();
         Assert.Equal(0, none);
-    }
+    });
 }

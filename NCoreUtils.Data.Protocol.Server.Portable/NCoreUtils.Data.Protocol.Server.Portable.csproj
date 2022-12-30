@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Server.Common\NCoreUtils.Data.Protocol.Server.Common.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Portable.Common\NCoreUtils.Data.Protocol.Portable.Common.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
+    <RootNamespace>NCoreUtils</RootNamespace>
+  </PropertyGroup>
+</Project>

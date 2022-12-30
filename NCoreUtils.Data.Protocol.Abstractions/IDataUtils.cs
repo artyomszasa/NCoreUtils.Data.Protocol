@@ -101,4 +101,10 @@ public partial interface IDataUtils
     string? Stringify(Type type, object? value);
 
     #endregion
+
+    #region extenion
+
+    void Accept(Type type, IDataTypeVisitor visitor);
+
+    #endregion
 }

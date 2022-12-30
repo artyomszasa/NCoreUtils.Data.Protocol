@@ -19,7 +19,7 @@ public class ArrayOf : IFunction
         if (utils.IsArray(expression.Type, out var elementType) && expression.TryExtractConstant(out var boxed) && boxed is Array array)
         {
             var length = array.GetLength(0);
-            var arrayExpression = Expression.Constant(array, elementType);
+            var arrayExpression = Expression.Constant(array, expression.Type);
             var arguments = new Expression[length];
             for (var i = 0; i < arguments.Length; ++i)
             {

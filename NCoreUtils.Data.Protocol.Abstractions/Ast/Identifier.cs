@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
@@ -6,6 +7,7 @@ public sealed class Identifier : Node
 {
     public UniqueString Value { get; }
 
+    [DebuggerStepThrough]
     internal Identifier(UniqueString value)
         => Value = value ?? throw new ArgumentNullException(nameof(value));
 
