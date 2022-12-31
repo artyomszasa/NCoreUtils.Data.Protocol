@@ -11,7 +11,7 @@ public static class TypeVariableCheckExtensions
         {
             return util.IsAssignableFrom(candidateType, v.Type);
         }
-        return v.Constraints.Match(util, candidateType, out var _);
+        return v.Constraints.Match(util, candidateType, out _);
     }
 
     public static bool IsCompatible<T>(this TypeVariable v, IDataUtils util)

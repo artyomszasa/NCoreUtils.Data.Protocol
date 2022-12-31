@@ -89,5 +89,5 @@ public class DefaultDataQueryExpressionBuilder : IDataQueryExpressionBuilder
     public LambdaExpression BuildExpression(
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
         string input)
-        => BuildExpression(rootType, input, out var _);
+        => BuildExpression(rootType, input, out _);
 }

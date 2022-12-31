@@ -16,12 +16,12 @@ public partial interface IDataUtils
     bool IsNullable(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsNullable(Type type)
-        => IsNullable(type, out var _);
+        => IsNullable(type, out _);
 
     bool IsMaybe(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsMaybe(Type type)
-        => IsMaybe(type, out var _);
+        => IsMaybe(type, out _);
 
     bool IsOptional(Type type)
         => IsNullable(type) || IsMaybe(type);
@@ -39,17 +39,17 @@ public partial interface IDataUtils
     bool IsLambda(Type type, [MaybeNullWhen(false)] out Type argType, [MaybeNullWhen(false)] out Type resType);
 
     bool IsLambda(Type type)
-        => IsLambda(type, out var _, out var __);
+        => IsLambda(type, out _, out _);
 
     bool IsArray(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsArray(Type type)
-        => IsArray(type, out var _);
+        => IsArray(type, out _);
 
     bool IsEnumerable(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsEnumerable(Type type)
-        => IsEnumerable(type, out var _);
+        => IsEnumerable(type, out _);
 
     /// <summary>
     /// Returns <c>true</c> if type specified by <paramref name="baseType" /> is assignable from

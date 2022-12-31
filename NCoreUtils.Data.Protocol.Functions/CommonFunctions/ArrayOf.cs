@@ -14,9 +14,9 @@ public class ArrayOf : IFunction
         int size)
         => new(arrayType, elementType, size);
 
-    public FunctionMatch MatchEnumerableOrArray(IDataUtils utils, Expression expression)
+    public static FunctionMatch MatchEnumerableOrArray(IDataUtils utils, Expression expression)
     {
-        if (utils.IsArray(expression.Type, out var elementType) && expression.TryExtractConstant(out var boxed) && boxed is Array array)
+        if (utils.IsArray(expression.Type) && expression.TryExtractConstant(out var boxed) && boxed is Array array)
         {
             var length = array.GetLength(0);
             var arrayExpression = Expression.Constant(array, expression.Type);
@@ -27,7 +27,9 @@ public class ArrayOf : IFunction
             }
             return new(Names.Array, arguments);
         }
-        if (utils.IsEnumerable(expression.Type, out elementType) && expression.TryExtractConstant(out boxed) && boxed is System.Collections.IEnumerable enumerable)
+        if (utils.IsEnumerable(expression.Type, out var elementType)
+            && expression.TryExtractConstant(out boxed)
+            && boxed is System.Collections.IEnumerable enumerable)
         {
             var arguments = new List<Expression>();
             foreach (var item in enumerable)

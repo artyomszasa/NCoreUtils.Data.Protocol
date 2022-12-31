@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NCoreUtils.Data.Protocol.Internal;
@@ -67,17 +68,15 @@ public partial class QueryProvider
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private IEnumerable<T> ExecuteEnumerable<T>(Expression expression)
-    {
-        var asyncEnumerable = ExecuteEnumerableAsync<T>(expression);
-        var asyncEnumerator = asyncEnumerable.GetAsyncEnumerator();
-        return asyncEnumerable.ToBlockingEnumerable();
-    }
+        => ExecuteEnumerableAsync<T>(expression).ToBlockingEnumerable();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private T ExecuteReduction<T>(Expression expression)
         => ExecuteAsync<T>(expression, CancellationToken.None).Result;
 
-    private bool TryExtractQueryableType(Expression expression, [MaybeNullWhen(false)] out Type elementType)
+    private static bool TryExtractQueryableType(Expression expression, [MaybeNullWhen(false)] out Type elementType)
     {
         // FIXME: does this work in aot context?
         if (typeof(Query).IsAssignableFrom(expression.Type) && expression is ConstantExpression cexpr)

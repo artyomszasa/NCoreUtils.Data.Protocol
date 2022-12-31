@@ -9,7 +9,7 @@ namespace NCoreUtils.Data.Protocol;
 
 public partial class PortableDataUtils : IDataUtils
 {
-    private static Type _gFunc2 = typeof(Func<,>);
+    private static readonly Type _gFunc2 = typeof(Func<,>);
 
     private static string FormatTypeName(Type type)
     {
@@ -36,7 +36,12 @@ public partial class PortableDataUtils : IDataUtils
             { typeof(ushort), new UInt16Descriptor() },
             { typeof(uint), new UInt32Descriptor() },
             { typeof(ulong), new UInt64Descriptor() },
+            { typeof(short?), new NullableInt16Descriptor() },
             { typeof(int?), new NullableInt32Descriptor() },
+            { typeof(long?), new NullableInt64Descriptor() },
+            { typeof(ushort?), new NullableUInt16Descriptor() },
+            { typeof(uint?), new NullableUInt32Descriptor() },
+            { typeof(ulong?), new NullableUInt64Descriptor() },
             { typeof(string), new StringDescriptor() },
             { typeof(Guid), new GuidDescriptor() },
             { typeof(DateTime), new DateTimeDescriptor() },

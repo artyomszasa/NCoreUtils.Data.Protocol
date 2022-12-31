@@ -152,24 +152,25 @@ namespace NCoreUtils.Data.Protocol
                 targetTypes.Add(predicateSymbol, TypeData.Create(predicateSymbol, nullableT, enumerableT, func2T));
             }
         }
-        if (builtin.Contains(symbol) || targetTypes.TryGetValue(symbol, out var data))
+        if (builtin.Contains(symbol) || targetTypes.TryGetValue(symbol, out _))
         {
             return;
         }
+        TypeData data;
         if (symbol is INamedTypeSymbol namedSymbol)
         {
-            data = TypeData.Create(symbol, nullableT, enumerableT, func2T);
-            targetTypes.Add(symbol, data);
+            data = TypeData.Create(namedSymbol, nullableT, enumerableT, func2T);
+            targetTypes.Add(namedSymbol, data);
             if (data.IsValueType)
             {
                 if (!data.IsNullable)
                 {
-                    AddTargetType(compilation, nullableT.Construct(symbol), true, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, nullableT.Construct(namedSymbol), true, targetTypes, nullableT, enumerableT, func2T, builtin);
                 }
             }
             else
             {
-                var baseType = symbol.BaseType;
+                var baseType = namedSymbol.BaseType;
                 if (baseType is not null && baseType.SpecialType != SpecialType.System_Object
                     && baseType.SpecialType != SpecialType.System_Delegate
                     && baseType.SpecialType != SpecialType.System_MulticastDelegate)
@@ -180,7 +181,7 @@ namespace NCoreUtils.Data.Protocol
             if (data.IsEnumerable)
             {
                 var enumerableSymbol = enumerableT.Construct(data.ElementType);
-                if (!SymbolEqualityComparer.Default.Equals(symbol, enumerableSymbol))
+                if (!SymbolEqualityComparer.Default.Equals(namedSymbol, enumerableSymbol))
                 {
                     // add IEnumerable<T> for types implementing it!
                     AddTargetType(compilation, enumerableSymbol, false, targetTypes, nullableT, enumerableT, func2T, builtin);
@@ -193,8 +194,8 @@ namespace NCoreUtils.Data.Protocol
         }
         else if (symbol is IArrayTypeSymbol arraySymbol)
         {
-            data = TypeData.Create(symbol, nullableT, enumerableT, func2T);
-            targetTypes.Add(symbol, data);
+            data = TypeData.Create(arraySymbol, nullableT, enumerableT, func2T);
+            targetTypes.Add(arraySymbol, data);
             AddTargetType(compilation, arraySymbol.ElementType, true, targetTypes, nullableT, enumerableT, func2T, builtin);
             // add IEnumerable<T> for array types!
             AddTargetType(compilation, enumerableT.Construct(arraySymbol.ElementType), false, targetTypes, nullableT, enumerableT, func2T, builtin);
@@ -259,7 +260,7 @@ namespace NCoreUtils.Data.Protocol
             var emitter = new ProtocolContextEmitter(builtinTypes);
             var name = target.Cds.Identifier.ValueText;
             var @namespace = Helpers.GetSyntaxNamespace(target.Cds) ?? "NCoreUtils.Data.Proto";
-            var visibility = target.SemanticModel.GetTypeInfo(target.Cds).Type?.DeclaredAccessibility switch
+            var visibility = target.SemanticModel.GetDeclaredSymbol(target.Cds)?.DeclaredAccessibility switch
             {
                 null => "public",
                 Accessibility.Internal => "internal",

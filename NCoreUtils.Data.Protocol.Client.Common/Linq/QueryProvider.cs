@@ -26,7 +26,7 @@ public partial class QueryProvider : IAsyncQueryProvider, IProtocolQueryProvider
         Executor = executor ?? throw new ArgumentNullException(nameof(executor));
     }
 
-    private Query CreateDerivedQuery(Query query, Type derivedType)
+    private static Query CreateDerivedQuery(Query query, Type derivedType)
     {
         if (query is null)
         {

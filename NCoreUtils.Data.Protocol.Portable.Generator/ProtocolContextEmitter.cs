@@ -157,6 +157,7 @@ internal class ProtocolContextEmitter
     private string EmitDescriptor(TypeData data)
     {
         return @$"
+    [global::NCoreUtils.Data.Protocol.Internal.DescribedTypeAttribute(typeof({data.FullName}))]
     public sealed class {data.SafeName}Descriptor : global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor
     {{
         {EmitEnumFactory(data)}

@@ -79,7 +79,7 @@ public class LinqToAstTests
         return new(serviceProvider, scope);
     }
 
-    private void RunPortableAndReflection(Action<IDataUtils> action)
+    private static void RunPortableAndReflection(Action<IDataUtils> action)
     {
         {
             var util = new PortableDataUtils(GeneratedContext.Singleton);

@@ -54,11 +54,7 @@ public abstract class ArithmeticTypeDescriptor : ITypeDescriptor
         return false;
     }
 
-    public virtual bool IsNullable([MaybeNullWhen(false)] out Type elementType)
-    {
-        elementType = default;
-        return false;
-    }
+    public abstract bool IsNullable([MaybeNullWhen(false)] out Type elementType);
 
     public abstract object Parse(string value);
 

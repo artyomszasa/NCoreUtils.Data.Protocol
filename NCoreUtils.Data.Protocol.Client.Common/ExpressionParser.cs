@@ -46,7 +46,7 @@ public class ExpressionParser
         {
             null => Node.Constant(null),
             string s => Node.Constant(s),
-            object any => Node.Constant(Utils.Stringify(type, value))
+            object any => Node.Constant(Utils.Stringify(type, any))
         };
 
     protected virtual Node VisitMember(MemberExpression node, UniqueStringMap ctx, IFunctionMatcher functionMatcher)

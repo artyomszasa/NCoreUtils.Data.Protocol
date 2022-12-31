@@ -114,7 +114,7 @@ public partial record TypeConstraints
     {
         foreach (var member in members)
         {
-            if (!util.TryGetProperty(candidateType, member.Value, out var _))
+            if (!util.TryGetProperty(candidateType, member.Value, out _))
             {
                 error = new(
                     candidateType,
