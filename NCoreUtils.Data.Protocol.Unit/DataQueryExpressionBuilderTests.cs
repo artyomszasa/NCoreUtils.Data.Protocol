@@ -143,6 +143,14 @@ public class DataQueryExpressionBuilderTests : IDisposable
     });
 
     [Theory]
+    [InlineData("o => o.num * 2 + o.num * 3", 5, 25)]
+    public void Precedence(string raw, int input, int expected) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var expression = (Expression<Func<Item, int>>)builder.BuildExpression(typeof(Item), raw);
+        Assert.Equal(expected, expression.Compile()(Item.FromInt32(input)));
+    });
+
+    [Theory]
     [InlineData("o => o.str = \"a\"", "a", true)]
     [InlineData("o => o.str = \"a\"", null, false)]
     [InlineData("o => o.str = null", "a", false)]

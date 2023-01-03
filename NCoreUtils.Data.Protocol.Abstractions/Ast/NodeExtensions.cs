@@ -57,7 +57,7 @@ public static class NodeExtensions
             switch (v)
             {
                 case null:
-                    builder.Append(NullLiteral.Length);
+                    builder.Append(NullLiteral);
                     break;
                 case "":
                     builder.Append("\"\"");
@@ -203,9 +203,9 @@ public static class NodeExtensions
             => Node.Member(member.Instance.Accept(this, source, target), member.MemberName);
     }
 
-    internal const string NullLiteral = "null";
+    public const string NullLiteral = "null";
 
-    internal static string GetString(this BinaryOperation operation) => operation switch
+    public static string GetString(this BinaryOperation operation) => operation switch
     {
         BinaryOperation.Equal => "=",
         BinaryOperation.NotEqual => "!=",

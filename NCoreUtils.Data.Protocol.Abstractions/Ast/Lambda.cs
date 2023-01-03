@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
@@ -8,6 +11,7 @@ public sealed class Lambda : Node
 
     public Node Body { get; }
 
+    [DebuggerStepThrough]
     internal Lambda(Identifier arg, Node body)
     {
         Arg = arg ?? throw new ArgumentNullException(nameof(arg));
@@ -19,6 +23,9 @@ public sealed class Lambda : Node
 
     internal override int Accept(NodeExtensions.GetStringifiedSizeVisitor visitor, bool complex)
         => visitor.VisitLambda(this, complex);
+
+    internal override int Accept(NodeHashVisitor visitor, ref int supply, ImmutableDictionary<UniqueString, int> context)
+        => visitor.VisitLambda(this, ref supply, context);
 
     public override TResult Accept<TArg1, TArg2, TResult>(INodeRefVisitor<TArg1, TArg2, TResult> visitor, ref TArg1 arg1, TArg2 arg2)
         where TArg1 : struct

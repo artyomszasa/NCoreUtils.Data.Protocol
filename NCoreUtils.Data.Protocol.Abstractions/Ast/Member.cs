@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
@@ -8,6 +11,7 @@ public sealed class Member : Node
 
     public string MemberName { get; }
 
+    [DebuggerStepThrough]
     internal Member(Node instance, string memberName)
     {
         if (string.IsNullOrWhiteSpace(memberName))
@@ -23,6 +27,9 @@ public sealed class Member : Node
 
     internal override int Accept(NodeExtensions.GetStringifiedSizeVisitor visitor, bool complex)
         => visitor.VisitMember(this, complex);
+
+    internal override int Accept(NodeHashVisitor visitor, ref int supply, ImmutableDictionary<UniqueString, int> context)
+        => visitor.VisitMember(this, ref supply, context);
 
     public override TResult Accept<TArg1, TArg2, TResult>(INodeRefVisitor<TArg1, TArg2, TResult> visitor, ref TArg1 arg1, TArg2 arg2)
         where TArg1 : struct

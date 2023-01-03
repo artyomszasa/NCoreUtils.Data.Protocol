@@ -3,6 +3,9 @@
     <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
   </PropertyGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
+    <Compile Include="..\shared\CodeAnalysis\**" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.csproj" />
   </ItemGroup>

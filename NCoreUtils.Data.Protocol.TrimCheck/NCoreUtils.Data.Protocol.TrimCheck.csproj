@@ -5,13 +5,27 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Portable\NCoreUtils.Data.Protocol.Portable.csproj" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Abstractions" />
-    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Antlr4" />
-    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Functions" />
-    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Functions.Abstractions" />
-    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Grammar" />
-    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.TypeInference" />
-    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.TypeInference.Abstractions" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Client" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Client.Abstractions" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Client.Common" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Client.Portable" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.CombinatorParser" />
     <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Portable" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Portable.Common" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Reflection.Common" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Server" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Server.Abstractions" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Server.Common" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.Server.Portable" />
+    <TrimmerRootAssembly Include="NCoreUtils.Data.Protocol.TypeInference" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Client\NCoreUtils.Data.Protocol.Client.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Client.Portable\NCoreUtils.Data.Protocol.Client.Portable.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Server\NCoreUtils.Data.Protocol.Server.csproj" />
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Server.Portable\NCoreUtils.Data.Protocol.Server.Portable.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

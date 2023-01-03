@@ -17,8 +17,20 @@ using System;
 
 namespace NCoreUtils.Data.Protocol
 {
+    [Flags]
+    internal enum ProtocolGenerationMode
+    {
+        Minimal = 0x00,
+        Predicates = 0x01,
+        Array = 0x02,
+        Enumerable = 0x04,
+        Nullable = 0x08,
+        Optimal = Predicates | Enumerable,
+        Full = Predicates | Array | Enumerable | Nullable
+    }
+
     [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
-    internal sealed class ProtocolEntityAttribute : System.Attribute
+    internal sealed class ProtocolEntityAttribute : Attribute
     {
         public Type EntityType { get; }
 
@@ -29,7 +41,7 @@ namespace NCoreUtils.Data.Protocol
     }
 
     [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
-    internal sealed class ProtocolLambdaAttribute : System.Attribute
+    internal sealed class ProtocolLambdaAttribute : Attribute
     {
         public Type ArgType { get; }
 
@@ -39,6 +51,17 @@ namespace NCoreUtils.Data.Protocol
         {
             ArgType = argType;
             ResType = resType;
+        }
+    }
+
+    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
+    internal sealed class ProtocolGenerationOptionsAttribute : Attribute
+    {
+        public ProtocolGenerationMode Mode { get; }
+
+        public ProtocolGenerationOptionsAttribute(ProtocolGenerationMode mode)
+        {
+            Mode = mode;
         }
     }
 }";
@@ -53,6 +76,25 @@ namespace NCoreUtils.Data.Protocol
         => fullName == "NCoreUtils.Data.Protocol.ProtocolLambdaAttribute"
             || fullName == "global::NCoreUtils.Data.Protocol.ProtocolLambdaAttribute";
 
+    private static bool IsOptsAttribute(string? fullName)
+        => fullName == "NCoreUtils.Data.Protocol.ProtocolGenerationOptionsAttribute"
+            || fullName == "global::NCoreUtils.Data.Protocol.ProtocolGenerationOptionsAttribute";
+
+    private static T GetConstantAsEnum<T>(SemanticModel semanticModel, ExpressionSyntax expression)
+        where T : struct
+    {
+        var svalue = semanticModel.GetConstantValue(expression) switch
+        {
+            { HasValue: true, Value: var value } when value is not null => value.ToString(),
+            _ => throw new InvalidOperationException($"Unable to get constant value from {expression}")
+        };
+        return Enum.TryParse<T>(
+            svalue,
+            out var evalue
+        )   ? evalue
+            : throw new InvalidOperationException($"Unable to convert {svalue} to {typeof(T)}.");
+    }
+
     private ProtocolContextTarget? ReadTarget(GeneratorSyntaxContext ctx, CancellationToken cancellationToken)
     {
         var semanticModel = ctx.SemanticModel;
@@ -60,6 +102,7 @@ namespace NCoreUtils.Data.Protocol
         {
             HashSet<ITypeSymbol>? entityTypes = null;
             HashSet<INamedTypeSymbol>? lambdaTypes = null;
+            var genMode = GenMode.Predicates | GenMode.Enumerable;
             INamedTypeSymbol func2T = semanticModel.Compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get System.Func<,> type.");
             var attributes = cds.AttributeLists.SelectMany(list => list.Attributes);
             foreach (var attribute in attributes)
@@ -112,10 +155,25 @@ namespace NCoreUtils.Data.Protocol
                         (lambdaTypes ??= new(SymbolEqualityComparer.Default)).Add(func2T.Construct(argType, resType));
                     }
                 }
+                else if (IsOptsAttribute(fullName))
+                {
+                    var args = (IReadOnlyList<AttributeArgumentSyntax>?)attribute.ArgumentList?.Arguments ?? Array.Empty<AttributeArgumentSyntax>();
+                    for (var i = 0; i < args.Count; ++i)
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                                genMode = GetConstantAsEnum<GenMode>(semanticModel, args[0].Expression);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
             }
             if (entityTypes is not null || lambdaTypes is not null)
             {
-                return new(semanticModel, cds, entityTypes ?? new(SymbolEqualityComparer.Default), lambdaTypes ?? new(SymbolEqualityComparer.Default));
+                return new(semanticModel, cds, genMode, entityTypes ?? new(SymbolEqualityComparer.Default), lambdaTypes ?? new(SymbolEqualityComparer.Default));
             }
         }
         return default;
@@ -124,6 +182,7 @@ namespace NCoreUtils.Data.Protocol
     private static void AddTargetType(
         Compilation compilation,
         ITypeSymbol symbol,
+        GenMode mode,
         bool root,
         IDictionary<ITypeSymbol, TypeData> targetTypes,
         INamedTypeSymbol nullableT,
@@ -134,22 +193,31 @@ namespace NCoreUtils.Data.Protocol
         if (root)
         {
             // add array type if not already present
-            var arraySymbol = compilation.CreateArrayTypeSymbol(symbol);
-            if (!targetTypes.ContainsKey(arraySymbol))
+            if (mode.HasFlag(GenMode.Array))
             {
-                targetTypes.Add(arraySymbol, TypeData.Create(arraySymbol, nullableT, enumerableT, func2T));
+                var arraySymbol = compilation.CreateArrayTypeSymbol(symbol);
+                if (!targetTypes.ContainsKey(arraySymbol))
+                {
+                    targetTypes.Add(arraySymbol, TypeData.Create(arraySymbol, nullableT, enumerableT, func2T));
+                }
             }
             // add enumerable type if not already present
-            var enumerableSymbol = enumerableT.Construct(symbol);
-            if (!targetTypes.ContainsKey(enumerableSymbol))
+            if (mode.HasFlag(GenMode.Enumerable))
             {
-                targetTypes.Add(enumerableSymbol, TypeData.Create(enumerableSymbol, nullableT, enumerableT, func2T));
+                var enumerableSymbol = enumerableT.Construct(symbol);
+                if (!targetTypes.ContainsKey(enumerableSymbol))
+                {
+                    targetTypes.Add(enumerableSymbol, TypeData.Create(enumerableSymbol, nullableT, enumerableT, func2T));
+                }
             }
             // add predicate lambda type
-            var predicateSymbol = func2T.Construct(symbol, compilation.GetSpecialType(SpecialType.System_Boolean));
-            if (!targetTypes.ContainsKey(predicateSymbol))
+            if (mode.HasFlag(GenMode.Predicates))
             {
-                targetTypes.Add(predicateSymbol, TypeData.Create(predicateSymbol, nullableT, enumerableT, func2T));
+                var predicateSymbol = func2T.Construct(symbol, compilation.GetSpecialType(SpecialType.System_Boolean));
+                if (!targetTypes.ContainsKey(predicateSymbol))
+                {
+                    targetTypes.Add(predicateSymbol, TypeData.Create(predicateSymbol, nullableT, enumerableT, func2T));
+                }
             }
         }
         if (builtin.Contains(symbol) || targetTypes.TryGetValue(symbol, out _))
@@ -163,9 +231,9 @@ namespace NCoreUtils.Data.Protocol
             targetTypes.Add(namedSymbol, data);
             if (data.IsValueType)
             {
-                if (!data.IsNullable)
+                if (!data.IsNullable && mode.HasFlag(GenMode.Nullable))
                 {
-                    AddTargetType(compilation, nullableT.Construct(namedSymbol), true, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, nullableT.Construct(namedSymbol), mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
                 }
             }
             else
@@ -175,7 +243,7 @@ namespace NCoreUtils.Data.Protocol
                     && baseType.SpecialType != SpecialType.System_Delegate
                     && baseType.SpecialType != SpecialType.System_MulticastDelegate)
                 {
-                    AddTargetType(compilation, baseType, true, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, baseType, mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
                 }
             }
             if (data.IsEnumerable)
@@ -184,21 +252,21 @@ namespace NCoreUtils.Data.Protocol
                 if (!SymbolEqualityComparer.Default.Equals(namedSymbol, enumerableSymbol))
                 {
                     // add IEnumerable<T> for types implementing it!
-                    AddTargetType(compilation, enumerableSymbol, false, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, enumerableSymbol, mode, false, targetTypes, nullableT, enumerableT, func2T, builtin);
                 }
             }
             foreach (var prop in data.Properties)
             {
-                AddTargetType(compilation, prop.Type, true, targetTypes, nullableT, enumerableT, func2T, builtin);
+                AddTargetType(compilation, prop.Type, mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
             }
         }
         else if (symbol is IArrayTypeSymbol arraySymbol)
         {
             data = TypeData.Create(arraySymbol, nullableT, enumerableT, func2T);
             targetTypes.Add(arraySymbol, data);
-            AddTargetType(compilation, arraySymbol.ElementType, true, targetTypes, nullableT, enumerableT, func2T, builtin);
+            AddTargetType(compilation, arraySymbol.ElementType, mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
             // add IEnumerable<T> for array types!
-            AddTargetType(compilation, enumerableT.Construct(arraySymbol.ElementType), false, targetTypes, nullableT, enumerableT, func2T, builtin);
+            AddTargetType(compilation, enumerableT.Construct(arraySymbol.ElementType), mode, false, targetTypes, nullableT, enumerableT, func2T, builtin);
         }
         else
         {
@@ -249,7 +317,7 @@ namespace NCoreUtils.Data.Protocol
             {
                 if (type0 is INamedTypeSymbol type)
                 {
-                    AddTargetType(compilation, type, true, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
+                    AddTargetType(compilation, type, target.Mode, true, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
                 }
                 else
                 {

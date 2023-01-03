@@ -1,68 +1,14 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using NCoreUtils.Data.Protocol.Internal;
 using NCoreUtils.Memory;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
 public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
 {
-    private sealed class HashVisitor : INodeRefVisitor<int, ImmutableDictionary<UniqueString, int>, int>
-    {
-        public static HashVisitor Singleton { get; } = new HashVisitor();
-
-        private HashVisitor() { }
-
-        public int VisitBinary(Binary binary, ref int supply, ImmutableDictionary<UniqueString, int> context)
-            => HashCode.Combine(
-                HashTags.Binary,
-                binary.Left.Accept(this, ref supply, context),
-                binary.Operation,
-                binary.Right.Accept(this, ref supply, context)
-            );
-
-        public int VisitCall(Call call, ref int supply, ImmutableDictionary<UniqueString, int> context)
-        {
-            var builder = new HashCode();
-            builder.Add(HashTags.Call);
-            builder.Add(StringComparer.InvariantCultureIgnoreCase.GetHashCode(call.Name));
-            builder.Add(call.Arguments.Count);
-            foreach (var arg in call.Arguments)
-            {
-                builder.Add(arg.Accept(this, ref supply, context));
-            }
-            return builder.ToHashCode();
-        }
-
-        public int VisitConstant(Constant constant, ref int supply, ImmutableDictionary<UniqueString, int> context)
-            => HashCode.Combine(HashTags.Constant, constant.RawValue?.GetHashCode() ?? 0);
-
-        public int VisitIdentifier(Identifier identifier, ref int supply, ImmutableDictionary<UniqueString, int> context)
-            => HashCode.Combine(
-                HashTags.Identifier,
-                context.TryGetValue(identifier.Value, out var id) ? id : identifier.Value.GetHashCode()
-            );
-
-        public int VisitLambda(Lambda lambda, ref int supply, ImmutableDictionary<UniqueString, int> context)
-        {
-            var id = supply++;
-            return HashCode.Combine(
-                HashTags.Lambda,
-                id,
-                lambda.Body.Accept(this, ref supply, context.Add(lambda.Arg.Value, id))
-            );
-        }
-
-        public int VisitMember(Member member, ref int supply, ImmutableDictionary<UniqueString, int> context)
-            => HashCode.Combine(
-                HashTags.Member,
-                member.Instance.Accept(this, ref supply, context),
-                StringComparer.InvariantCultureIgnoreCase.GetHashCode(member.MemberName)
-            );
-    }
-
     private static bool SequenceDeepEq(IReadOnlyList<Node> @as, IReadOnlyList<Node> bs, ImmutableDictionary<UniqueString, UniqueString> context)
     {
         if (@as.Count != bs.Count)
@@ -129,6 +75,8 @@ public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
 
     internal abstract int Accept(NodeExtensions.GetStringifiedSizeVisitor visitor, bool complex);
 
+    internal abstract int Accept(NodeHashVisitor visitor, ref int supply, ImmutableDictionary<UniqueString, int> context);
+
     public abstract TResult Accept<TArg1, TArg2, TResult>(INodeRefVisitor<TArg1, TArg2, TResult> visitor, ref TArg1 arg1, TArg2 arg2)
         where TArg1 : struct;
 
@@ -143,7 +91,7 @@ public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
     public override int GetHashCode()
     {
         var supply = 0;
-        return Accept(HashVisitor.Singleton, ref supply, ImmutableDictionary<UniqueString, int>.Empty);
+        return Accept(NodeHashVisitor.Singleton, ref supply, ImmutableDictionary<UniqueString, int>.Empty);
     }
 
     public override string ToString()

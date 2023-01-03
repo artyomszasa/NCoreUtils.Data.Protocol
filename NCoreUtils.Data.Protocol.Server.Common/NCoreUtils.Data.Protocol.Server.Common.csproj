@@ -4,8 +4,16 @@
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\shared\CommonFunctionNames.cs" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
+    <Compile Include="..\shared\CodeAnalysis\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Antlr4\NCoreUtils.Data.Protocol.Antlr4.csproj" />
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Functions\NCoreUtils.Data.Protocol.Functions.csproj" />
+    -->
+    <ProjectReference Include="..\NCoreUtils.Data.Protocol.CombinatorParser\NCoreUtils.Data.Protocol.CombinatorParser.csproj" />
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.TypeInference\NCoreUtils.Data.Protocol.TypeInference.csproj" />
   </ItemGroup>
   <ItemGroup>

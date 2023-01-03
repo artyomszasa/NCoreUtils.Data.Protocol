@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
@@ -9,6 +12,7 @@ public sealed class Call : Node
 
     public IReadOnlyList<Node> Arguments { get; }
 
+    [DebuggerStepThrough]
     internal Call(string name, IReadOnlyList<Node> arguments)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -24,6 +28,9 @@ public sealed class Call : Node
 
     internal override int Accept(NodeExtensions.GetStringifiedSizeVisitor visitor, bool complex)
         => visitor.VisitCall(this, complex);
+
+    internal override int Accept(NodeHashVisitor visitor, ref int supply, ImmutableDictionary<UniqueString, int> context)
+        => visitor.VisitCall(this, ref supply, context);
 
     public override TResult Accept<TArg1, TArg2, TResult>(INodeRefVisitor<TArg1, TArg2, TResult> visitor, ref TArg1 arg1, TArg2 arg2)
         where TArg1 : struct

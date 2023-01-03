@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using NCoreUtils.Data.Protocol.CommonFunctions;
+using NCoreUtils.Data.Protocol.CommonClientFunctions;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 

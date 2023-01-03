@@ -6,10 +6,29 @@ namespace NCoreUtils.Data.Protocol;
 
 internal class Program
 {
+    private sealed class DummyDisposable : IDisposable
+    {
+        public static DummyDisposable Singleton { get; } = new();
+
+        public void Dispose() { /* noop */ }
+    }
+
+    private sealed class DummyLogger<T> : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+            => DummyDisposable.Singleton;
+
+        public bool IsEnabled(LogLevel logLevel)
+            => false;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        { /* noop */ }
+    }
+
     private static void Main(string[] args)
     {
         using var services = new ServiceCollection()
-            .AddLogging(b => b.ClearProviders().SetMinimumLevel(LogLevel.Debug).AddSimpleConsole(o => o.SingleLine = true))
+            .AddSingleton(typeof(ILogger<>), typeof(DummyLogger<>))
             .AddDataQueryServices(DataQueryContext.Singleton)
             .BuildServiceProvider(true);
         using var scope = services.CreateScope();
