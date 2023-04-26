@@ -45,6 +45,11 @@ public partial class PortableDataUtils : IDataUtils
             { typeof(string), new StringDescriptor() },
             { typeof(Guid), new GuidDescriptor() },
             { typeof(DateTime), new DateTimeDescriptor() },
+            { typeof(DateTime?), new NullableDateTimeDescriptor() },
+#if NET6_0_OR_GREATER
+            { typeof(DateOnly), new DateOnlyDescriptor() },
+            { typeof(DateOnly?), new NullableDateOnlyDescriptor() },
+#endif
             { typeof(DateTimeOffset), new DateTimeOffsetDescriptor() },
             { typeof(DateTimeOffset?), new NullableDateTimeOffsetDescriptor() }
         };

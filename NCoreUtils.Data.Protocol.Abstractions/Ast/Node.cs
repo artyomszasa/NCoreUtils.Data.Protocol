@@ -25,7 +25,7 @@ public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
         return true;
     }
 
-    private static bool DeepEq(Node a, Node b, ImmutableDictionary<UniqueString, UniqueString> context)
+    public static bool DeepEq(Node a, Node b, ImmutableDictionary<UniqueString, UniqueString> context)
         => (a, b) switch
         {
             (Lambda la, Lambda lb) => DeepEq(la.Body, lb.Body, context.Add(la.Arg.Value, lb.Arg.Value)),

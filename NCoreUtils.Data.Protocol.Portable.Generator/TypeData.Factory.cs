@@ -29,8 +29,14 @@ public partial class TypeData
         }
         foreach (var prop in symbol.GetMembers().OfType<IPropertySymbol>())
         {
-            // NOTE: EqualityContract present on records
-            if (prop.DeclaredAccessibility == Accessibility.Public && !prop.IsIndexer && 0 == prop.Parameters.Length && !string.IsNullOrEmpty(prop.Name) && prop.Name != "EqualityContract")
+
+            if (prop.DeclaredAccessibility == Accessibility.Public
+                // NOTE: exclude static properties
+                && !prop.IsStatic
+                // NOTE: exclude indexers
+                && !prop.IsIndexer && 0 == prop.Parameters.Length
+                // NOTE: exclude EqualityContract present on records
+                && !string.IsNullOrEmpty(prop.Name) && prop.Name != "EqualityContract")
             {
                 properties[prop.Name] = prop;
             }

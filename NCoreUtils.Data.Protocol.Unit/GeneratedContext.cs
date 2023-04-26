@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace NCoreUtils.Data.Protocol.Unit;
 
+[ProtocolGenerationOptions(ProtocolGenerationMode.Optimal | ProtocolGenerationMode.Array)]
 [ProtocolEntity(typeof(Func<int, bool>))]
 [ProtocolEntity(typeof(Func<string, bool>))]
 [ProtocolEntity(typeof(Func<DateTimeOffset, bool>))]
@@ -12,6 +13,7 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolEntity(typeof(ItemWithEnum))]
 [ProtocolEntity(typeof(ItemWithNullableInt32))]
 [ProtocolEntity(typeof(ItemWithNullableDateTimeOffset))]
+[ProtocolEntity(typeof(ItemWithNullableDateOnly))]
 [ProtocolEntity(typeof(Item))]
 [ProtocolLambda(typeof(Item), typeof(Func<string, bool>))]
 [ProtocolLambda(typeof(Item), typeof(Func<SubItem, bool>))]

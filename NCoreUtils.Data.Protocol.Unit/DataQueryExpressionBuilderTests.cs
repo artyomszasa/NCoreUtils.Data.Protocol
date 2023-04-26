@@ -209,6 +209,8 @@ public class DataQueryExpressionBuilderTests : IDisposable
     [InlineData("e => e.value <= dateTimeOffset(637767216000000000)", 637767216000000000L, true)]
     [InlineData("e => e.value <= dateTimeOffset(637767216000000000)", 637767215000000000L, true)]
     [InlineData("e => e.value <= dateTimeOffset(637767216000000000)", null, false)]
+    [InlineData("e => e.value = null", null, true)]
+    [InlineData("e => e.value != null", null, false)]
     public void NullableDateTimeOffsetOps(string raw, long? utcTicks, bool expected) => Scoped((IDataQueryExpressionBuilder builder) =>
     {
         var expression = (Expression<Func<ItemWithNullableDateTimeOffset, bool>>)builder.BuildExpression(typeof(ItemWithNullableDateTimeOffset), raw);

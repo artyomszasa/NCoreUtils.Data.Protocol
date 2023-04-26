@@ -36,35 +36,35 @@ public sealed partial class NullableDateTimeOffsetDescriptor : ITypeDescriptor
             ? Expression.NotEqual(self, right)
             : right.Type == typeof(DateTimeOffset)
                 ? Expression.NotEqual(self, Expression.Convert(right, typeof(DateTimeOffset?)))
-                : throw new InvalidOperationException($"Cannot create NotEqual expression from DateTmeOffset? and {right.Type}.");
+                : throw new InvalidOperationException($"Cannot create NotEqual expression from DateTimeOffset? and {right.Type}.");
 
     public Expression CreateGreaterThan(Expression self, Expression right)
         => right.Type == typeof(DateTimeOffset?)
             ? Expression.GreaterThan(self, right)
             : right.Type == typeof(DateTimeOffset)
                 ? Expression.GreaterThan(self, Expression.Convert(right, typeof(DateTimeOffset?)))
-                : throw new InvalidOperationException($"Cannot create GreaterThan expression from DateTmeOffset? and {right.Type}.");
+                : throw new InvalidOperationException($"Cannot create GreaterThan expression from DateTimeOffset? and {right.Type}.");
 
     public Expression CreateGreaterThanOrEqual(Expression self, Expression right)
         => right.Type == typeof(DateTimeOffset?)
             ? Expression.GreaterThanOrEqual(self, right)
             : right.Type == typeof(DateTimeOffset)
                 ? Expression.GreaterThanOrEqual(self, Expression.Convert(right, typeof(DateTimeOffset?)))
-                : throw new InvalidOperationException($"Cannot create GreaterThanOrEqual expression from DateTmeOffset? and {right.Type}.");
+                : throw new InvalidOperationException($"Cannot create GreaterThanOrEqual expression from DateTimeOffset? and {right.Type}.");
 
     public Expression CreateLessThan(Expression self, Expression right)
         => right.Type == typeof(DateTimeOffset?)
             ? Expression.LessThan(self, right)
             : right.Type == typeof(DateTimeOffset)
                 ? Expression.LessThan(self, Expression.Convert(right, typeof(DateTimeOffset?)))
-                : throw new InvalidOperationException($"Cannot create LessThan expression from DateTmeOffset? and {right.Type}.");
+                : throw new InvalidOperationException($"Cannot create LessThan expression from DateTimeOffset? and {right.Type}.");
 
     public Expression CreateLessThanOrEqual(Expression self, Expression right)
         => right.Type == typeof(DateTimeOffset?)
             ? Expression.LessThanOrEqual(self, right)
             : right.Type == typeof(DateTimeOffset)
                 ? Expression.LessThanOrEqual(self, Expression.Convert(right, typeof(DateTimeOffset?)))
-                : throw new InvalidOperationException($"Cannot create LessThanOrEqual expression from DateTmeOffset? and {right.Type}.");
+                : throw new InvalidOperationException($"Cannot create LessThanOrEqual expression from DateTimeOffset? and {right.Type}.");
 
     public Expression CreateAdd(Expression self, Expression right)
         => Expression.Add(self, right);

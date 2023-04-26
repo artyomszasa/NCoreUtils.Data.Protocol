@@ -289,7 +289,7 @@ namespace NCoreUtils.Data.Protocol
             var enumerableT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T)!;
             var func2T = compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get type symbol for System.Func<>.");
 
-            var valuePrimitives = new ITypeSymbol[]
+            var valuePrimitives = new List<ITypeSymbol>
             {
                 compilation.GetSpecialType(SpecialType.System_Boolean),
                 compilation.GetTypeByMetadataName("System.Guid") ?? throw new InvalidOperationException("Unable to get type symbol for System.Guid."),
@@ -305,6 +305,26 @@ namespace NCoreUtils.Data.Protocol
                 compilation.GetSpecialType(SpecialType.System_UInt64),
                 compilation.GetSpecialType(SpecialType.System_DateTime),
             };
+
+            // NOTE: DateOnly is only available on .NET6+
+            var dateOnlyType = compilation.GetTypeByMetadataName("System.DateOnly");
+            if (dateOnlyType is not null)
+            {
+                valuePrimitives.Add(dateOnlyType);
+            }
+
+            // ctx.ReportDiagnostic(Diagnostic.Create(
+            //     descriptor: new DiagnosticDescriptor(
+            //         id: "NCU1000",
+            //         title: "DateOnly",
+            //         messageFormat: "DateOnly is: {0}",
+            //         category: "Protocol",
+            //         defaultSeverity: DiagnosticSeverity.Warning,
+            //         isEnabledByDefault: true
+            //     ),
+            //     location: default,
+            //     dateOnlyType is null ? "missing" : "present"
+            // ));
 
             var builtinTypes = new HashSet<ITypeSymbol>(
                 new ITypeSymbol[] { compilation.GetSpecialType(SpecialType.System_String) }
