@@ -57,7 +57,7 @@ public static class NodeExtensions
             switch (v)
             {
                 case null:
-                    builder.Append(NullLiteral.Length);
+                    builder.Append(NullLiteral);
                     break;
                 case "":
                     builder.Append("\"\"");
