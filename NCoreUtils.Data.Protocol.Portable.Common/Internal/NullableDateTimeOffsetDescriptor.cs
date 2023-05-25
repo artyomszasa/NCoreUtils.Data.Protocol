@@ -67,8 +67,16 @@ public sealed partial class NullableDateTimeOffsetDescriptor : ITypeDescriptor
                 : throw new InvalidOperationException($"Cannot create LessThanOrEqual expression from DateTimeOffset? and {right.Type}.");
 
     public Expression CreateAdd(Expression self, Expression right)
-        => Expression.Add(self, right);
+        => right.Type == typeof(DateTimeOffset?)
+            ? Expression.Add(self, right)
+            : right.Type == typeof(DateTimeOffset)
+                ? Expression.Add(self, Expression.Convert(right, typeof(DateTimeOffset?)))
+                : throw new InvalidOperationException($"Cannot create Add expression from DateTimeOffset? and {right.Type}.");
 
     public Expression CreateSubtract(Expression self, Expression right)
-        => Expression.Subtract(self, right);
+        => right.Type == typeof(DateTimeOffset?)
+            ? Expression.Subtract(self, right)
+            : right.Type == typeof(DateTimeOffset)
+                ? Expression.Subtract(self, Expression.Convert(right, typeof(DateTimeOffset?)))
+                : throw new InvalidOperationException($"Cannot create Add expression from DateTimeOffset? and {right.Type}.");
 }

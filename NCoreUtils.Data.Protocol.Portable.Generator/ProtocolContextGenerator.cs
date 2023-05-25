@@ -284,79 +284,96 @@ namespace NCoreUtils.Data.Protocol
 
         context.RegisterSourceOutput(targets, (ctx, target) =>
         {
-            var compilation = target.SemanticModel.Compilation;
-            var nullableT = compilation.GetSpecialType(SpecialType.System_Nullable_T)!;
-            var enumerableT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T)!;
-            var func2T = compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get type symbol for System.Func<>.");
-
-            var valuePrimitives = new List<ITypeSymbol>
+            try
             {
-                compilation.GetSpecialType(SpecialType.System_Boolean),
-                compilation.GetTypeByMetadataName("System.Guid") ?? throw new InvalidOperationException("Unable to get type symbol for System.Guid."),
-                compilation.GetTypeByMetadataName("System.DateTime") ?? throw new InvalidOperationException("Unable to get type symbol for System.DateTime."),
-                compilation.GetTypeByMetadataName("System.DateTimeOffset") ?? throw new InvalidOperationException("Unable to get type symbol for System.DateTimeOffset."),
-                compilation.GetSpecialType(SpecialType.System_SByte),
-                compilation.GetSpecialType(SpecialType.System_Int16),
-                compilation.GetSpecialType(SpecialType.System_Int32),
-                compilation.GetSpecialType(SpecialType.System_Int64),
-                compilation.GetSpecialType(SpecialType.System_Byte),
-                compilation.GetSpecialType(SpecialType.System_UInt16),
-                compilation.GetSpecialType(SpecialType.System_UInt32),
-                compilation.GetSpecialType(SpecialType.System_UInt64),
-                compilation.GetSpecialType(SpecialType.System_DateTime),
-            };
+                var compilation = target.SemanticModel.Compilation;
+                var nullableT = compilation.GetSpecialType(SpecialType.System_Nullable_T)!;
+                var enumerableT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T)!;
+                var func2T = compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get type symbol for System.Func<>.");
 
-            // NOTE: DateOnly is only available on .NET6+
-            var dateOnlyType = compilation.GetTypeByMetadataName("System.DateOnly");
-            if (dateOnlyType is not null)
-            {
-                valuePrimitives.Add(dateOnlyType);
-            }
-
-            // ctx.ReportDiagnostic(Diagnostic.Create(
-            //     descriptor: new DiagnosticDescriptor(
-            //         id: "NCU1000",
-            //         title: "DateOnly",
-            //         messageFormat: "DateOnly is: {0}",
-            //         category: "Protocol",
-            //         defaultSeverity: DiagnosticSeverity.Warning,
-            //         isEnabledByDefault: true
-            //     ),
-            //     location: default,
-            //     dateOnlyType is null ? "missing" : "present"
-            // ));
-
-            var builtinTypes = new HashSet<ITypeSymbol>(
-                new ITypeSymbol[] { compilation.GetSpecialType(SpecialType.System_String) }
-                    .Concat(valuePrimitives)
-                    .Concat(valuePrimitives.Select(t => nullableT.Construct(t))),
-                SymbolEqualityComparer.Default
-            );
-            var targetTypes = new Dictionary<ITypeSymbol, TypeData>(SymbolEqualityComparer.Default);
-            foreach (var type0 in target.EntityTypes)
-            {
-                if (type0 is INamedTypeSymbol type)
+                var valuePrimitives = new List<ITypeSymbol>
                 {
-                    AddTargetType(compilation, type, target.Mode, true, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
-                }
-                else
+                    compilation.GetSpecialType(SpecialType.System_Boolean),
+                    compilation.GetTypeByMetadataName("System.Guid") ?? throw new InvalidOperationException("Unable to get type symbol for System.Guid."),
+                    compilation.GetTypeByMetadataName("System.DateTime") ?? throw new InvalidOperationException("Unable to get type symbol for System.DateTime."),
+                    compilation.GetTypeByMetadataName("System.DateTimeOffset") ?? throw new InvalidOperationException("Unable to get type symbol for System.DateTimeOffset."),
+                    compilation.GetSpecialType(SpecialType.System_SByte),
+                    compilation.GetSpecialType(SpecialType.System_Int16),
+                    compilation.GetSpecialType(SpecialType.System_Int32),
+                    compilation.GetSpecialType(SpecialType.System_Int64),
+                    compilation.GetSpecialType(SpecialType.System_Byte),
+                    compilation.GetSpecialType(SpecialType.System_UInt16),
+                    compilation.GetSpecialType(SpecialType.System_UInt32),
+                    compilation.GetSpecialType(SpecialType.System_UInt64),
+                    compilation.GetSpecialType(SpecialType.System_DateTime),
+                };
+
+                // NOTE: DateOnly is only available on .NET6+
+                var dateOnlyType = compilation.GetTypeByMetadataName("System.DateOnly");
+                if (dateOnlyType is not null)
                 {
-                    // NOTE: DEBUG
-                    throw new Exception($"not-named type: {type0.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
+                    valuePrimitives.Add(dateOnlyType);
                 }
+
+                // ctx.ReportDiagnostic(Diagnostic.Create(
+                //     descriptor: new DiagnosticDescriptor(
+                //         id: "NCU1000",
+                //         title: "DateOnly",
+                //         messageFormat: "DateOnly is: {0}",
+                //         category: "Protocol",
+                //         defaultSeverity: DiagnosticSeverity.Warning,
+                //         isEnabledByDefault: true
+                //     ),
+                //     location: default,
+                //     dateOnlyType is null ? "missing" : "present"
+                // ));
+
+                var builtinTypes = new HashSet<ITypeSymbol>(
+                    new ITypeSymbol[] { compilation.GetSpecialType(SpecialType.System_String) }
+                        .Concat(valuePrimitives)
+                        .Concat(valuePrimitives.Select(t => nullableT.Construct(t))),
+                    SymbolEqualityComparer.Default
+                );
+                var targetTypes = new Dictionary<ITypeSymbol, TypeData>(SymbolEqualityComparer.Default);
+                foreach (var type0 in target.EntityTypes)
+                {
+                    if (type0 is INamedTypeSymbol type)
+                    {
+                        AddTargetType(compilation, type, target.Mode, true, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
+                    }
+                    else
+                    {
+                        // NOTE: DEBUG
+                        throw new Exception($"not-named type: {type0.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
+                    }
+                }
+                var emitter = new ProtocolContextEmitter(builtinTypes);
+                var name = target.Cds.Identifier.ValueText;
+                var @namespace = Helpers.GetSyntaxNamespace(target.Cds) ?? "NCoreUtils.Data.Proto";
+                var visibility = target.SemanticModel.GetDeclaredSymbol(target.Cds)?.DeclaredAccessibility switch
+                {
+                    null => "public",
+                    Accessibility.Internal => "internal",
+                    _ => "public"
+                };
+                IEnumerable<(string ArgType, string ResType)> lambdas = target.LambdaTypes
+                    .Select(l => (l.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), l.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+                ctx.AddSource($"{name}.g.cs", SourceText.From(emitter.EmitContext(@namespace, name, visibility, targetTypes.Values, lambdas, ctx.ReportDiagnostic), Utf8));
             }
-            var emitter = new ProtocolContextEmitter(builtinTypes);
-            var name = target.Cds.Identifier.ValueText;
-            var @namespace = Helpers.GetSyntaxNamespace(target.Cds) ?? "NCoreUtils.Data.Proto";
-            var visibility = target.SemanticModel.GetDeclaredSymbol(target.Cds)?.DeclaredAccessibility switch
+            catch (Exception exn)
             {
-                null => "public",
-                Accessibility.Internal => "internal",
-                _ => "public"
-            };
-            IEnumerable<(string ArgType, string ResType)> lambdas = target.LambdaTypes
-                .Select(l => (l.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), l.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
-            ctx.AddSource($"{name}.g.cs", SourceText.From(emitter.EmitContext(@namespace, name, visibility, targetTypes.Values, lambdas), Utf8));
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "NCU0000",
+                        "An exception was thrown by the ProtocolContextGenerator generator",
+                        "An exception was thrown by the ProtocolContextGenerator generator: '{0}'",
+                        "ProtocolContextGenerator",
+                        DiagnosticSeverity.Error,
+                        isEnabledByDefault: true),
+                    Location.None,
+                    exn.ToString()
+                ));
+            }
         });
     }
 }

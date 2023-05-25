@@ -149,7 +149,7 @@ public ref struct Parser
         return ExprFollow(node, in ctx);
     }
 
-    private Node Expr(in ParserContext ctx)
+    public Node Expr(in ParserContext ctx)
     {
         Node left;
         switch (Input.Next)

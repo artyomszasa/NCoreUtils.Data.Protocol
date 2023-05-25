@@ -7,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.Generator;
 
 public partial class TypeData : IEquatable<TypeData>
 {
-    private (ITypeSymbol Arg, ITypeSymbol Res)? ArgResType;
+    private (ITypeSymbol Arg, ITypeSymbol Res, string ArgFullName, string ResFullName)? ArgRes;
 
     public ITypeSymbol Symbol { get; }
 
@@ -28,13 +28,18 @@ public partial class TypeData : IEquatable<TypeData>
 
     public ITypeSymbol? ElementType { get; }
 
+    public string? ElementTypeFullName { get; }
+
     [MemberNotNullWhen(true, nameof(ElementType))]
+    [MemberNotNullWhen(true, nameof(ElementTypeFullName))]
     public bool IsArray { get; }
 
     [MemberNotNullWhen(true, nameof(ElementType))]
+    [MemberNotNullWhen(true, nameof(ElementTypeFullName))]
     public bool IsEnumerable { get; }
 
     [MemberNotNullWhen(true, nameof(ElementType))]
+    [MemberNotNullWhen(true, nameof(ElementTypeFullName))]
     public bool IsArrayOrEnumerable => IsArray || IsEnumerable;
 
     public bool IsEnum => Symbol.TypeKind == TypeKind.Enum;
@@ -44,13 +49,19 @@ public partial class TypeData : IEquatable<TypeData>
     [MemberNotNullWhen(true, nameof(NullableType))]
     public bool IsNullable => NullableType is not null;
 
-    public ITypeSymbol? LambdaArgType => ArgResType?.Arg;
+    public ITypeSymbol? LambdaArgType => ArgRes?.Arg;
 
-    public ITypeSymbol? LambdaResType => ArgResType?.Res;
+    public string? LambdaArgTypeFullName => ArgRes?.ArgFullName;
+
+    public ITypeSymbol? LambdaResType => ArgRes?.Res;
+
+    public string? LambdaResTypeFullName => ArgRes?.ResFullName;
 
     [MemberNotNullWhen(true, nameof(LambdaArgType))]
+    [MemberNotNullWhen(true, nameof(LambdaArgTypeFullName))]
     [MemberNotNullWhen(true, nameof(LambdaResType))]
-    public bool IsLambda => ArgResType.HasValue;
+    [MemberNotNullWhen(true, nameof(LambdaResTypeFullName))]
+    public bool IsLambda => ArgRes.HasValue;
 
     private TypeData(
         ITypeSymbol symbol,
@@ -73,16 +84,22 @@ public partial class TypeData : IEquatable<TypeData>
         if (symbol is IArrayTypeSymbol arraySymbol)
         {
             ElementType = arraySymbol.ElementType;
+            ElementTypeFullName = ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             IsArray = true;
             IsEnumerable = false;
         }
         else
         {
             ElementType = elementType;
+            ElementTypeFullName = elementType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             IsArray = false;
             IsEnumerable = elementType is not null;
         }
-        ArgResType = argResType;
+        if (argResType.HasValue)
+        {
+            var (arg, res) = argResType.Value;
+            ArgRes = (arg, res, arg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), res.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        }
     }
 
     public bool Equals([NotNullWhen(true)] TypeData? other)

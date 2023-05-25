@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -11,6 +13,8 @@ internal class ProtocolContextEmitter
         public bool Value { get; set; }
     }
 
+    private static Cache<TypeData, string> DescriptorEmitCache { get; } = new(TypeDataEmitEqualityComparer.Singleton);
+
     private HashSet<ITypeSymbol> BuiltInTypes { get; }
 
     public ProtocolContextEmitter(HashSet<ITypeSymbol> builtInTypes)
@@ -18,7 +22,7 @@ internal class ProtocolContextEmitter
         BuiltInTypes = builtInTypes;
     }
 
-    private string EmitEnumFactory(TypeData data)
+    private static string EmitEnumFactory(TypeData data)
     {
         if (data.IsEnum)
         {
@@ -61,7 +65,7 @@ internal class ProtocolContextEmitter
         }
     }
 
-    private string EmitCreateEqualMethodBodyForValueType(TypeData data)
+    private static string EmitCreateEqualMethodBodyForValueType(TypeData data)
     {
         return @$"right.Type.Equals(typeof({data.FullName}))
             ? Expression.Equal(self, right)
@@ -70,7 +74,7 @@ internal class ProtocolContextEmitter
                 : throw new global::System.InvalidOperationException($""Cannot create AndAlso expression from {data.FullName} and {{right.Type}}."")";
     }
 
-    private string EmitCreateEqualMethodBodyForNullableType(TypeData data, ITypeSymbol t)
+    private static string EmitCreateEqualMethodBodyForNullableType(TypeData data, ITypeSymbol t)
     {
         return @$"right.Type.Equals(typeof({data.FullName}))
             ? Expression.Equal(self, right)
@@ -79,14 +83,14 @@ internal class ProtocolContextEmitter
                 : throw new global::System.InvalidOperationException($""Cannot create AndAlso expression from {data.FullName} and {{right.Type}}."")";
     }
 
-    private string EmitCreateEqualMethodBody(TypeData data) => data switch
+    private static string EmitCreateEqualMethodBody(TypeData data) => data switch
     {
         { IsValueType: true, IsNullable: true, NullableType: var t } => EmitCreateEqualMethodBodyForNullableType(data, t),
         { IsValueType: true } => EmitCreateEqualMethodBodyForValueType(data),
         _ => $"Expression.Equal(self, right)"
     };
 
-    private string EmitCreateNotEqualMethodBodyForValueType(TypeData data)
+    private static string EmitCreateNotEqualMethodBodyForValueType(TypeData data)
     {
         return @$"right.Type.Equals(typeof({data.FullName}))
             ? Expression.NotEqual(self, right)
@@ -95,7 +99,7 @@ internal class ProtocolContextEmitter
                 : throw new global::System.InvalidOperationException($""Cannot create AndAlso expression from {data.FullName} and {{right.Type}}."")";
     }
 
-    private string EmitCreateNotEqualMethodBodyForNullableType(TypeData data, ITypeSymbol t)
+    private static string EmitCreateNotEqualMethodBodyForNullableType(TypeData data, ITypeSymbol t)
     {
         return @$"right.Type.Equals(typeof({data.FullName}))
             ? Expression.NotEqual(self, right)
@@ -104,14 +108,14 @@ internal class ProtocolContextEmitter
                 : throw new global::System.InvalidOperationException($""Cannot create AndAlso expression from {data.FullName} and {{right.Type}}."")";
     }
 
-    private string EmitCreateNotEqualMethodBody(TypeData data) => data switch
+    private static string EmitCreateNotEqualMethodBody(TypeData data) => data switch
     {
         { IsValueType: true, IsNullable: true, NullableType: var t } => EmitCreateNotEqualMethodBodyForNullableType(data, t),
         { IsValueType: true } => EmitCreateNotEqualMethodBodyForValueType(data),
         _ => $"Expression.NotEqual(self, right)"
     };
 
-    private string EmitIsAssignableToBody(TypeData data)
+    private static string EmitIsAssignableToBody(TypeData data)
     {
         var bases = new List<ITypeSymbol> { data.Symbol };
         var baseType = data.Symbol.BaseType;
@@ -123,10 +127,10 @@ internal class ProtocolContextEmitter
         return string.Join(" || ", bases.Select(t => $" typeof({t.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}).Equals(baseType)"));
     }
 
-    private string EmitPropertyValue(TypeData data, IPropertySymbol p)
+    private static string EmitPropertyValue(TypeData data, IPropertySymbol p)
         => $"(PropertyInfo)((MemberExpression)((Expression<global::System.Func<{data.FullName}, {p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>>)(e => e!.{p.Name}!)).Body).Member";
 
-    private string EmitPropertyValues(TypeData data)
+    private static string EmitPropertyValues(TypeData data)
     {
         if (data.IsEnumerable)
         {
@@ -135,7 +139,7 @@ internal class ProtocolContextEmitter
         return string.Join(",\n            ", data.Properties.Select(p => EmitPropertyValue(data, p)));
     }
 
-    private string EmitStringify(TypeData data)
+    private static string EmitStringify(TypeData data)
     {
         if (data.IsEnum)
         {
@@ -154,7 +158,7 @@ internal class ProtocolContextEmitter
             => $"{data.FullName}.{field.Name} => \"{field.Name}\"";
     }
 
-    private string EmitDescriptor(TypeData data)
+    private static string EmitDescriptorImpl(TypeData data)
     {
         return @$"
     [global::NCoreUtils.Data.Protocol.Internal.DescribedTypeAttribute(typeof({data.FullName}))]
@@ -205,20 +209,20 @@ internal class ProtocolContextEmitter
 
         public bool IsEnumerable([MaybeNullWhen(false)] out global::System.Type elementType)
         {{
-            elementType = {(data.IsEnumerable ? $"typeof({data.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" : "default")};
+            elementType = {(data.IsEnumerable ? $"typeof({data.ElementTypeFullName})" : "default")};
             return {(data.IsEnumerable ? "true" : "false")};
         }}
 
         public bool IsArray([MaybeNullWhen(false)] out global::System.Type elementType)
         {{
-            elementType = {(data.IsArray ? $"typeof({data.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" : "default")};
+            elementType = {(data.IsArray ? $"typeof({data.ElementTypeFullName})" : "default")};
             return {(data.IsArray ? "true" : "false")};
         }}
 
         public bool IsLambda([MaybeNullWhen(false)] out global::System.Type argType, [MaybeNullWhen(false)] out global::System.Type resType)
         {{
-            argType = {(data.IsLambda ? $"typeof({data.LambdaArgType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" : "default")};
-            resType = {(data.IsLambda ? $"typeof({data.LambdaResType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" : "default")};
+            argType = {(data.IsLambda ? $"typeof({data.LambdaArgTypeFullName})" : "default")};
+            resType = {(data.IsLambda ? $"typeof({data.LambdaResTypeFullName})" : "default")};
             return {(data.IsLambda ? "true" : "false")};
         }}
 
@@ -301,20 +305,31 @@ internal class ProtocolContextEmitter
     }}";
     }
 
-    public string EmitContext(string @namespace, string name, string visibility, IEnumerable<TypeData> types0, IEnumerable<(string ArgType, string ResType)> lambdaTypes0)
+    private static string EmitDescriptor(TypeData data)
+        => DescriptorEmitCache.GetOrAdd(data, EmitDescriptorImpl);
+
+    public string EmitContext(
+        string @namespace,
+        string name,
+        string visibility,
+        IEnumerable<TypeData> types0,
+        IEnumerable<(string ArgType, string ResType)> lambdaTypes0,
+        Action<Diagnostic> reportDiagnostic)
     {
-        var types = types0.ToList();
-        var lambdaTypes = new HashSet<(string ArgType, string ResType)>(lambdaTypes0);
-        foreach (var data in types)
+        try
         {
-            foreach (var bitype in BuiltInTypes)
+            var types = types0.ToList();
+            var lambdaTypes = new HashSet<(string ArgType, string ResType)>(lambdaTypes0);
+            foreach (var data in types)
             {
-                var bitname = bitype.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                lambdaTypes.Add((data.FullName, bitname));
-                lambdaTypes.Add((bitname, data.FullName));
+                foreach (var bitype in BuiltInTypes)
+                {
+                    var bitname = bitype.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                    lambdaTypes.Add((data.FullName, bitname));
+                    lambdaTypes.Add((bitname, data.FullName));
+                }
             }
-        }
-        return $@"#nullable enable
+            return $@"#nullable enable
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -345,5 +360,21 @@ namespace {@namespace}
     public global::System.Collections.Generic.IEnumerable<(global::System.Type ArgType, global::System.Type ResType, global::System.Type LambdaType)> GetLambdaTypes() => _lambdaTypes;
 }}
 }}";
+        }
+        catch (Exception exn)
+        {
+            reportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "NCU0000",
+                    "An exception was thrown by the ProtocolContextEmitter generator",
+                    "An exception was thrown by the ProtocolContextEmitter generator: '{0}'",
+                    "ProtocolContextEmitter",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                Location.None,
+                exn.ToString()
+            ));
+            return exn.ToString();
+        }
     }
 }
