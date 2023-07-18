@@ -143,7 +143,7 @@ public ref struct Parser
                 Input.Advance();
                 node = Node.Binary(left, BinaryOperation.OrElse, Expr(ctx.WithPrecedence(PrecedenceContext.Boolean)));
                 break;
-            case var tok:
+            default:
                 return left;
         }
         return ExprFollow(node, in ctx);

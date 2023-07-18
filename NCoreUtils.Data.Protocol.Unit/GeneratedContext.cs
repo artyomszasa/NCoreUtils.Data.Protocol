@@ -20,4 +20,5 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolEntity(typeof(DerivedEntity))]
 [ProtocolEntity(typeof(List<int>))]
 [ProtocolEntity(typeof(HashSet<int>))]
+[ProtocolEntity(typeof(int[]))]
 public partial class GeneratedContext { }

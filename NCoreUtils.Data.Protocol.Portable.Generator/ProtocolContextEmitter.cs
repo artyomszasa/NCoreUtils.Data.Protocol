@@ -17,9 +17,15 @@ internal class ProtocolContextEmitter
 
     private HashSet<ITypeSymbol> BuiltInTypes { get; }
 
-    public ProtocolContextEmitter(HashSet<ITypeSymbol> builtInTypes)
+    private INamedTypeSymbol EnumerableT { get; }
+
+    private INamedTypeSymbol ReadOnlyListT { get; }
+
+    public ProtocolContextEmitter(HashSet<ITypeSymbol> builtInTypes, INamedTypeSymbol enumerableT, INamedTypeSymbol readOnlyListT)
     {
         BuiltInTypes = builtInTypes;
+        EnumerableT = enumerableT;
+        ReadOnlyListT = readOnlyListT;
     }
 
     private static string EmitEnumFactory(TypeData data)
@@ -115,7 +121,7 @@ internal class ProtocolContextEmitter
         _ => $"Expression.NotEqual(self, right)"
     };
 
-    private static string EmitIsAssignableToBody(TypeData data)
+    private static string EmitIsAssignableToBody(TypeData data, INamedTypeSymbol enumerableT, INamedTypeSymbol readonlyListT)
     {
         var bases = new List<ITypeSymbol> { data.Symbol };
         var baseType = data.Symbol.BaseType;
@@ -123,6 +129,14 @@ internal class ProtocolContextEmitter
         {
             bases.Add(baseType);
             baseType = baseType.BaseType;
+        }
+        if (data.IsArray)
+        {
+            bases.Add(readonlyListT.Construct(data.ElementType));
+        }
+        if (data.IsArrayOrEnumerable)
+        {
+            bases.Add(enumerableT.Construct(data.ElementType));
         }
         return string.Join(" || ", bases.Select(t => $" typeof({t.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}).Equals(baseType)"));
     }
@@ -158,7 +172,7 @@ internal class ProtocolContextEmitter
             => $"{data.FullName}.{field.Name} => \"{field.Name}\"";
     }
 
-    private static string EmitDescriptorImpl(TypeData data)
+    private static string EmitDescriptorImpl(TypeData data, INamedTypeSymbol enumerableT, INamedTypeSymbol readonlyListT)
     {
         return @$"
     [global::NCoreUtils.Data.Protocol.Internal.DescribedTypeAttribute(typeof({data.FullName}))]
@@ -205,7 +219,7 @@ internal class ProtocolContextEmitter
             => throw new global::System.NotSupportedException();
 
         public bool IsAssignableTo(global::System.Type baseType)
-            => {EmitIsAssignableToBody(data)};
+            => {EmitIsAssignableToBody(data, enumerableT, readonlyListT)};
 
         public bool IsEnumerable([MaybeNullWhen(false)] out global::System.Type elementType)
         {{
@@ -305,8 +319,8 @@ internal class ProtocolContextEmitter
     }}";
     }
 
-    private static string EmitDescriptor(TypeData data)
-        => DescriptorEmitCache.GetOrAdd(data, EmitDescriptorImpl);
+    private static string EmitDescriptor(TypeData data, INamedTypeSymbol enumerableT, INamedTypeSymbol readonlyListT)
+        => DescriptorEmitCache.GetOrAdd(data, d => EmitDescriptorImpl(d, enumerableT, readonlyListT));
 
     public string EmitContext(
         string @namespace,
@@ -338,7 +352,7 @@ namespace {@namespace}
 {{
 {visibility} partial class {name} : global::NCoreUtils.Data.Protocol.IPortableDataContext
 {{
-    {string.Join("\n\n    ", types.Select(EmitDescriptor))}
+    {string.Join("\n\n    ", types.Select(data => EmitDescriptor(data, EnumerableT, ReadOnlyListT)))}
 
     private static readonly global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor[] _descriptors = new global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor[]
     {{

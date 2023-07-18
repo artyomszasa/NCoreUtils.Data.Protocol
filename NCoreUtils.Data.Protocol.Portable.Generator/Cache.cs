@@ -77,7 +77,7 @@ internal sealed class Cache<TKey, TValue>
                 return entry.Value;
             }
             var value = factory(key);
-            Data.Add(key, new Entry(value, now + EntryDuration));
+            Data[key] = new Entry(value, now + EntryDuration);
             return value;
         }
         finally

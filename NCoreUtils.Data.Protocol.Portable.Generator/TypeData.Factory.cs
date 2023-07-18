@@ -78,13 +78,25 @@ public partial class TypeData
         var nullableType = symbol is INamedTypeSymbol namedSymbol && SymbolEqualityComparer.Default.Equals(namedSymbol.ConstructedFrom, nullableT)
             ? namedSymbol.TypeArguments[0]
             : default;
-        var elementType = IsTypeEnumerable(symbol, enumerableT, out var etype) ? etype : default;
+        var elementType = symbol is IArrayTypeSymbol arrayType
+            ? arrayType.ElementType
+            : IsTypeEnumerable(symbol, enumerableT, out var etype) ? etype : default;
         var argResType = symbol is INamedTypeSymbol named1Symbol && SymbolEqualityComparer.Default.Equals(named1Symbol.ConstructedFrom, func2T)
             ? (named1Symbol.TypeArguments[0], named1Symbol.TypeArguments[1])
             : default((ITypeSymbol Arg, ITypeSymbol Res)?);
         var properties = (symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct) && elementType is null
             ? GetPropertiesRecursive(symbol)
             : Array.Empty<IPropertySymbol>();
-        return new TypeData(symbol, name, safeName, fullName, nullName, properties, nullableType, elementType, argResType);
+        return new TypeData(
+            symbol: symbol,
+            name: name,
+            safeName: safeName,
+            fullName: fullName,
+            nullName: nullName,
+            properties: properties,
+            nullableType: nullableType,
+            elementType: elementType,
+            argResType: argResType
+        );
     }
 }

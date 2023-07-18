@@ -34,13 +34,13 @@ public ref struct Lexer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose()
+        public readonly void Dispose()
         {
             ArrayPool<char>.Shared.Return(_buffer);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override string ToString()
+        public readonly override string ToString()
             => new(_buffer, 0, _offset);
     }
 
@@ -157,7 +157,7 @@ public ref struct Lexer
     private static Token HandleIdent(ReadOnlySpan<char> input, ref Source source)
     {
         var index = 1;
-        while (index < input.Length && CharUtils.IsLetterOrDigit(input[index]))
+        while (index < input.Length && CharUtils.IsLetterOrDigitOrUnderscore(input[index]))
         {
             ++index;
         }
@@ -213,7 +213,7 @@ public ref struct Lexer
             ['"', .. var rest] => HandleStringLiteral(rest, ref Source),
             [var ch0, ..] when char.IsWhiteSpace(ch0) => HandleWhitespace(input, ref Source),
             [var ch0, ..] when CharUtils.IsDigit(ch0) => HandleNumLiteral(input, ref Source),
-            [var ch0, ..] when CharUtils.IsLetter(ch0) => HandleIdent(input, ref Source),
+            [var ch0, ..] when CharUtils.IsLetterOrUnderscore(ch0) => HandleIdent(input, ref Source),
             [var ch0, ..] => throw new InvalidOperationException($"Unexpected character '{ch0}' as {Source.Position}."),
             [] => Token.Eos(Source.Position)
         };

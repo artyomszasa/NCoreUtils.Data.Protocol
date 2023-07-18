@@ -289,6 +289,7 @@ namespace NCoreUtils.Data.Protocol
                 var compilation = target.SemanticModel.Compilation;
                 var nullableT = compilation.GetSpecialType(SpecialType.System_Nullable_T)!;
                 var enumerableT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T)!;
+                var readOnlyListT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IReadOnlyList_T)!;
                 var func2T = compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get type symbol for System.Func<>.");
 
                 var valuePrimitives = new List<ITypeSymbol>
@@ -335,19 +336,19 @@ namespace NCoreUtils.Data.Protocol
                     SymbolEqualityComparer.Default
                 );
                 var targetTypes = new Dictionary<ITypeSymbol, TypeData>(SymbolEqualityComparer.Default);
-                foreach (var type0 in target.EntityTypes)
+                foreach (var type in target.EntityTypes)
                 {
-                    if (type0 is INamedTypeSymbol type)
+                    if (type is INamedTypeSymbol or IArrayTypeSymbol)
                     {
                         AddTargetType(compilation, type, target.Mode, true, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
                     }
                     else
                     {
                         // NOTE: DEBUG
-                        throw new Exception($"not-named type: {type0.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
+                        throw new Exception($"not-named non-array type: {type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
                     }
                 }
-                var emitter = new ProtocolContextEmitter(builtinTypes);
+                var emitter = new ProtocolContextEmitter(builtinTypes, enumerableT, readOnlyListT);
                 var name = target.Cds.Identifier.ValueText;
                 var @namespace = Helpers.GetSyntaxNamespace(target.Cds) ?? "NCoreUtils.Data.Proto";
                 var visibility = target.SemanticModel.GetDeclaredSymbol(target.Cds)?.DeclaredAccessibility switch
