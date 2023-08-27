@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
@@ -9,6 +11,12 @@ public sealed partial class NullableDateTimeOffsetDescriptor : ITypeDescriptor
 {
     object ITypeDescriptor.Parse(string value)
         => Parse(value)!;
+
+    public IReadOnlyList<PropertyInfo> Properties { get; } = new PropertyInfo[]
+    {
+        (PropertyInfo)((MemberExpression)((Expression<Func<DateTimeOffset?, bool>>)(e => e.HasValue)).Body).Member,
+        (PropertyInfo)((MemberExpression)((Expression<Func<DateTimeOffset?, DateTimeOffset>>)(e => e!.Value)).Body).Member
+    };
 
     public bool IsArithmetic => true;
 
