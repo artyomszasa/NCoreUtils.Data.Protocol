@@ -8,7 +8,7 @@ namespace NCoreUtils.Data.Protocol.Internal;
 
 #if NET6_0_OR_GREATER
 
-[BuiltInDescriptorAttribute(typeof(DateOnly))]
+[BuiltInDescriptor(typeof(DateOnly))]
 public sealed partial class DateOnlyDescriptor : ITypeDescriptor
 {
     object ITypeDescriptor.Parse(string value)

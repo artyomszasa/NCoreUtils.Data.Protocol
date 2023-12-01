@@ -12,7 +12,7 @@ public enum TypeRelation
     ResultOf
 }
 
-public struct Substitution : IEquatable<Substitution>
+public readonly struct Substitution : IEquatable<Substitution>
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(Substitution left, Substitution right) => left.Equals(right);
@@ -61,12 +61,3 @@ public partial record TypeInferenceContext(
     ImmutableDictionary<TypeUid, TypeVariable> Types,
     ImmutableDictionary<TypeUid, ImmutableHashSet<Substitution>> Substitutions
 );
-
-// public partial record TypeInferenceContext
-// {
-//     public static TypeInferenceContext Empty { get; } = new(
-//         ImmutableDictionary<TypeUid, TypeVariable>.Empty,
-//         ImmutableDictionary<TypeUid, ImmutableHashSet<Substitution>>.Empty
-//     );
-// }
-

@@ -6,7 +6,8 @@ using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
-public class MappedQuery<TSource, TResult> : Query<TResult>
+public record MappedQuery<TSource, TResult>(Query<TSource> Source, Func<TSource, TResult> Selector)
+    : Query<TResult>(Source.Provider)
 {
     private static HashSet<string> OrDefaultReductions { get; } = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase)
     {
@@ -16,28 +17,11 @@ public class MappedQuery<TSource, TResult> : Query<TResult>
         nameof(System.Linq.Queryable.ElementAtOrDefault)
     };
 
-    public Query<TSource> Source { get; }
-
-    public Func<TSource, TResult> Selector { get; }
-
-    public MappedQuery(Query<TSource> source, Func<TSource, TResult> selector)
-        : base(source.Provider)
-    {
-        Source = source ?? throw new ArgumentNullException(nameof(source));
-        Selector = selector ?? throw new ArgumentNullException(nameof(selector));
-    }
-
     public override Query ApplyLimit(int limit)
-        => new MappedQuery<TSource, TResult>(
-            (Query<TSource>)Source.ApplyLimit(limit),
-            Selector
-        );
+        => this with { Source = (Query<TSource>)Source.ApplyLimit(limit) };
 
     public override Query ApplyOffset(int offset)
-        => new MappedQuery<TSource, TResult>(
-            (Query<TSource>)Source.ApplyOffset(offset),
-            Selector
-        );
+        => this with { Source = (Query<TSource>)Source.ApplyOffset(offset) };
 
     public override Query ApplyOrderBy(Lambda node, bool isDescending)
     {
@@ -71,4 +55,7 @@ public class MappedQuery<TSource, TResult> : Query<TResult>
         }
         return await Source.ExecuteReductionAsync<T>(executor, reduction, cancellationToken);
     }
+
+    public override string ToString()
+        => $"{Source} with {Selector}";
 }

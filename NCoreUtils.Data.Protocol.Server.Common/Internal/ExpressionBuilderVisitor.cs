@@ -10,19 +10,13 @@ namespace NCoreUtils.Data.Protocol.Internal;
 
 public partial class ExpressionBuilderVisitor : ITypedNodeVisitor<Type, IPropertyResolver, NameMap, Expression>
 {
-    private struct ConstantData
+    private readonly struct ConstantData(object? value, Type type)
     {
-        public object? Value { get; }
+        public object? Value { get; } = value;
 
-        public Type Type { get; }
+        public Type Type { get; } = type;
 
         public bool ShouldBox => Value is not null;
-
-        public ConstantData(object? value, Type type)
-        {
-            Value = value;
-            Type = type;
-        }
 
         public Expression BuildExpression(IDataUtils util)
             => ShouldBox

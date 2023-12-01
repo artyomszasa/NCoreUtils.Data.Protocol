@@ -5,7 +5,7 @@ using NCoreUtils.Data.Protocol.Lexing;
 
 namespace NCoreUtils.Data.Protocol.Parsing;
 
-public ref struct Parser
+public ref struct Parser(string input)
 {
     private static BinaryOperation MapBinOp(TokenType tokenType) => tokenType switch
     {
@@ -24,10 +24,7 @@ public ref struct Parser
         var tt => throw new ParserException($"Non-operator token: {tt}.")
     };
 
-    private Preload Input;
-
-    public Parser(string input)
-        => Input = new(input);
+    private Preload Input = new(input);
 
     #region Ident
 

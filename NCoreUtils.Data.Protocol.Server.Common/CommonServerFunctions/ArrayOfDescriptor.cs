@@ -33,6 +33,7 @@ internal sealed class ArrayOfDescriptor : IFunctionDescriptor
         ArgumentTypes = builder.Build();
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "Array type is preserved in constructor.")]
     public Expression CreateExpression(IReadOnlyList<Expression> arguments)
         => Expression.NewArrayInit(ElementType, arguments);
 }

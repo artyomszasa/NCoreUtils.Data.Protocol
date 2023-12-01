@@ -5,12 +5,10 @@ using NCoreUtils.Data.Protocol.TypeInference;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
-internal sealed class FunctionDescriptorResolverWrapper : IFunctionDescriptorResolverWrapper
+internal sealed class FunctionDescriptorResolverWrapper(IFunctionDescriptorResolver resolver)
+    : IFunctionDescriptorResolverWrapper
 {
-    private IFunctionDescriptorResolver Resolver { get; }
-
-    public FunctionDescriptorResolverWrapper(IFunctionDescriptorResolver resolver)
-        => Resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
+    private IFunctionDescriptorResolver Resolver { get; } = resolver ?? throw new ArgumentNullException(nameof(resolver));
 
     public bool TryResolveFunction(
         IDataUtils util,

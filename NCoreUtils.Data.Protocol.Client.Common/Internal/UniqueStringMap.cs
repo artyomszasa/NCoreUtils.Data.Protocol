@@ -7,8 +7,8 @@ namespace NCoreUtils.Data.Protocol.Internal;
 
 public class UniqueStringMap
 {
-    private static readonly string[] _letters = new string[]
-    {
+    private static readonly string[] _letters =
+    [
         "a",
         "b",
         "c",
@@ -35,7 +35,7 @@ public class UniqueStringMap
         "x",
         "y",
         "z"
-    };
+    ];
 
     private static string GetName(int ix)
     {
@@ -50,7 +50,7 @@ public class UniqueStringMap
 
     private int _supply = 0;
 
-    private Dictionary<ParameterExpression, UniqueString> Parameters { get; } = new();
+    private Dictionary<ParameterExpression, UniqueString> Parameters { get; } = [];
 
     public UniqueString Add(ParameterExpression parameter)
     {

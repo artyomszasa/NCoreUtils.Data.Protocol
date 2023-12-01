@@ -7,8 +7,8 @@ namespace NCoreUtils.Data.Protocol.Internal;
 
 public class NameMap
 {
-    private static readonly string[] _letters = new string[]
-    {
+    private static readonly string[] _letters =
+    [
         "a",
         "b",
         "c",
@@ -35,7 +35,7 @@ public class NameMap
         "x",
         "y",
         "z"
-    };
+    ];
 
     private static string GetName(int ix)
     {

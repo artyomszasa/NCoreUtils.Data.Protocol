@@ -11,22 +11,15 @@ using NCoreUtils.Data.Protocol.Internal;
 namespace NCoreUtils.Data.Protocol.Linq;
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-public abstract class Query : IOrderedQueryable
+public abstract record Query(IProtocolQueryProvider Provider) : IOrderedQueryable
 {
     IQueryProvider IQueryable.Provider => Provider;
 
     protected IDataUtils Util => Provider.Util;
 
-    public IProtocolQueryProvider Provider { get; }
-
     public abstract Type ElementType { get; }
 
     public virtual Expression Expression => Expression.Constant(this);
-
-    public Query(IProtocolQueryProvider provider)
-    {
-        Provider = provider ?? throw new ArgumentNullException(nameof(provider));
-    }
 
     IEnumerator IEnumerable.GetEnumerator() => GetBoxedEnumerator();
 
@@ -49,7 +42,7 @@ public abstract class Query : IOrderedQueryable
     public abstract Query Derive(Type targetType);
 }
 
-public abstract class Query<T> : Query, IOrderedQueryable<T>
+public abstract record Query<T>(IProtocolQueryProvider Provider) : Query(Provider), IOrderedQueryable<T>
 {
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     private sealed class ApplySelectVisitor : IDataTypeVisitor
@@ -76,8 +69,6 @@ public abstract class Query<T> : Query, IOrderedQueryable<T>
 
     public override Type ElementType => typeof(T);
 
-    public Query(IProtocolQueryProvider provider) : base(provider) { }
-
     internal abstract IAsyncEnumerable<T> ExecuteEnumerationAsync(IDataQueryExecutor executor);
 
     protected override IEnumerator GetBoxedEnumerator()
@@ -97,5 +88,5 @@ public abstract class Query<T> : Query, IOrderedQueryable<T>
     }
 
     public override Query Derive(Type targetType)
-        => throw new InvalidOperationException($"Unable to create derived query for {typeof(T)} => {targetType} from {this.GetType()}.");
+        => throw new InvalidOperationException($"Unable to create derived query for {typeof(T)} => {targetType} from {GetType()}.");
 }

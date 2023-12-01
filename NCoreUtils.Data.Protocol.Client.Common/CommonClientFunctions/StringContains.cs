@@ -7,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.CommonClientFunctions;
 
 public sealed class StringContains : IFunctionMatcher
 {
-    private static MethodInfo _mContains = ReflectionHelpers.GetMethod<string, bool>("".Contains);
+    private static readonly MethodInfo _mContains = ReflectionHelpers.GetMethod<string, bool>("".Contains);
 
     public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {

@@ -3,13 +3,18 @@ using System.Runtime.Serialization;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
+#if !NET8_0_OR_GREATER
+[Serializable]
+#endif
 public class ProtocolTypeConstraintMismatchException : ProtocolTypeInferenceException
 {
     public TypeConstriantMismatch Details { get; }
 
+#if !NET8_0_OR_GREATER
     protected ProtocolTypeConstraintMismatchException(SerializationInfo info, StreamingContext context)
         : base(info, context)
         => Details = (TypeConstriantMismatch)info.GetValue(nameof(Details), typeof(TypeConstriantMismatch))!;
+#endif
 
     public ProtocolTypeConstraintMismatchException(TypeConstriantMismatch details, string? message = default)
         : base(message ?? details.ToString())
@@ -23,9 +28,11 @@ public class ProtocolTypeConstraintMismatchException : ProtocolTypeInferenceExce
         : this(details, default, innerException)
     { }
 
+#if !NET8_0_OR_GREATER
     public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
         base.GetObjectData(info, context);
         info.AddValue(nameof(Details), Details, typeof(TypeConstriantMismatch));
     }
+#endif
 }

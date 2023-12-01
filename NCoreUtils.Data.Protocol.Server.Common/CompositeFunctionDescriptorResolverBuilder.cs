@@ -1,16 +1,12 @@
 using System;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol;
 
-public class CompositeFunctionDescriptorResolverBuilder
+public class CompositeFunctionDescriptorResolverBuilder(IServiceCollection services)
 {
-    public IServiceCollection Services { get; }
-
-    public CompositeFunctionDescriptorResolverBuilder(IServiceCollection services)
-        => Services = services ?? throw new ArgumentNullException(nameof(services));
+    public IServiceCollection Services { get; } = services ?? throw new ArgumentNullException(nameof(services));
 
     public CompositeFunctionDescriptorResolverBuilder AddRegisteredService<T>()
         where T : IFunctionDescriptorResolver

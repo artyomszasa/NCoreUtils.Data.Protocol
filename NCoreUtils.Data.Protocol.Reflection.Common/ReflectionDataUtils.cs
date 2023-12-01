@@ -9,6 +9,7 @@ using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol;
 
+[RequiresDynamicCode(S.ReflectionTrimWarning)]
 [RequiresUnreferencedCode(S.ReflectionTrimWarning)]
 public partial class ReflectionDataUtils : IDataUtils
 {
@@ -163,7 +164,7 @@ public partial class ReflectionDataUtils : IDataUtils
         {
             return Activator.CreateInstance(
                 type: typeof(Nullable<>).MakeGenericType(type),
-                args: new [] { value }
+                args: [value]
             )!;
         }
         throw new InvalidOperationException($"Unable to create nullable box for object of non-value type {type}.");

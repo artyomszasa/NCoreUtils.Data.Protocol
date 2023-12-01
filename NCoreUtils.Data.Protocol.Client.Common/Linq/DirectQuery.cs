@@ -13,7 +13,14 @@ public static class DirectQuery
     public static Query<T> Create<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(QueryProvider provider) => new DirectQuery<T>(provider);
 }
 
-internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : Query<T>
+internal record DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
+        IProtocolQueryProvider Provider,
+        Lambda? Filter = default,
+        Lambda? SortBy = default,
+        bool IsDescending = default,
+        int Offset = default,
+        int? Limit = default
+    ) : Query<T>(Provider)
 {
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     private sealed class DeriveVisitor : IDataTypeVisitor
@@ -41,33 +48,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
         }
     }
 
-    public Lambda? Filter { get; }
-
-    public Lambda? SortBy { get; }
-
-    public bool IsDescending { get; }
-
-    public int Offset { get; }
-
-    public int? Limit { get; }
-
     public virtual string Target => string.Empty;
-
-    public DirectQuery(
-        IProtocolQueryProvider provider,
-        Lambda? filter = default,
-        Lambda? sortBy = default,
-        bool isDescending = false,
-        int offset = 0,
-        int? limit = default)
-        : base(provider)
-    {
-        Filter = filter;
-        SortBy = sortBy;
-        IsDescending = isDescending;
-        Offset = offset;
-        Limit = limit;
-    }
 
     internal override IAsyncEnumerable<T> ExecuteEnumerationAsync(IDataQueryExecutor executor)
         => executor.ExecuteEnumerationAsync<T>(
@@ -78,7 +59,8 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             default,
             default,
             Offset,
-            Limit);
+            Limit
+        );
 
     internal override Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, string reduction, CancellationToken cancellationToken)
         => executor.ExecuteReductionAsync<T, TResult>(
@@ -89,47 +71,24 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             IsDescending,
             Offset,
             Limit,
-            cancellationToken);
+            cancellationToken
+        );
 
     public override Query ApplyWhere(Lambda node)
-    {
-        var newFilter = null == Filter ? node : Filter.AndAlso(node);
-        return new DirectQuery<T>(
-            Provider,
-            newFilter,
-            SortBy,
-            IsDescending,
-            Offset,
-            Limit);
-    }
+        => this with { Filter = null == Filter ? node : Filter.AndAlso(node) };
 
     public override Query ApplyOrderBy(Lambda node, bool isDescending)
-        => new DirectQuery<T>(
-            Provider,
-            Filter,
-            node,
-            isDescending,
-            Offset,
-            Limit);
+        => this with { SortBy = node, IsDescending = isDescending };
 
     public override Query ApplyOffset(int offset)
-        => new DirectQuery<T>(
-            Provider,
-            Filter,
-            SortBy,
-            IsDescending,
-            offset,
-            Limit);
+        => this with { Offset = offset };
 
     public override Query ApplyLimit(int limit)
-        => new DirectQuery<T>(
-            Provider,
-            Filter,
-            SortBy,
-            IsDescending,
-            Offset,
-            limit);
+        => this with { Limit = limit };
 
     public override Query Derive(Type targetType)
         => DeriveVisitor.Visit(Util, targetType)(this);
+
+    public override string ToString()
+        => $"[{GetType().Name}, Filter = {Filter}, SortBy = {SortBy}, IsDescending = {IsDescending}, Offset = {Offset}, Limit = {Limit}]";
 }

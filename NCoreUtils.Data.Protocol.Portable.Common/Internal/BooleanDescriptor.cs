@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
-[BuiltInDescriptorAttribute(typeof(bool))]
+[BuiltInDescriptor(typeof(bool))]
 public sealed partial class BooleanDescriptor : ITypeDescriptor
 {
     private static IReadOnlyList<string> Truthy { get; } = new [] { "true", "on", "1" };

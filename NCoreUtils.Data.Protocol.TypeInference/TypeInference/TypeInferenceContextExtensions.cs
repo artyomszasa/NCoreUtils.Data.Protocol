@@ -56,7 +56,11 @@ public static class TypeInferenceContextExtensions
     /// <returns>Type constraints for the specified type UID.</returns>
     public static TypeVariable GetAllConstraints(this TypeInferenceContext ctx, TypeUid uid)
     {
+#if NET6_0_OR_GREATER
+        var v0 = ctx.Types.GetValueOrDefault(uid, TypeVariable.Empty);
+#else
         var v0 = ctx.Types.GetOrDefault(uid, TypeVariable.Empty);
+#endif
         if (ctx.Substitutions.TryGetValue(uid, out var substitutions))
         {
             var processedSubstitutions = new HashSet<Substitution> { new(TypeRelation.SameAs, uid) };

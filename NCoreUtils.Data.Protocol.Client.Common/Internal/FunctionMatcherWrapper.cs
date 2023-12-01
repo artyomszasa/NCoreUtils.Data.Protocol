@@ -3,12 +3,9 @@ using System.Linq.Expressions;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
-internal sealed class FunctionMatcherWrapper : IFunctionMatcherWrapper
+internal sealed class FunctionMatcherWrapper(IFunctionMatcher matcher) : IFunctionMatcherWrapper
 {
-    private IFunctionMatcher Matcher { get; }
-
-    public FunctionMatcherWrapper(IFunctionMatcher matcher)
-        => Matcher = matcher;
+    private IFunctionMatcher Matcher { get; } = matcher;
 
     public void Dispose()
         => (Matcher as IDisposable)?.Dispose();

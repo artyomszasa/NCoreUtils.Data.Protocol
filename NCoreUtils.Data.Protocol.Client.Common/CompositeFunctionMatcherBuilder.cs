@@ -4,12 +4,9 @@ using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol;
 
-public sealed class CompositeFunctionMatcherBuilder
+public sealed class CompositeFunctionMatcherBuilder(IServiceCollection services)
 {
-    public IServiceCollection Services { get; }
-
-    public CompositeFunctionMatcherBuilder(IServiceCollection services)
-        => Services = services ?? throw new ArgumentNullException(nameof(services));
+    public IServiceCollection Services { get; } = services ?? throw new ArgumentNullException(nameof(services));
 
     public CompositeFunctionMatcherBuilder AddRegisteredService<T>()
         where T : IFunctionMatcher

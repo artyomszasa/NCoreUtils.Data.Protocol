@@ -5,20 +5,16 @@ using Source = NCoreUtils.Data.Protocol.IO.StringSource;
 
 namespace NCoreUtils.Data.Protocol.Lexing;
 
-public ref struct Lexer
+public ref struct Lexer(string input)
 {
-    private ref struct Buffer
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS9113
+    private ref struct Buffer(int _)
+#pragma warning restore CS9113
     {
-        private char[] _buffer;
+        private char[] _buffer = ArrayPool<char>.Shared.Rent(512);
 
-        private int _offset;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Buffer(int _)
-        {
-            _buffer = ArrayPool<char>.Shared.Rent(512);
-            _offset = 0;
-        }
+        private int _offset = 0;
 
         public void Push(char ch)
         {
@@ -178,10 +174,7 @@ public ref struct Lexer
         return Token.Ws(startPosition, source.Position, new(input[..index]));
     }
 
-    private Source Source;
-
-    public Lexer(string input)
-        => Source = new(input);
+    private Source Source = new(input);
 
     public Token Next()
     {

@@ -6,23 +6,17 @@ using NCoreUtils.Data.Protocol.TypeInference.Ast;
 
 namespace NCoreUtils.Data.Protocol;
 
-public class DefaultTypeInferer : ITypeInferrer
+public class DefaultTypeInferer(
+    IDataUtils util,
+    IFunctionDescriptorResolver functionResolver,
+    IPropertyResolver? propertyResolver = default)
+    : ITypeInferrer
 {
-    public IDataUtils Util { get; }
+    public IDataUtils Util { get; } = util ?? throw new ArgumentNullException(nameof(util));
 
-    public IPropertyResolver PropertyResolver { get; }
+    public IPropertyResolver PropertyResolver { get; } = propertyResolver ?? DefaultPropertyResolver.For(util);
 
-    public IFunctionDescriptorResolver FunctionResolver { get; }
-
-    public DefaultTypeInferer(
-        IDataUtils util,
-        IFunctionDescriptorResolver functionResolver,
-        IPropertyResolver? propertyResolver = default)
-    {
-        Util = util ?? throw new ArgumentNullException(nameof(util));
-        PropertyResolver = propertyResolver ?? DefaultPropertyResolver.For(util);
-        FunctionResolver = functionResolver ?? throw new ArgumentNullException(nameof(functionResolver));
-    }
+    public IFunctionDescriptorResolver FunctionResolver { get; } = functionResolver ?? throw new ArgumentNullException(nameof(functionResolver));
 
     protected virtual Func<TypeUid, Type> CreateResolver(TypeInferenceContext context)
         => typeUid => context.InstantiateType(PropertyResolver, typeUid);

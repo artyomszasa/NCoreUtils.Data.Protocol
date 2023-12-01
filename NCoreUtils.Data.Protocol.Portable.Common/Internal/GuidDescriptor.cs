@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
-[BuiltInDescriptorAttribute(typeof(Guid))]
+[BuiltInDescriptor(typeof(Guid))]
 public sealed partial class GuidDescriptor : ITypeDescriptor
 {
     public bool IsArithmetic => false;

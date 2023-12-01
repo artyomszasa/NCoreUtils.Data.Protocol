@@ -12,12 +12,9 @@ public abstract class TypeConstriantMismatchReason
     /// Examined type is missing some constrainted member.
     /// </summary>
     [Serializable]
-    public sealed class MissingMember : TypeConstriantMismatchReason
+    public sealed class MissingMember(string memberName) : TypeConstriantMismatchReason
     {
-        public string MemberName { get; }
-
-        public MissingMember(string memberName)
-            => MemberName = memberName;
+        public string MemberName { get; } = memberName;
 
         public override string ToString(TypeRef type)
             => $"Type {type} has no member {MemberName}.";
@@ -27,12 +24,9 @@ public abstract class TypeConstriantMismatchReason
     /// Examined type is missing some constrainted interface.
     /// </summary>
     [Serializable]
-    public sealed class MissingInterfaceImplmentation : TypeConstriantMismatchReason
+    public sealed class MissingInterfaceImplmentation(TypeRef @interface) : TypeConstriantMismatchReason
     {
-        public TypeRef Interface { get; }
-
-        public MissingInterfaceImplmentation(TypeRef @interface)
-            => Interface = @interface;
+        public TypeRef Interface { get; } = @interface;
 
         public override string ToString(TypeRef type)
             => $"Type {type} does not implement {Interface}.";
@@ -42,12 +36,9 @@ public abstract class TypeConstriantMismatchReason
     /// Examined type is incompatible with the constainted base type.
     /// </summary>
     [Serializable]
-    public sealed class IncompatibleType : TypeConstriantMismatchReason
+    public sealed class IncompatibleType(TypeRef baseType) : TypeConstriantMismatchReason
     {
-        public TypeRef BaseType { get; }
-
-        public IncompatibleType(TypeRef baseType)
-            => BaseType = baseType;
+        public TypeRef BaseType { get; } = baseType;
 
         public override string ToString(TypeRef type)
             => $"Type {type} is not compatible with constrainted base type {BaseType}.";

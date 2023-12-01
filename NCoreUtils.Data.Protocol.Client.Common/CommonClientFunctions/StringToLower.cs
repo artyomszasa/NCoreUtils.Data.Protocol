@@ -7,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.CommonClientFunctions;
 
 public sealed class StringToLower : IFunctionMatcher
 {
-    private static MethodInfo _mToLower = ReflectionHelpers.GetMethod<string>("".ToLower);
+    private static readonly MethodInfo _mToLower = ReflectionHelpers.GetMethod<string>("".ToLower);
 
     public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {

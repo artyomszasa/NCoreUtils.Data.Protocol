@@ -8,23 +8,17 @@ using NCoreUtils.Data.Protocol.TypeInference.Ast;
 
 namespace NCoreUtils.Data.Protocol;
 
-public class DefaultDataQueryExpressionBuilder : IDataQueryExpressionBuilder
+public class DefaultDataQueryExpressionBuilder(
+    IDataQueryParser parser,
+    ITypeInferrer inferrer,
+    ILogger<DefaultDataQueryExpressionBuilder> logger)
+    : IDataQueryExpressionBuilder
 {
-    public IDataQueryParser Parser { get; }
+    public IDataQueryParser Parser { get; } = parser ?? throw new ArgumentNullException(nameof(parser));
 
-    public ITypeInferrer Inferrer { get; }
+    public ITypeInferrer Inferrer { get; } = inferrer ?? throw new ArgumentNullException(nameof(inferrer));
 
-    public ILogger Logger { get; }
-
-    public DefaultDataQueryExpressionBuilder(
-        IDataQueryParser parser,
-        ITypeInferrer inferrer,
-        ILogger<DefaultDataQueryExpressionBuilder> logger)
-    {
-        Parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        Inferrer = inferrer ?? throw new ArgumentNullException(nameof(inferrer));
-        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    public ILogger Logger { get; } = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Creates LINQ expression from the resolved internal expression.

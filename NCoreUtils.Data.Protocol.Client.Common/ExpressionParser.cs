@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq.Expressions;
 using NCoreUtils.Data.Protocol.Ast;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol;
 
-public class ExpressionParser
+public class ExpressionParser(IDataUtils utils, IFunctionMatcher functionMatcher)
 {
     private static Dictionary<ExpressionType, BinaryOperation> BinaryOperationMap { get; } = new()
     {
@@ -26,15 +25,9 @@ public class ExpressionParser
         { ExpressionType.Modulo,             BinaryOperation.Modulo }
     };
 
-    protected IDataUtils Utils { get; }
+    protected IDataUtils Utils { get; } = utils ?? throw new ArgumentNullException(nameof(utils));
 
-    protected IFunctionMatcher FunctionMatcher { get; }
-
-    public ExpressionParser(IDataUtils utils, IFunctionMatcher functionMatcher)
-    {
-        Utils = utils ?? throw new ArgumentNullException(nameof(utils));
-        FunctionMatcher = functionMatcher ?? throw new ArgumentNullException(nameof(functionMatcher));
-    }
+    protected IFunctionMatcher FunctionMatcher { get; } = functionMatcher ?? throw new ArgumentNullException(nameof(functionMatcher));
 
     protected bool IsNullableHasValue(MemberExpression expression)
         => expression.Member.Name == nameof(Nullable<int>.HasValue)

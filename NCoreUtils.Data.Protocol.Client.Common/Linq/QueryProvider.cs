@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NCoreUtils.Linq;
@@ -11,20 +10,15 @@ using NCoreUtils.Linq;
 namespace NCoreUtils.Data.Protocol.Linq;
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-public partial class QueryProvider : IAsyncQueryProvider, IProtocolQueryProvider
+public partial class QueryProvider(IDataUtils util, ExpressionParser expressionParser, IDataQueryExecutor executor)
+    : IAsyncQueryProvider
+    , IProtocolQueryProvider
 {
-    private ExpressionParser ExpressionParser { get; }
+    private ExpressionParser ExpressionParser { get; } = expressionParser ?? throw new ArgumentNullException(nameof(expressionParser));
 
-    private IDataQueryExecutor Executor { get; }
+    private IDataQueryExecutor Executor { get; } = executor ?? throw new ArgumentNullException(nameof(executor));
 
-    public IDataUtils Util { get; }
-
-    public QueryProvider(IDataUtils util, ExpressionParser expressionParser, IDataQueryExecutor executor)
-    {
-        Util = util;
-        ExpressionParser = expressionParser ?? throw new ArgumentNullException(nameof(expressionParser));
-        Executor = executor ?? throw new ArgumentNullException(nameof(executor));
-    }
+    public IDataUtils Util { get; } = util;
 
     private static Query CreateDerivedQuery(Query query, Type derivedType)
     {

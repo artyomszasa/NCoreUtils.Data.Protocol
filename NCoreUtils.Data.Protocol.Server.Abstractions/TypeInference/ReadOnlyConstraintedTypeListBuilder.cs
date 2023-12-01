@@ -13,7 +13,7 @@ public class ReadOnlyConstraintedTypeListBuilder : IEnumerable
         => Types = types;
 
     public ReadOnlyConstraintedTypeListBuilder()
-        : this(new List<Type>())
+        : this([])
     { }
 
     public ReadOnlyConstraintedTypeListBuilder(int capacity)

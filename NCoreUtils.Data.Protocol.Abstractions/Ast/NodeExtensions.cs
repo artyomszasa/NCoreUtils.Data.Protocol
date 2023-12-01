@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol.Ast;
@@ -223,11 +222,20 @@ public static class NodeExtensions
         _ => throw new InvalidOperationException("Invalid binary operation")
     };
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsNumeric(char ch)
+#if NET7_0_OR_GREATER
+        => char.IsAsciiDigit(ch);
+#else
+        => char.IsDigit(ch);
+#endif
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsNumeric(string input)
     {
         foreach (var ch in input.AsSpan())
         {
-            if (!char.IsDigit(ch))
+            if (!IsNumeric(ch))
             {
                 return false;
             }

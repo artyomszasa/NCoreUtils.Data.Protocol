@@ -6,17 +6,11 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 
 public class DefaultPropertyResolver : IPropertyResolver
 {
-    private struct TypeAndPropertyName : IEquatable<TypeAndPropertyName>
+    private readonly struct TypeAndPropertyName(Type type, string propertyName) : IEquatable<TypeAndPropertyName>
     {
-        public Type Type { get; }
+        public Type Type { get; } = type;
 
-        public string PropertyName { get; }
-
-        public TypeAndPropertyName(Type type, string propertyName)
-        {
-            Type = type;
-            PropertyName = propertyName;
-        }
+        public string PropertyName { get; } = propertyName;
 
         public bool Equals(TypeAndPropertyName other)
             => Type == other.Type && PropertyName == other.PropertyName;

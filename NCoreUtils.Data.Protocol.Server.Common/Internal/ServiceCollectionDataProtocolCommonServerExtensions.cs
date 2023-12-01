@@ -23,15 +23,15 @@ public static class ServiceCollectionDataProtocolCommonServerExtensions
         if (!noCommonFunctions)
         {
             builder
-                .AddSingleton(_ => new StringLength())
-                .AddSingleton(_ => new StringContains())
-                .AddSingleton(_ => new StringToLower())
-                .AddSingleton(_ => new StringToUpper())
-                .AddSingleton(_ => new CollectionContains())
-                .AddSingleton(_ => new CollectionAny())
-                .AddSingleton(_ => new CollectionAll())
-                .AddSingleton(_ => new ArrayOf())
-                .AddSingleton(_ => new DateTimeOffsetFun());
+                .AddSingleton(static _ => new StringLength())
+                .AddSingleton(static _ => new StringContains())
+                .AddSingleton(static _ => new StringToLower())
+                .AddSingleton(static _ => new StringToUpper())
+                .AddSingleton(static _ => new CollectionContains())
+                .AddSingleton(static _ => new CollectionAny())
+                .AddSingleton(static _ => new CollectionAll())
+                .AddSingleton(static _ => new ArrayOf())
+                .AddSingleton(static _ => new DateTimeOffsetFun());
         }
         configureFunctions?.Invoke(builder);
         services.TryAddScoped<IDataQueryExpressionBuilder, DefaultDataQueryExpressionBuilder>();

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
@@ -10,9 +10,6 @@
     <Compile Include="..\shared\CodeAnalysis\**" />
   </ItemGroup>
   <ItemGroup>
-    <!--
-    <ProjectReference Include="..\NCoreUtils.Data.Protocol.Antlr4\NCoreUtils.Data.Protocol.Antlr4.csproj" />
-    -->
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.CombinatorParser\NCoreUtils.Data.Protocol.CombinatorParser.csproj" />
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.TypeInference\NCoreUtils.Data.Protocol.TypeInference.csproj" />
   </ItemGroup>

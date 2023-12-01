@@ -4,7 +4,8 @@ using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public sealed class UniqueString : IEquatable<UniqueString>
+[method: DebuggerStepThrough]
+public sealed class UniqueString(string value) : IEquatable<UniqueString>
 {
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -28,11 +29,7 @@ public sealed class UniqueString : IEquatable<UniqueString>
         return !a.Equals(b);
     }
 
-    public string Value { get; }
-
-    [DebuggerStepThrough]
-    public UniqueString(string value)
-        => Value = value ?? throw new ArgumentNullException(nameof(value));
+    public string Value { get; } = value ?? throw new ArgumentNullException(nameof(value));
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

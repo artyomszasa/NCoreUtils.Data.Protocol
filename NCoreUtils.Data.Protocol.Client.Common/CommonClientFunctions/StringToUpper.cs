@@ -7,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.CommonClientFunctions;
 
 public sealed class StringToUpper : IFunctionMatcher
 {
-    private static MethodInfo _mToLower = ReflectionHelpers.GetMethod<string>("".ToUpper);
+    private static readonly MethodInfo _mToLower = ReflectionHelpers.GetMethod<string>("".ToUpper);
 
     public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {

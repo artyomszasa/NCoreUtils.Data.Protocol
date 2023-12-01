@@ -5,6 +5,7 @@ using System.Globalization;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
+[RequiresDynamicCode("The ReflectionEnumFactory uses reflection to create enum-specific factories.")]
 [RequiresUnreferencedCode("The ReflectionEnumFactory uses reflection to create enum-specific factories.")]
 public static class ReflectionEnumFactory
 {

@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
-[BuiltInDescriptorAttribute(typeof(DateTime))]
+[BuiltInDescriptor(typeof(DateTime))]
 public sealed partial class DateTimeDescriptor : ITypeDescriptor
 {
     object ITypeDescriptor.Parse(string value)

@@ -4,14 +4,11 @@ using System.Reflection;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
-internal class DefaultProperty : IProperty
+internal class DefaultProperty(PropertyInfo property) : IProperty
 {
-    public PropertyInfo Property { get; }
+    public PropertyInfo Property { get; } = property ?? throw new ArgumentNullException(nameof(property));
 
     public Type PropertyType => Property.PropertyType;
-
-    public DefaultProperty(PropertyInfo property)
-        => Property = property ?? throw new ArgumentNullException(nameof(property));
 
     public Expression CreateExpression(Expression instance)
         => Expression.Property(instance, Property);

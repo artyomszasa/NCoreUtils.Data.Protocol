@@ -7,7 +7,8 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 /// <summary>
 /// Represents immutable name identifier that is unique within some context.
 /// </summary>
-public readonly struct NameUid : IEquatable<NameUid>
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly struct NameUid(int uid) : IEquatable<NameUid>
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(NameUid left, NameUid right) => left.Equals(right);
@@ -15,10 +16,7 @@ public readonly struct NameUid : IEquatable<NameUid>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(NameUid left, NameUid right) => !left.Equals(right);
 
-    public int Uid { get; }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public NameUid(int uid) => Uid = uid;
+    public int Uid { get; } = uid;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(NameUid other)

@@ -7,25 +7,23 @@ using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
+[RequiresDynamicCode("Should only be used in full-reflection/manually trimmed context.")]
+[RequiresUnreferencedCode("Should only be used in full-reflection/manually trimmed context.")]
 public abstract class BoxedConstantBuilder
 {
     private static ConcurrentDictionary<Type, BoxedConstantBuilder> Cache { get; }
 
     private static Func<Type, BoxedConstantBuilder> Factory { get; }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2109", Justification = "RequiresUnreferencedCodeAttribute at public members.")]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "RequiresUnreferencedCodeAttribute at public members.")]
     static BoxedConstantBuilder()
     {
         Cache = new();
         Factory = Create;
     }
 
-    [RequiresUnreferencedCode("Should only be used in full-reflection/manually trimmed context.")]
     private static BoxedConstantBuilder Create(Type type)
         => (BoxedConstantBuilder)Activator.CreateInstance(typeof(BoxedConstantBuilder<>).MakeGenericType(type), true)!;
 
-    [RequiresUnreferencedCode("Should only be used in full-reflection/manually trimmed context.")]
     public static Expression BuildExpression(object? value, Type type)
         => Cache.GetOrAdd(type, Factory)
             .BuildExpression(value);
@@ -36,6 +34,7 @@ public abstract class BoxedConstantBuilder
 }
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+[UnconditionalSuppressMessage("Trimming", "IL2109", Justification = "Only required for base type because instances of this type are created using reflection.")]
 public sealed class BoxedConstantBuilder<T> : BoxedConstantBuilder
 {
     private static PropertyInfo ValueProperty { get; }

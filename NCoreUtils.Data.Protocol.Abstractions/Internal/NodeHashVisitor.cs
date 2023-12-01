@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Internal;
@@ -31,9 +32,11 @@ internal sealed class NodeHashVisitor
         return builder.ToHashCode();
     }
 
+    [SuppressMessage("Performance", "CA1822")]
     public int VisitConstant(Constant constant, ref int supply, ImmutableDictionary<UniqueString, int> context)
         => HashCode.Combine(NodeHashTags.Constant, constant.RawValue?.GetHashCode() ?? 0);
 
+    [SuppressMessage("Performance", "CA1822")]
     public int VisitIdentifier(Identifier identifier, ref int supply, ImmutableDictionary<UniqueString, int> context)
         => HashCode.Combine(
             NodeHashTags.Identifier,

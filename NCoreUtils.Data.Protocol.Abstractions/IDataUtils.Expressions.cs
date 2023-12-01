@@ -32,7 +32,4 @@ public partial interface IDataUtils
     Expression CreateDivide(Expression left, Expression right);
 
     Expression CreateModulo(Expression left, Expression right);
-
-
-
 }

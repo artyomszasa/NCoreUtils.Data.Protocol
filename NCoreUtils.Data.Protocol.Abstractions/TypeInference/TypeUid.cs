@@ -8,7 +8,9 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 /// <summary>
 /// Represents immutable type identifier that is unique within some context.
 /// </summary>
-public readonly struct TypeUid : IEquatable<TypeUid>
+[method: DebuggerStepThrough]
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly struct TypeUid(int uid) : IEquatable<TypeUid>
 {
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -18,11 +20,7 @@ public readonly struct TypeUid : IEquatable<TypeUid>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(TypeUid left, TypeUid right) => !left.Equals(right);
 
-    public int Uid { get; }
-
-    [DebuggerStepThrough]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TypeUid(int uid) => Uid = uid;
+    public int Uid { get; } = uid;
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

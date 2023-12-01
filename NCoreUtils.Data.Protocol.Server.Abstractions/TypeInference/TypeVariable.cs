@@ -7,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 /// <summary>
 /// Represents immutable type variable.
 /// </summary>
-public struct TypeVariable
+public readonly struct TypeVariable
 {
     public static TypeVariable Empty { get; } = new(TypeConstraints.Empty);
 

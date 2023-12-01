@@ -13,20 +13,14 @@ public enum PrecedenceContext
     MulDivRem = 4
 }
 
-public readonly ref struct ParserContext
+public readonly ref struct ParserContext(PrecedenceContext precedence, ImmutableDictionary<string, UniqueString> parameters)
 {
     [DebuggerStepThrough]
     public static ParserContext Initial() => new(default, ImmutableDictionary<string, UniqueString>.Empty);
 
-    private ImmutableDictionary<string, UniqueString> Parameters { get; }
+    private ImmutableDictionary<string, UniqueString> Parameters { get; } = parameters;
 
-    public PrecedenceContext Precedence { get; }
-
-    public ParserContext(PrecedenceContext precedence, ImmutableDictionary<string, UniqueString> parameters)
-    {
-        Precedence = precedence;
-        Parameters = parameters;
-    }
+    public PrecedenceContext Precedence { get; } = precedence;
 
     public UniqueString GetParameter(string name)
         => Parameters.TryGetValue(name, out var uname)

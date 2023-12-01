@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
-[BuiltInDescriptorAttribute(typeof(DateTimeOffset))]
+[BuiltInDescriptor(typeof(DateTimeOffset))]
 public sealed partial class DateTimeOffsetDescriptor : ITypeDescriptor
 {
     object ITypeDescriptor.Parse(string value)

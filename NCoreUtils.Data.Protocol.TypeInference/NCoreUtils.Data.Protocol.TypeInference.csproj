@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
     <Compile Include="..\shared\CodeAnalysis\**" />
@@ -10,6 +10,6 @@
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Server.Abstractions\NCoreUtils.Data.Protocol.Server.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.Maybe" Version="3.0.0" />
+    <PackageReference Include="NCoreUtils.Maybe" Version="3.0.2" />
   </ItemGroup>
 </Project>

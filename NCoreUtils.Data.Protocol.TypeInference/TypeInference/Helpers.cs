@@ -14,7 +14,7 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 
 public static class Helpers
 {
-    internal sealed class UnresolvedFunction : IFunctionDescriptor
+    internal sealed class UnresolvedFunction(string name) : IFunctionDescriptor
     {
         public Type ResultType
         {
@@ -25,10 +25,7 @@ public static class Helpers
 
         public ReadOnlyConstraintedTypeList ArgumentTypes => throw new InvalidOperationException();
 
-        public string Name { get; }
-
-        public UnresolvedFunction(string name)
-            => Name = name ?? throw new ArgumentNullException(nameof(name));
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         public Expression CreateExpression(IReadOnlyList<Expression> arguments)
             => throw new InvalidOperationException();
@@ -89,8 +86,8 @@ public static class Helpers
         );
     }
 
-    private static HashSet<BinaryOperation> BooleanResultOperations { get; } = new()
-    {
+    private static HashSet<BinaryOperation> BooleanResultOperations { get; } =
+    [
         BinaryOperation.OrElse,
         BinaryOperation.AndAlso,
         BinaryOperation.GreaterThan,
@@ -99,10 +96,10 @@ public static class Helpers
         BinaryOperation.LessThanOrEqual,
         BinaryOperation.Equal,
         BinaryOperation.NotEqual
-    };
+    ];
 
-    private static HashSet<BinaryOperation> NumericArgOperation { get; } = new()
-    {
+    private static HashSet<BinaryOperation> NumericArgOperation { get; } =
+    [
         BinaryOperation.GreaterThan,
         BinaryOperation.GreaterThanOrEqual,
         BinaryOperation.LessThan,
@@ -112,16 +109,16 @@ public static class Helpers
         BinaryOperation.Multiply,
         BinaryOperation.Divide,
         BinaryOperation.Modulo
-    };
+    ];
 
-    private static HashSet<BinaryOperation> NumericResultOperation { get; } = new()
-    {
+    private static HashSet<BinaryOperation> NumericResultOperation { get; } =
+    [
         BinaryOperation.Add,
         BinaryOperation.Subtract,
         BinaryOperation.Multiply,
         BinaryOperation.Divide,
         BinaryOperation.Modulo
-    };
+    ];
 
     public static Node<TypeUid> Idfy(Node node)
     {
