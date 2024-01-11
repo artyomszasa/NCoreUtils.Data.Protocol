@@ -8,6 +8,9 @@ public partial record Item(int Num, string? Str, SubItem[] Sub);
 
 public enum AOrB { A = 0, B }
 
+[Flags]
+public enum MyFlags { None = 0x00, A = 0x01, B = 0x02, B2 = 0x03, C = 0x04 }
+
 public record ItemWithEnum(AOrB Value);
 
 public record ItemWithNullableInt32(int? Value);

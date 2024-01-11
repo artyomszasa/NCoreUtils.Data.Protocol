@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace NCoreUtils.Data.Protocol.Generator;
@@ -43,6 +44,10 @@ public partial class TypeData : IEquatable<TypeData>
     public bool IsArrayOrEnumerable => IsArray || IsEnumerable;
 
     public bool IsEnum => Symbol.TypeKind == TypeKind.Enum;
+
+    public bool IsEnumFlags => IsEnum && Symbol.GetAttributes().Any(a => a.AttributeClass?.Name == "FlagsAttribute" || a.AttributeClass?.Name == "Flags");
+
+    public ITypeSymbol? EnumUndelyingType => (Symbol as INamedTypeSymbol)?.EnumUnderlyingType;
 
     public bool IsValueType => Symbol.IsValueType;
 

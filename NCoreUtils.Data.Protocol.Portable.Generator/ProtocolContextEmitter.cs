@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
@@ -28,8 +29,95 @@ internal class ProtocolContextEmitter
         ReadOnlyListT = readOnlyListT;
     }
 
+    // private static IEnumerable<(long I, string S)> GetEnumPermitations(string fullName, IFieldSymbol[] fields, int offset)
+    // {
+    //     if (offset == fields.Length - 1)
+    //     {
+    //         yield return (I: Convert.ToInt64(fields[offset].ConstantValue, CultureInfo.InvariantCulture), S: $"{fullName}.{fields[offset].Name}");
+    //     }
+    //     else
+    //     {
+    //         var field = fields[offset];
+    //         var i0 = Convert.ToInt64(field.ConstantValue, CultureInfo.InvariantCulture);
+    //         var s0 = $"{fullName}.{field.Name}";
+    //         yield return (I: i0, S: s0);
+    //         foreach (var (i, s) in GetEnumPermitations(fullName, fields, offset + 1))
+    //         {
+    //             yield return (i, s);
+    //             if (i0 != 0L)
+    //             {
+    //                 yield return (i + i0, $"{s0} | {s}");
+    //             }
+    //         }
+    //     }
+    // }
+
     private static string EmitEnumFactory(TypeData data)
     {
+        if (data.IsEnumFlags)
+        {
+            var first = new BooleanBox { Value = true };
+            var fields = data.Symbol.GetMembers()
+                .OfType<IFieldSymbol>()
+                .Where(f => f.IsStatic)
+                .ToArray();
+            var intType = data.EnumUndelyingType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "int";
+            // var permutations = GetEnumPermitations(data.FullName, fields, 0).OrderBy(tup => tup.I).ThenBy(tup => tup.S.Length).Distinct().ToArray();
+            // var permutationDedup = new HashSet<long>();
+            return @$"public sealed class {data.SafeName}EnumFactory : global::NCoreUtils.Data.Protocol.Internal.IEnumFactory
+        {{
+            public static {data.SafeName}EnumFactory Singleton {{ get; }} = new {data.SafeName}EnumFactory();
+
+            public {data.FullName} SingleFromRawValue(global::System.ReadOnlySpan<char> rawValue)
+            {{
+                {string.Join(string.Empty, fields.Select(field => EmitFlagNameCheck(first, data, field)))}
+                }}
+                else
+                {{
+                    throw new global::System.InvalidOperationException($""Unable to parse {{rawValue.ToString()}} as {data.FullName}."");
+                }}
+            }}
+
+            public object FromRawValue(string rawValue)
+            {{
+                if ({intType}.TryParse(rawValue, global::System.Globalization.NumberStyles.Integer, global::System.Globalization.CultureInfo.InvariantCulture, out var i))
+                {{
+                    return ({data.FullName})i;
+                }}
+                else
+                {{
+                    var res = default({data.FullName});
+                    foreach (var item in global::NCoreUtils.Data.Protocol.Internal.EnumParserHelper.EnumerateFlags(rawValue))
+                    {{
+                        res |= SingleFromRawValue(item);
+                    }}
+                    return res;
+                }}
+            }}
+        }}";
+
+            // static string EmitFlagsAsNumberCase(HashSet<long> dedup, (long I, string S) tup)
+            //     => dedup.Add(tup.I) ? $"case {tup.I}: return {tup.S};" : string.Empty;
+
+            static string EmitFlagNameCheck(BooleanBox first, TypeData data, IFieldSymbol field)
+            {
+                if (first.Value)
+                {
+                    first.Value = false;
+                    return @$"if (global::NCoreUtils.Data.Protocol.Internal.EnumParserHelper.IsSame(""{field.Name}"", rawValue))
+                {{
+                    return {data.FullName}.{field.Name};";
+                }
+                else
+                {
+                    return @$"
+                }}
+                else if (global::NCoreUtils.Data.Protocol.Internal.EnumParserHelper.IsSame(""{field.Name}"", rawValue))
+                {{
+                    return {data.FullName}.{field.Name};";
+                }
+            }
+        }
         if (data.IsEnum)
         {
             var first = new BooleanBox { Value = true };
@@ -162,6 +250,7 @@ internal class ProtocolContextEmitter
             {{
                 null => default,
                 {string.Join(",\n                ", fields.Select(field => EmitEnumCase(data, field)))},
+                {data.FullName} v => v.ToString(),
                 _ => default
             }};";
         }
