@@ -64,6 +64,15 @@ namespace NCoreUtils.Data.Protocol
             Mode = mode;
         }
     }
+
+    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
+    internal sealed class ProtocolDescriptorAttribute : Attribute
+    {
+        public Type DescriptorType { get; }
+
+        public ProtocolDescriptorAttribute(Type descriptorType)
+            => DescriptorType = descriptorType;
+    }
 }";
 
     private static UTF8Encoding Utf8 { get; } = new(false);
@@ -79,6 +88,10 @@ namespace NCoreUtils.Data.Protocol
     private static bool IsOptsAttribute(string? fullName)
         => fullName == "NCoreUtils.Data.Protocol.ProtocolGenerationOptionsAttribute"
             || fullName == "global::NCoreUtils.Data.Protocol.ProtocolGenerationOptionsAttribute";
+
+    private static bool IsDescriptorAttribute(string? fullName)
+        => fullName == "NCoreUtils.Data.Protocol.ProtocolDescriptorAttribute"
+            || fullName == "global::NCoreUtils.Data.Protocol.ProtocolDescriptorAttribute";
 
     private static T GetConstantAsEnum<T>(SemanticModel semanticModel, ExpressionSyntax expression)
         where T : struct
@@ -102,6 +115,7 @@ namespace NCoreUtils.Data.Protocol
         {
             HashSet<ITypeSymbol>? entityTypes = null;
             HashSet<INamedTypeSymbol>? lambdaTypes = null;
+            HashSet<ITypeSymbol>? explicitDescriptorTypes = null;
             var genMode = GenMode.Predicates | GenMode.Enumerable;
             INamedTypeSymbol func2T = semanticModel.Compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get System.Func<,> type.");
             var attributes = cds.AttributeLists.SelectMany(list => list.Attributes);
@@ -170,10 +184,38 @@ namespace NCoreUtils.Data.Protocol
                         }
                     }
                 }
+                else if (IsDescriptorAttribute(fullName))
+                {
+                    var args = (IReadOnlyList<AttributeArgumentSyntax>?)attribute.ArgumentList?.Arguments ?? Array.Empty<AttributeArgumentSyntax>();
+                    ITypeSymbol? descriptorType = null;
+                    for (var i = 0; i < args.Count; ++i)
+                    {
+                        var arg = args[i];
+                        switch (i)
+                        {
+                            case 0:
+                                descriptorType = semanticModel.GetTypeInfo(arg.ChildNodes().Single().ChildNodes().Single()).ConvertedType;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    if (descriptorType is not null)
+                    {
+                        (explicitDescriptorTypes ??= new(SymbolEqualityComparer.Default)).Add(descriptorType);
+                    }
+                }
             }
             if (entityTypes is not null || lambdaTypes is not null)
             {
-                return new(semanticModel, cds, genMode, entityTypes ?? new(SymbolEqualityComparer.Default), lambdaTypes ?? new(SymbolEqualityComparer.Default));
+                return new(
+                    semanticModel,
+                    cds,
+                    genMode,
+                    entityTypes ?? new(SymbolEqualityComparer.Default),
+                    lambdaTypes ?? new(SymbolEqualityComparer.Default),
+                    explicitDescriptorTypes ?? new(SymbolEqualityComparer.Default)
+                );
             }
         }
         return default;
@@ -291,6 +333,8 @@ namespace NCoreUtils.Data.Protocol
                 var enumerableT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T)!;
                 var readOnlyListT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IReadOnlyList_T)!;
                 var func2T = compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get type symbol for System.Func<>.");
+                var typeDescriptorT = compilation.GetTypeByMetadataName("NCoreUtils.Data.Protocol.Internal.ITypeDescriptor`1")
+                    ?? throw new InvalidOperationException("Unable to get type symbol for NCoreUtils.Data.Protocol.Internal.ITypeDescriptor<T>, ensure at least version 8.0.0-rc02 NCoreUtils.Data.Protocol.Portable.Common is referenced by the project.");
 
                 var valuePrimitives = new List<ITypeSymbol>
                 {
@@ -335,6 +379,7 @@ namespace NCoreUtils.Data.Protocol
                         .Concat(valuePrimitives.Select(t => nullableT.Construct(t))),
                     SymbolEqualityComparer.Default
                 );
+                var explicitDescritors = target.ExplicitDescriptorTypes.ToExlicitDescriptorDictionary(typeDescriptorT);
                 var targetTypes = new Dictionary<ITypeSymbol, TypeData>(SymbolEqualityComparer.Default);
                 foreach (var type in target.EntityTypes)
                 {
@@ -359,7 +404,15 @@ namespace NCoreUtils.Data.Protocol
                 };
                 IEnumerable<(string ArgType, string ResType)> lambdas = target.LambdaTypes
                     .Select(l => (l.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), l.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
-                ctx.AddSource($"{name}.g.cs", SourceText.From(emitter.EmitContext(@namespace, name, visibility, targetTypes.Values, lambdas, ctx.ReportDiagnostic), Utf8));
+                var rawSource = emitter.EmitContext(
+                    @namespace,
+                    name,
+                    visibility,
+                    explicitDescritors,
+                    targetTypes.Values,
+                    lambdas,
+                    ctx.ReportDiagnostic);
+                ctx.AddSource($"{name}.g.cs", SourceText.From(rawSource, Utf8));
             }
             catch (Exception exn)
             {

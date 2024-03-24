@@ -17,12 +17,21 @@ internal class ProtocolContextTarget
 
     public HashSet<INamedTypeSymbol> LambdaTypes { get; }
 
-    public ProtocolContextTarget(SemanticModel semanticModel, ClassDeclarationSyntax cds, GenMode mode, HashSet<ITypeSymbol> entityTypes, HashSet<INamedTypeSymbol> lambdaTypes)
+    public HashSet<ITypeSymbol> ExplicitDescriptorTypes { get; }
+
+    public ProtocolContextTarget(
+        SemanticModel semanticModel,
+        ClassDeclarationSyntax cds,
+        GenMode mode,
+        HashSet<ITypeSymbol> entityTypes,
+        HashSet<INamedTypeSymbol> lambdaTypes,
+        HashSet<ITypeSymbol> explicitDescriptorTypes)
     {
         SemanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
         Cds = cds ?? throw new ArgumentNullException(nameof(cds));
         Mode = mode;
         EntityTypes = entityTypes ?? throw new ArgumentNullException(nameof(entityTypes));
         LambdaTypes = lambdaTypes ?? throw new ArgumentNullException(nameof(lambdaTypes));
+        ExplicitDescriptorTypes = explicitDescriptorTypes ?? throw new ArgumentNullException(nameof(explicitDescriptorTypes));
     }
 }

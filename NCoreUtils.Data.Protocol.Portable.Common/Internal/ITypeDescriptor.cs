@@ -81,3 +81,9 @@ public interface ITypeDescriptor
 
     void Accept(IDataTypeVisitor visitor);
 }
+
+public interface ITypeDescriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : ITypeDescriptor
+{
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    Type ITypeDescriptor.Type => typeof(T);
+}

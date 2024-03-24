@@ -19,6 +19,8 @@ public record ItemWithNullableDateTimeOffset(DateTimeOffset? Value);
 
 public record ItemWithNullableDateOnly(DateOnly? Value);
 
+public record ItemWithComplexData(SomeComplexData Data);
+
 public partial record Item
 {
     public static Item FromInt32(int numValue) => new(numValue, default, Array.Empty<SubItem>());

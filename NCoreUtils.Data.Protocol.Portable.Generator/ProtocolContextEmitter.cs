@@ -415,6 +415,7 @@ internal class ProtocolContextEmitter
         string @namespace,
         string name,
         string visibility,
+        IReadOnlyDictionary<ITypeSymbol, ITypeSymbol> explicitDescriptors,
         IEnumerable<TypeData> types0,
         IEnumerable<(string ArgType, string ResType)> lambdaTypes0,
         Action<Diagnostic> reportDiagnostic)
@@ -441,11 +442,11 @@ namespace {@namespace}
 {{
 {visibility} partial class {name} : global::NCoreUtils.Data.Protocol.IPortableDataContext
 {{
-    {string.Join("\n\n    ", types.Select(data => EmitDescriptor(data, EnumerableT, ReadOnlyListT)))}
+    {string.Join("\n\n    ", types.Where(data => !explicitDescriptors.ContainsKey(data.Symbol)).Select(data => EmitDescriptor(data, EnumerableT, ReadOnlyListT)))}
 
     private static readonly global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor[] _descriptors = new global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor[]
     {{
-        {string.Join(",\n        ", types.Select(data => $"new {data.SafeName}Descriptor()"))}
+        {string.Join(",\n        ", types.Select(EmitDescriptorNew))}
     }};
 
     private static readonly (global::System.Type ArgType, global::System.Type ResType, global::System.Type LambdaType)[] _lambdaTypes = new (global::System.Type ArgType, global::System.Type ResType, global::System.Type LambdaType)[]
@@ -479,5 +480,10 @@ namespace {@namespace}
             ));
             return exn.ToString();
         }
+
+        string EmitDescriptorNew(TypeData data)
+            => explicitDescriptors.TryGetValue(data.Symbol, out var explicitDescriptor)
+                ? $"new {explicitDescriptor.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}()"
+                : $"new {data.SafeName}Descriptor()";
     }
 }
