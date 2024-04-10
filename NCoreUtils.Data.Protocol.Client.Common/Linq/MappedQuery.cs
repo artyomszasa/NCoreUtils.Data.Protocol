@@ -9,14 +9,6 @@ namespace NCoreUtils.Data.Protocol.Linq;
 public record MappedQuery<TSource, TResult>(Query<TSource> Source, Func<TSource, TResult> Selector)
     : Query<TResult>(Source.Provider)
 {
-    private static HashSet<string> OrDefaultReductions { get; } = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase)
-    {
-        nameof(System.Linq.Queryable.FirstOrDefault),
-        nameof(System.Linq.Queryable.SingleOrDefault),
-        nameof(System.Linq.Queryable.LastOrDefault),
-        nameof(System.Linq.Queryable.ElementAtOrDefault)
-    };
-
     public override Query ApplyLimit(int limit)
         => this with { Source = (Query<TSource>)Source.ApplyLimit(limit) };
 
@@ -41,12 +33,12 @@ public record MappedQuery<TSource, TResult>(Query<TSource> Source, Func<TSource,
         }
     }
 
-    internal override async Task<T> ExecuteReductionAsync<T>(IDataQueryExecutor executor, string reduction, CancellationToken cancellationToken)
+    internal override async Task<T> ExecuteReductionAsync<T>(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken)
     {
         if (typeof(T).IsAssignableFrom(typeof(TResult)))
         {
             var res = await Source.ExecuteReductionAsync<TSource>(executor, reduction, cancellationToken);
-            if (res is null && OrDefaultReductions.Contains(reduction))
+            if (res is null && reduction.AllowNull)
             {
                 return default!;
             }

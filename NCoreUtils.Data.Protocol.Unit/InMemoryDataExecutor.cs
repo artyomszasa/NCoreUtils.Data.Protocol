@@ -74,7 +74,7 @@ public class InMemoryDataExecutor : IDataQueryExecutor
     [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Unit only.")]
     public Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
         string target,
-        string reduction,
+        Reduction reduction,
         Node? filter = null,
         Node? sortBy = null,
         bool isDescending = false,
@@ -108,7 +108,7 @@ public class InMemoryDataExecutor : IDataQueryExecutor
         }
         var gm = typeof(Enumerable)
             .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .Where(m => StringComparer.InvariantCultureIgnoreCase.Equals(reduction, m.Name)
+            .Where(m => StringComparer.InvariantCultureIgnoreCase.Equals(reduction.AllowNull ? $"{reduction.Name}ordefault" : reduction.Name, m.Name)
                 && m.GetParameters().Length == 1
                 && m.GetParameters()[0].ParameterType.IsConstructedGenericType
                 && m.GetParameters()[0].ParameterType.GetGenericTypeDefinition() == typeof(IEnumerable<>))

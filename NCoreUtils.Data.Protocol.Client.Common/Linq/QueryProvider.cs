@@ -98,18 +98,23 @@ public partial class QueryProvider(IDataUtils util, ExpressionParser expressionP
                     switch (method.Name)
                     {
                         case nameof(Queryable.First):
+                            return query.ExecuteReductionAsync<T>(Executor, Reduction.First, cancellationToken);
                         case nameof(Queryable.FirstOrDefault):
+                            return query.ExecuteReductionAsync<T>(Executor, Reduction.FirstOrDefault, cancellationToken);
                         case nameof(Queryable.Last):
+                            return query.ExecuteReductionAsync<T>(Executor, Reduction.Last, cancellationToken);
                         case nameof(Queryable.LastOrDefault):
+                            return query.ExecuteReductionAsync<T>(Executor, Reduction.LastOrDefault, cancellationToken);
                         case nameof(Queryable.Single):
+                            return query.ExecuteReductionAsync<T>(Executor, Reduction.Single, cancellationToken);
                         case nameof(Queryable.SingleOrDefault):
-                            return query.ExecuteReductionAsync<T>(Executor, method.Name, cancellationToken);
+                            return query.ExecuteReductionAsync<T>(Executor, Reduction.SingleOrDefault, cancellationToken);
                         case nameof(Queryable.Count):
                             // T must be int
-                            return TaskCast<int, T>(query.ExecuteReductionAsync<int>(Executor, method.Name, cancellationToken));
+                            return TaskCast<int, T>(query.ExecuteReductionAsync<int>(Executor, Reduction.Count, cancellationToken));
                         case nameof(Queryable.Any):
                             // T must be bool
-                            return TaskCast<bool, T>(query.ExecuteReductionAsync<bool>(Executor, method.Name, cancellationToken));
+                            return TaskCast<bool, T>(query.ExecuteReductionAsync<bool>(Executor, Reduction.Any, cancellationToken));
                     }
                 }
                 else if (2 == arguments.Count)
@@ -117,18 +122,23 @@ public partial class QueryProvider(IDataUtils util, ExpressionParser expressionP
                     switch(method.Name)
                     {
                         case nameof(Queryable.First):
+                            return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(Executor, Reduction.First, cancellationToken);
                         case nameof(Queryable.FirstOrDefault):
+                            return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(Executor, Reduction.FirstOrDefault, cancellationToken);
                         case nameof(Queryable.Last):
+                            return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(Executor, Reduction.Last, cancellationToken);
                         case nameof(Queryable.LastOrDefault):
+                            return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(Executor, Reduction.LastOrDefault, cancellationToken);
                         case nameof(Queryable.Single):
+                            return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(Executor, Reduction.Single, cancellationToken);
                         case nameof(Queryable.SingleOrDefault):
-                            return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(Executor, method.Name, cancellationToken);
+                            return query.ApplyWhere(arguments[1]).ExecuteReductionAsync<T>(Executor, Reduction.SingleOrDefault, cancellationToken);
                         case nameof(Queryable.Count):
                             // T must be int
-                            return TaskCast<int, T>(query.ApplyWhere(arguments[1]).ExecuteReductionAsync<int>(Executor, method.Name, cancellationToken));
+                            return TaskCast<int, T>(query.ApplyWhere(arguments[1]).ExecuteReductionAsync<int>(Executor, Reduction.Count, cancellationToken));
                         case nameof(Queryable.Any):
                             // T must be bool
-                            return TaskCast<bool, T>(query.ApplyWhere(arguments[1]).ExecuteReductionAsync<bool>(Executor, method.Name, cancellationToken));
+                            return TaskCast<bool, T>(query.ApplyWhere(arguments[1]).ExecuteReductionAsync<bool>(Executor, Reduction.Any, cancellationToken));
                     }
                 }
                 throw new NotSupportedException($"Method {method} is not supported.");

@@ -33,7 +33,7 @@ public interface IDataQueryExecutor
     /// <returns>Reduction result.</returns>
     Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
         string target,
-        string reduction,
+        Reduction reduction,
         Ast.Node? filter = default,
         Ast.Node? sortBy = default,
         bool isDescending = false,

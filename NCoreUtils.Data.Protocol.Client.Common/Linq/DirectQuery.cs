@@ -10,7 +10,7 @@ namespace NCoreUtils.Data.Protocol.Linq;
 
 public static class DirectQuery
 {
-    public static Query<T> Create<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(QueryProvider provider) => new DirectQuery<T>(provider);
+    public static Query<T> Create<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IProtocolQueryProvider provider) => new DirectQuery<T>(provider);
 }
 
 internal record DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
@@ -62,7 +62,7 @@ internal record DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMembe
             Limit
         );
 
-    internal override Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, string reduction, CancellationToken cancellationToken)
+    internal override Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken)
         => executor.ExecuteReductionAsync<T, TResult>(
             Target,
             reduction,

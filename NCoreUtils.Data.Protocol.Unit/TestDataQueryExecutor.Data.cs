@@ -18,7 +18,7 @@ public partial class TestDataQueryExecutor
 
     public record ExecuteReductionData(
         string Target,
-        string Reduction,
+        Reduction Reduction,
         Node? Filter,
         Node? SortBy,
         bool IsDescending,

@@ -25,7 +25,7 @@ public abstract record Query(IProtocolQueryProvider Provider) : IOrderedQueryabl
 
     protected abstract IEnumerator GetBoxedEnumerator();
 
-    internal abstract Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, string reduction, CancellationToken cancellationToken);
+    internal abstract Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken);
 
     public abstract Query ApplyWhere(Ast.Lambda node);
 

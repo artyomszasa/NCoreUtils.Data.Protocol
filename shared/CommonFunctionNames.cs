@@ -1,6 +1,6 @@
 namespace NCoreUtils.Data.Protocol;
 
-internal static class CommonFunctionNames
+public static class CommonFunctionNames
 {
     public const string Length = "length";
 

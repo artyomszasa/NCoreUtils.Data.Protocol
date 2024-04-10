@@ -2,6 +2,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NCoreUtils.Data.Protocol.CommonClientFunctions;
+using NCoreUtils.Data.Protocol.Linq;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
@@ -31,6 +32,7 @@ public static class ServiceCollectionDataProtocolCommonClientExtensions
         services.AddScoped<IFunctionMatcher>(serviceProvider => new CompositeFunctionMatcher(
             serviceProvider.GetServices<IFunctionMatcherWrapper>()
         ));
+        services.TryAddScoped<IProtocolQueryProvider, QueryProvider>();
         return services;
     }
 

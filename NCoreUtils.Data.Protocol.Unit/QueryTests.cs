@@ -164,7 +164,8 @@ public class QueryTests
         Assert.Equal(qparser.ParseQuery("x => x.num > 32"), data.Filter);
         Assert.Equal(qparser.ParseQuery("x => x.num"), data.SortBy);
         Assert.False(data.IsDescending);
-        Assert.Equal("any", data.Reduction, true);
+        Assert.Same(Reductions.Any.Singleton, data.Reduction);
+        Assert.Equal("any", data.Reduction.Name, ignoreCase: true);
     });
 
     [Fact]

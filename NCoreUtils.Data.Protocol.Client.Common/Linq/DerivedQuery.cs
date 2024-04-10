@@ -40,7 +40,7 @@ internal record DerivedQuery<
         }
     }
 
-    internal override Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, string reduction, CancellationToken cancellationToken)
+    internal override Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken)
         => executor.ExecuteReductionAsync<TBase, TResult>(
             Target,
             reduction,

@@ -39,7 +39,7 @@ public partial class TestDataQueryExecutor : IDataQueryExecutor
 
     public Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
         string target,
-        string reduction,
+        Reduction reduction,
         Node? filter = null,
         Node? sortBy = null,
         bool isDescending = false,
