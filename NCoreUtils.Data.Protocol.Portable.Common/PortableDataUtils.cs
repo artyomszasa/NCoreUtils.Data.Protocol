@@ -36,6 +36,7 @@ public partial class PortableDataUtils : IDataUtils
             { typeof(ushort), new UInt16Descriptor() },
             { typeof(uint), new UInt32Descriptor() },
             { typeof(ulong), new UInt64Descriptor() },
+            { typeof(bool?), new NullableBooleanDescriptor() },
             { typeof(short?), new NullableInt16Descriptor() },
             { typeof(int?), new NullableInt32Descriptor() },
             { typeof(long?), new NullableInt64Descriptor() },
