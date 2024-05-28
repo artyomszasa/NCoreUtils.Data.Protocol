@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using NCoreUtils.Data.Protocol.TypeInference;
@@ -30,4 +31,15 @@ public sealed class CollectionAll : IFunctionDescriptorResolver
         descriptor = default;
         return false;
     }
+
+#if NETFRAMEWORK
+    public IFunctionDescriptor ResolveFunction(
+        IDataUtils util,
+        string name,
+        TypeVariable resultTypeConstraints,
+        IReadOnlyList<TypeVariable> argumentTypeConstraints,
+        Func<IFunctionDescriptor> next)
+        => DefaultFunctionDescriptorResolverImplementation
+            .ResolveFunction(this, util, name, resultTypeConstraints, argumentTypeConstraints, next);
+#endif
 }

@@ -31,7 +31,11 @@ public interface IFunctionDescriptorResolver
         TypeVariable resultTypeConstraints,
         IReadOnlyList<TypeVariable> argumentTypeConstraints,
         Func<IFunctionDescriptor> next)
+#if NETFRAMEWORK
+        ;
+#else
         => TryResolveFunction(util, name, resultTypeConstraints, argumentTypeConstraints, out var descriptor)
             ? descriptor
             : next();
+#endif
 }

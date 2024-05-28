@@ -24,6 +24,17 @@ internal sealed class FunctionDescriptorResolverWrapper(IFunctionDescriptorResol
             out descriptor
         );
 
+#if NETFRAMEWORK
+    public IFunctionDescriptor ResolveFunction(
+        IDataUtils util,
+        string name,
+        TypeVariable resultTypeConstraints,
+        IReadOnlyList<TypeVariable> argumentTypeConstraints,
+        Func<IFunctionDescriptor> next)
+        => DefaultFunctionDescriptorResolverImplementation
+            .ResolveFunction(this, util, name, resultTypeConstraints, argumentTypeConstraints, next);
+#endif
+
     public void Dispose()
         => (Resolver as IDisposable)?.Dispose();
 }

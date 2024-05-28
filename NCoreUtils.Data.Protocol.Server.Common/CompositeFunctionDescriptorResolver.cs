@@ -53,4 +53,15 @@ public class CompositeFunctionDescriptorResolver : IAmbigousFunctionDescriptorRe
         descriptor = default;
         return false;
     }
+
+#if NETFRAMEWORK
+    public IFunctionDescriptor ResolveFunction(
+        IDataUtils util,
+        string name,
+        TypeVariable resultTypeConstraints,
+        IReadOnlyList<TypeVariable> argumentTypeConstraints,
+        Func<IFunctionDescriptor> next)
+        => DefaultFunctionDescriptorResolverImplementation
+            .ResolveFunction(this, util, name, resultTypeConstraints, argumentTypeConstraints, next);
+#endif
 }

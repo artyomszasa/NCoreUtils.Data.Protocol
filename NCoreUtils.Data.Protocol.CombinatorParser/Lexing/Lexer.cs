@@ -40,6 +40,13 @@ public ref struct Lexer(string input)
             => new(_buffer, 0, _offset);
     }
 
+    private static string CreateString(ReadOnlySpan<char> source)
+#if NETFRAMEWORK
+        => source.ToString();
+#else
+        => new(source);
+#endif
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Token HandleSingleCharToken(TokenType tokenType, ref Source source)
     {
@@ -71,7 +78,7 @@ public ref struct Lexer(string input)
         }
         var startPosition = source.Position;
         source.Advance(index);
-        return Token.Num(startPosition, source.Position, new(input[..index]));
+        return Token.Num(startPosition, source.Position, CreateString(input[..index]));
     }
 
     /// <summary>
@@ -159,7 +166,7 @@ public ref struct Lexer(string input)
         }
         var startPosition = source.Position;
         source.Advance(index);
-        return Token.Ident(startPosition, source.Position, new(input[..index]));
+        return Token.Ident(startPosition, source.Position, CreateString(input[..index]));
     }
 
     private static Token HandleWhitespace(ReadOnlySpan<char> input, ref Source source)
@@ -171,7 +178,7 @@ public ref struct Lexer(string input)
         }
         var startPosition = source.Position;
         source.Advance(index);
-        return Token.Ws(startPosition, source.Position, new(input[..index]));
+        return Token.Ws(startPosition, source.Position, CreateString(input[..index]));
     }
 
     private Source Source = new(input);

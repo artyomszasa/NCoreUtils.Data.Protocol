@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol.Internal;
 
@@ -37,8 +38,25 @@ public static class ReflectionEnumFactory
         => InstanceCache.GetOrAdd(type, InstanceFactory);
 }
 
+internal static class ParseHelper
+{
+#if NETFRAMEWORK
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TEnum Parse<TEnum>(string input, bool ignoreCase)
+        where TEnum : struct, Enum
+        => (TEnum)Enum.Parse(typeof(TEnum), input, ignoreCase);
+#else
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TEnum Parse<TEnum>(string input, bool ignoreCase)
+        where TEnum : struct, Enum
+        => Enum.Parse<TEnum>(input, ignoreCase);
+#endif
+
+
+}
+
 public sealed class ReflectionInt64EnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -46,12 +64,12 @@ public sealed class ReflectionInt64EnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), i64);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }
 
 public sealed class ReflectionInt32EnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -59,12 +77,12 @@ public sealed class ReflectionInt32EnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), i32);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }
 
 public sealed class ReflectionInt16EnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -72,12 +90,12 @@ public sealed class ReflectionInt16EnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), i16);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }
 
 public sealed class ReflectionSByteEnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -85,12 +103,12 @@ public sealed class ReflectionSByteEnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), i8);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }
 
 public sealed class ReflectionUInt64EnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -98,12 +116,12 @@ public sealed class ReflectionUInt64EnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), ui64);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }
 
 public sealed class ReflectionUInt32EnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -111,12 +129,12 @@ public sealed class ReflectionUInt32EnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), ui32);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }
 
 public sealed class ReflectionUInt16EnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -124,12 +142,12 @@ public sealed class ReflectionUInt16EnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), ui16);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }
 
 public sealed class ReflectionByteEnumFactory<TEnum> : IEnumFactory
-    where TEnum : struct, System.Enum
+    where TEnum : struct, Enum
 {
     public object FromRawValue(string rawValue)
     {
@@ -137,6 +155,6 @@ public sealed class ReflectionByteEnumFactory<TEnum> : IEnumFactory
         {
             return Enum.ToObject(typeof(TEnum), ui8);
         }
-        return Enum.Parse<TEnum>(rawValue, ignoreCase: true);
+        return ParseHelper.Parse<TEnum>(rawValue, ignoreCase: true);
     }
 }

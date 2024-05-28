@@ -11,45 +11,81 @@ public partial interface IDataUtils
     bool IsValue(Type type);
 
     bool IsReference(Type type)
-        => !IsValue(type);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsReference(this, type);
+#endif
 
     bool IsNullable(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsNullable(Type type)
-        => IsNullable(type, out _);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsNullable(this, type);
+#endif
 
     bool IsMaybe(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsMaybe(Type type)
-        => IsMaybe(type, out _);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsMaybe(this, type);
+#endif
 
     bool IsOptional(Type type)
-        => IsNullable(type) || IsMaybe(type);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsOptional(this, type);
+#endif
 
     bool IsReferenceOrNullable(Type type)
-        => IsReference(type) || IsNullable(type);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsReferenceOrNullable(this, type);
+#endif
 
     bool IsEnum(Type type);
 
     bool IsArithmetic(Type type);
 
     bool IsArithmeticOrEnum(Type type)
-        => IsArithmetic(type) || IsEnum(type);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsArithmeticOrEnum(this, type);
+#endif
 
     bool IsLambda(Type type, [MaybeNullWhen(false)] out Type argType, [MaybeNullWhen(false)] out Type resType);
 
     bool IsLambda(Type type)
-        => IsLambda(type, out _, out _);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsLambda(this, type);
+#endif
 
     bool IsArray(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsArray(Type type)
-        => IsArray(type, out _);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsArray(this, type);
+#endif
 
     bool IsEnumerable(Type type, [MaybeNullWhen(false)] out Type elementType);
 
     bool IsEnumerable(Type type)
-        => IsEnumerable(type, out _);
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.IsEnumerable(this, type);
+#endif
 
     /// <summary>
     /// Returns <c>true</c> if type specified by <paramref name="baseType" /> is assignable from
@@ -64,18 +100,11 @@ public partial interface IDataUtils
     IReadOnlyList<PropertyInfo> GetProperties(Type type);
 
     bool TryGetProperty(Type type, string propertyName, [MaybeNullWhen(false)] out PropertyInfo property)
-    {
-        foreach (var prop in GetProperties(type))
-        {
-            if (StringComparer.InvariantCultureIgnoreCase.Equals(propertyName, prop.Name))
-            {
-                property = prop;
-                return true;
-            }
-        }
-        property = default;
-        return false;
-    }
+#if NETFRAMEWORK
+    ;
+#else
+        => DefaultDataUtilsImplementation.TryGetProperty(this, type, propertyName, out property);
+#endif
 
     Type GetArrayOfType(Type elementType);
 

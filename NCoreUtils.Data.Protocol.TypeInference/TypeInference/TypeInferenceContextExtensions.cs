@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
@@ -65,7 +66,7 @@ public static class TypeInferenceContextExtensions
         {
             var processedSubstitutions = new HashSet<Substitution> { new(TypeRelation.SameAs, uid) };
             var toMerge = new Queue<Substitution>(substitutions);
-            while (toMerge.TryDequeue(out var next))
+            while (TryDequeue(toMerge, out var next))
             {
                 if (processedSubstitutions.Add(next))
                 {
@@ -88,6 +89,29 @@ public static class TypeInferenceContextExtensions
             }
         }
         return v0;
+
+        static bool TryDequeue(Queue<Substitution> queue, [MaybeNullWhen(false)] out Substitution item)
+#if NETFRAMEWORK
+        {
+            if (queue.Count > 0)
+            {
+                try
+                {
+                    item = queue.Dequeue();
+                    return true;
+                }
+                catch (InvalidOperationException)
+                {
+                    item = default;
+                    return false;
+                }
+            }
+            item = default;
+            return false;
+        }
+#else
+            => queue.TryDequeue(out item);
+#endif
     }
 
     public static Maybe<Type> MaybeInstantiateType(this TypeInferenceContext ctx, IPropertyResolver propertyResolver, TypeUid uid)
