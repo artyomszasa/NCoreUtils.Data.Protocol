@@ -287,6 +287,7 @@ internal class ProtocolContextEmitter
         public global::System.Type Type
         {{
             {(data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL2026\")]" : string.Empty)}
+            {(data.IsEnum || data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL3050\")]" : string.Empty)}
             get => typeof({data.FullName});
         }}
 
