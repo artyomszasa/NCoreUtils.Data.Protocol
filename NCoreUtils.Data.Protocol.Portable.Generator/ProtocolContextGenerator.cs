@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -208,7 +209,7 @@ namespace NCoreUtils.Data.Protocol
             }
             if (entityTypes is not null || lambdaTypes is not null)
             {
-                return new(
+                var target = new ProtocolContextTarget(
                     semanticModel,
                     cds,
                     genMode,
@@ -216,6 +217,7 @@ namespace NCoreUtils.Data.Protocol
                     lambdaTypes ?? new(SymbolEqualityComparer.Default),
                     explicitDescriptorTypes ?? new(SymbolEqualityComparer.Default)
                 );
+                return target;
             }
         }
         return default;
@@ -328,6 +330,13 @@ namespace NCoreUtils.Data.Protocol
         {
             try
             {
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.ProcessingTarget,
+                    target.Cds.GetLocation(),
+                    new object [] { target }
+                ));
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
                 var compilation = target.SemanticModel.Compilation;
                 var nullableT = compilation.GetSpecialType(SpecialType.System_Nullable_T)!;
                 var enumerableT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T)!;
@@ -393,6 +402,13 @@ namespace NCoreUtils.Data.Protocol
                         throw new Exception($"not-named non-array type: {type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
                     }
                 }
+                stopwatch.Stop();
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.DoneCollectingTypes,
+                    default,
+                    new object[] { stopwatch.ElapsedMilliseconds, string.Join(", ", targetTypes.Keys.Select(ty => ty.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat))) }
+                ));
+                stopwatch.Restart();
                 var emitter = new ProtocolContextEmitter(builtinTypes, enumerableT, readOnlyListT);
                 var name = target.Cds.Identifier.ValueText;
                 var @namespace = Helpers.GetSyntaxNamespace(target.Cds) ?? "NCoreUtils.Data.Proto";
@@ -412,6 +428,12 @@ namespace NCoreUtils.Data.Protocol
                     targetTypes.Values,
                     lambdas,
                     ctx.ReportDiagnostic);
+                stopwatch.Stop();
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.DoneEmittingContext,
+                    default,
+                    new object[] { stopwatch.ElapsedMilliseconds, target.SelfType.Name }
+                ));
                 ctx.AddSource($"{name}.g.cs", SourceText.From(rawSource, Utf8));
             }
             catch (Exception exn)

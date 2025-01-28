@@ -287,6 +287,7 @@ internal class ProtocolContextEmitter
         public global::System.Type Type
         {{
             {(data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL2026\")]" : string.Empty)}
+            {(data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL2111\")]" : string.Empty)}
             {(data.IsEnum || data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL3050\")]" : string.Empty)}
             get => typeof({data.FullName});
         }}
@@ -412,6 +413,8 @@ internal class ProtocolContextEmitter
     private static string EmitDescriptor(TypeData data, INamedTypeSymbol enumerableT, INamedTypeSymbol readonlyListT)
         => DescriptorEmitCache.GetOrAdd(data, d => EmitDescriptorImpl(d, enumerableT, readonlyListT));
 
+    private static int BuildVersion { get; set; }
+
     public string EmitContext(
         string @namespace,
         string name,
@@ -443,6 +446,8 @@ namespace {@namespace}
 {{
 {visibility} partial class {name} : global::NCoreUtils.Data.Protocol.IPortableDataContext
 {{
+    public const int __BuildVersion = {BuildVersion++};
+
     {string.Join("\n\n    ", types.Where(data => !explicitDescriptors.ContainsKey(data.Symbol)).Select(data => EmitDescriptor(data, EnumerableT, ReadOnlyListT)))}
 
     private static readonly global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor[] _descriptors = new global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor[]

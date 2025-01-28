@@ -8,6 +8,14 @@ namespace NCoreUtils.Data.Protocol.Internal;
 
 public static class ServiceCollectionDataProtocolCommonClientExtensions
 {
+    public static IServiceCollection InternalAddCompositeFunctionMatcher(this IServiceCollection services)
+    {
+        services.AddScoped<IFunctionMatcher>(serviceProvider => new CompositeFunctionMatcher(
+            serviceProvider.GetServices<IFunctionMatcherWrapper>()
+        ));
+        return services;
+    }
+
     public static IServiceCollection AddCommonDataQueryClientServices(
         this IServiceCollection services,
         bool noCommonFunctions = false,
@@ -29,9 +37,7 @@ public static class ServiceCollectionDataProtocolCommonClientExtensions
         }
         configureFunctions?.Invoke(builder);
         services.TryAddScoped<ExpressionParser>();
-        services.AddScoped<IFunctionMatcher>(serviceProvider => new CompositeFunctionMatcher(
-            serviceProvider.GetServices<IFunctionMatcherWrapper>()
-        ));
+        services.InternalAddCompositeFunctionMatcher();
         services.TryAddScoped<IProtocolQueryProvider, QueryProvider>();
         return services;
     }

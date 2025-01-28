@@ -176,6 +176,12 @@ internal class DefaultMembersEmitter
     {
         if (opts.GenerateType)
         {
+            if (target.TargetTypeSymbol.Name == "Guid")
+            {
+                return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    [UnconditionalSuppressMessage(""Trimming"", ""IL3050"")]
+    public{target.Modifier} Type Type => typeof({target.TargetFullName});";
+            }
             return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     public{target.Modifier} Type Type => typeof({target.TargetFullName});";
         }
