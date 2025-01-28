@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using NCoreUtils.Data.Protocol.Internal;
 using NCoreUtils.Memory;
 
@@ -9,6 +10,18 @@ namespace NCoreUtils.Data.Protocol.Ast;
 
 public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator==(Node? a, Node? b)
+        => a is null
+            ? b is null
+            : a.Equals(b);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator!=(Node? a, Node? b)
+        => a is null
+            ? b is not null
+            : !a.Equals(b);
+
     private static bool SequenceDeepEq(IReadOnlyList<Node> @as, IReadOnlyList<Node> bs, ImmutableDictionary<UniqueString, UniqueString> context)
     {
         if (@as.Count != bs.Count)
@@ -36,7 +49,7 @@ public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
             (Member ma, Member mb) when StringComparer.InvariantCultureIgnoreCase.Equals(ma.MemberName, mb.MemberName) =>
                 DeepEq(ma.Instance, mb.Instance, context),
             (Constant ca, Constant cb) => ca.RawValue == cb.RawValue,
-            (Identifier ia, Identifier ib) => context.TryGetValue(ia.Value, out var mapped) && mapped == ib.Value,
+            (Identifier ia, Identifier ib) => ia.Value == ib.Value || (context.TryGetValue(ia.Value, out var mapped) && mapped == ib.Value),
             _ => false
         };
 
@@ -83,7 +96,8 @@ public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
     public abstract TResult Accept<TArg1, TArg2, TResult>(INodeVisitor<TArg1, TArg2, TResult> visitor, TArg1 arg1, TArg2 arg2);
 
     public bool Equals(Node? node)
-        => node is not null && DeepEq(this, node, ImmutableDictionary<UniqueString, UniqueString>.Empty);
+        => node is not null
+            && (ReferenceEquals(this, node) || DeepEq(this, node, ImmutableDictionary<UniqueString, UniqueString>.Empty));
 
     public override bool Equals(object? obj)
         => obj is Node other && Equals(other);
