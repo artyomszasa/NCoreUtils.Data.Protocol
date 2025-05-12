@@ -66,6 +66,18 @@ public class DataQueryExpressionBuilderTests : IDisposable
     });
 
     [Theory]
+    [InlineData("o => o.num + 1", 2, 3)]
+    [InlineData("o => o.num - 1", 2, 1)]
+    [InlineData("o => o.num * 2", 2, 4)]
+    [InlineData("o => o.num / 2", 2, 1)]
+    [InlineData("o => o.num % 2", 2, 0)]
+    public void ArithmeticOpsF(string raw, double input, double expected) => Scoped((IDataQueryExpressionBuilder builder) =>
+    {
+        var expression = (Expression<Func<ItemF, double>>)builder.BuildExpression(typeof(ItemF), raw);
+        Assert.Equal(expected, expression.Compile()(ItemF.FromNum(input)));
+    });
+
+    [Theory]
     [InlineData("o => o.num > 2", 2, false)]
     [InlineData("o => o.num > 2", 3, true)]
     [InlineData("o => o.num < 2", 2, false)]

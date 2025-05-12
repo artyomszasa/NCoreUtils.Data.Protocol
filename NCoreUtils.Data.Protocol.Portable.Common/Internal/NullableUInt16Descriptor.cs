@@ -9,6 +9,11 @@ namespace NCoreUtils.Data.Protocol.Internal;
 [BuiltInDescriptor(typeof(ushort?))]
 public sealed partial class NullableUInt16Descriptor : ArithmeticTypeDescriptor
 {
+    public static ushort? ParseUInt16(string value)
+        => string.IsNullOrEmpty(value)
+            ? default(ushort?)
+            : ushort.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
+
     public override IReadOnlyList<PropertyInfo> Properties { get; } = new PropertyInfo[]
     {
         (PropertyInfo)((MemberExpression)((Expression<Func<ushort?, bool>>)(e => e.HasValue)).Body).Member,
@@ -19,7 +24,7 @@ public sealed partial class NullableUInt16Descriptor : ArithmeticTypeDescriptor
         => baseType.Equals(typeof(ushort?));
 
     public override object Parse(string value)
-        => ushort.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        => ParseUInt16(value)!;
 
     public override string? Stringify(object? value) => value is null ? default : ((ushort)value!).ToString("D", CultureInfo.InvariantCulture);
 }

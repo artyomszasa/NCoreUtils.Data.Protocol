@@ -218,6 +218,7 @@ public partial record TypeConstraints
             switch (arithmeticity.Value, util.IsArithmeticOrEnum(candidateType))
             {
                 case (true, false):
+                    var x = util.IsArithmeticOrEnum(candidateType);
                     error = new(candidateType, TypeConstriantMismatchReason.NumericConstraint.Instance);
                     return false;
                 case (false, true):

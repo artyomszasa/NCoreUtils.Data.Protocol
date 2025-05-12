@@ -4,7 +4,18 @@ namespace NCoreUtils.Data.Protocol.Unit;
 
 public record SubItem(string Name);
 
-public partial record Item(int Num, string? Str, SubItem[] Sub);
+public partial record Item(int Num, string? Str, SubItem[] Sub)
+{
+    public static Item FromInt32(int numValue) => new(numValue, default, Array.Empty<SubItem>());
+
+    public static Item FromString(string? strValue) => new(default, strValue, Array.Empty<SubItem>());
+}
+
+
+public partial record ItemF(double Num, string? Str, SubItem[] Sub)
+{
+    public static ItemF FromNum(double numValue) => new(numValue, default, Array.Empty<SubItem>());
+}
 
 public enum AOrB { A = 0, B }
 
@@ -20,13 +31,6 @@ public record ItemWithNullableDateTimeOffset(DateTimeOffset? Value);
 public record ItemWithNullableDateOnly(DateOnly? Value);
 
 public record ItemWithComplexData(SomeComplexData Data);
-
-public partial record Item
-{
-    public static Item FromInt32(int numValue) => new(numValue, default, Array.Empty<SubItem>());
-
-    public static Item FromString(string? strValue) => new(default, strValue, Array.Empty<SubItem>());
-}
 
 public class BaseEntity
 {

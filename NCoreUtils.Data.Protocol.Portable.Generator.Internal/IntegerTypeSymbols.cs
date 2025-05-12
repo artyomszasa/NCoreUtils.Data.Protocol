@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 
 namespace NCoreUtils.Data.Protocol.Generator;
 
-internal sealed class IntegerTypeSymbols : IEnumerable<ITypeSymbol>
+internal sealed class IntegerTypeSymbols(Compilation compilation) : IEnumerable<ITypeSymbol>
 {
     private ITypeSymbol? _nullableInt16;
 
@@ -19,9 +19,9 @@ internal sealed class IntegerTypeSymbols : IEnumerable<ITypeSymbol>
 
     private ITypeSymbol? _nullableUInt64;
 
-    private Compilation Compilation { get; }
+    private Compilation Compilation { get; } = compilation;
 
-    private INamedTypeSymbol NullableT { get; }
+    private INamedTypeSymbol NullableT { get; } = compilation.GetSpecialType(SpecialType.System_Nullable_T);
 
     public ITypeSymbol NullableInt16 => _nullableInt16 ??= NullableT.Construct(Compilation.GetSpecialType(SpecialType.System_Int16));
 
@@ -52,12 +52,6 @@ internal sealed class IntegerTypeSymbols : IEnumerable<ITypeSymbol>
         _ => throw new InvalidOperationException("Should never happen.")
     };
 
-    public IntegerTypeSymbols(Compilation compilation)
-    {
-        Compilation = compilation;
-        NullableT = compilation.GetSpecialType(SpecialType.System_Nullable_T);
-    }
-
     public IEnumerator<ITypeSymbol> GetEnumerator()
     {
         yield return Compilation.GetSpecialType(SpecialType.System_Int16);
@@ -66,6 +60,8 @@ internal sealed class IntegerTypeSymbols : IEnumerable<ITypeSymbol>
         yield return Compilation.GetSpecialType(SpecialType.System_UInt16);
         yield return Compilation.GetSpecialType(SpecialType.System_UInt32);
         yield return Compilation.GetSpecialType(SpecialType.System_UInt64);
+        yield return Compilation.GetSpecialType(SpecialType.System_Single);
+        yield return Compilation.GetSpecialType(SpecialType.System_Double);
         yield return NullableInt16;
         yield return NullableInt32;
         yield return NullableInt64;

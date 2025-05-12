@@ -9,6 +9,11 @@ namespace NCoreUtils.Data.Protocol.Internal;
 [BuiltInDescriptor(typeof(ulong?))]
 public sealed partial class NullableUInt64Descriptor : ArithmeticTypeDescriptor
 {
+    public static ulong? ParseUInt64(string value)
+        => string.IsNullOrEmpty(value)
+            ? default(ulong?)
+            : ulong.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
+
     public override IReadOnlyList<PropertyInfo> Properties { get; } = new PropertyInfo[]
     {
         (PropertyInfo)((MemberExpression)((Expression<Func<ulong?, bool>>)(e => e.HasValue)).Body).Member,
@@ -19,7 +24,7 @@ public sealed partial class NullableUInt64Descriptor : ArithmeticTypeDescriptor
         => baseType.Equals(typeof(ulong?));
 
     public override object Parse(string value)
-        => ulong.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        => ParseUInt64(value)!;
 
     public override string? Stringify(object? value) => value is null ? default : ((ulong)value!).ToString("D", CultureInfo.InvariantCulture);
 }

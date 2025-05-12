@@ -359,6 +359,8 @@ namespace NCoreUtils.Data.Protocol
                     compilation.GetSpecialType(SpecialType.System_UInt16),
                     compilation.GetSpecialType(SpecialType.System_UInt32),
                     compilation.GetSpecialType(SpecialType.System_UInt64),
+                    compilation.GetSpecialType(SpecialType.System_Single),
+                    compilation.GetSpecialType(SpecialType.System_Double),
                     compilation.GetSpecialType(SpecialType.System_DateTime),
                 };
 

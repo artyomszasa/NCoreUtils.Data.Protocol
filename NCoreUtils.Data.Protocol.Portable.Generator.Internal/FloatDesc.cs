@@ -1,6 +1,6 @@
 namespace NCoreUtils.Data.Protocol.Generator;
 
-internal readonly struct IntDesc(int size, bool signed, bool nullable)
+internal readonly struct FloatDesc(int size, bool signed, bool nullable)
 {
     public int Size { get; } = size;
 

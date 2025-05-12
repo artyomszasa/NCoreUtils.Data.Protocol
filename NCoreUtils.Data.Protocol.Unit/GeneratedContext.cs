@@ -17,6 +17,7 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolEntity(typeof(Item))]
 [ProtocolLambda(typeof(Item), typeof(Func<string, bool>))]
 [ProtocolLambda(typeof(Item), typeof(Func<SubItem, bool>))]
+[ProtocolEntity(typeof(ItemF))]
 [ProtocolEntity(typeof(DerivedEntity))]
 [ProtocolEntity(typeof(List<int>))]
 [ProtocolEntity(typeof(HashSet<int>))]

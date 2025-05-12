@@ -7,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.Generator;
 
 #pragma warning disable IDE0060
 
-internal class DefaultMembersEmitter
+internal class DefaultMembersEmitter(IntegerTypeSymbols intSymbols, FloatingTypeSymbols floatSymbols)
 {
     private static ref readonly IntDesc InCond(bool condition, in IntDesc a, in IntDesc b)
     {
@@ -18,13 +18,35 @@ internal class DefaultMembersEmitter
         return ref b;
     }
 
-    private static bool TryGetNextSize(int size, out int nextSize)
+    private static ref readonly FloatDesc InCond(bool condition, in FloatDesc a, in FloatDesc b)
+    {
+        if (condition)
+        {
+            return ref a;
+        }
+        return ref b;
+    }
+
+    private static bool TryGetIntNextSize(int size, out int nextSize)
     {
         switch (size)
         {
             case 2:
                 nextSize = 4;
                 return true;
+            case 4:
+                nextSize = 8;
+                return true;
+            default:
+                nextSize = default;
+                return false;
+        }
+    }
+
+    private static bool TryGetFloatNextSize(int size, out int nextSize)
+    {
+        switch (size)
+        {
             case 4:
                 nextSize = 8;
                 return true;
@@ -49,7 +71,7 @@ internal class DefaultMembersEmitter
             common = new(s.Size, signed: true, nullable: nullable);
             return true;
         }
-        if (TryGetNextSize(Math.Max(s.Size, u.Size), out var size))
+        if (TryGetIntNextSize(Math.Max(s.Size, u.Size), out var size))
         {
             common = new(size, signed: true, nullable: nullable);
             return true;
@@ -58,10 +80,33 @@ internal class DefaultMembersEmitter
         return false;
     }
 
-    private IntegerTypeSymbols IntSymbols { get; }
+    private static bool TryGetCommonFloatDesc(in FloatDesc a, in FloatDesc b, out FloatDesc common)
+    {
+        var nullable = a.Nullable || b.Nullable;
+        if (a.Signed == b.Signed)
+        {
+            common = new(Math.Max(a.Size, b.Size), a.Signed, nullable);
+            return true;
+        }
+        ref readonly FloatDesc s = ref InCond(a.Signed, in a, in b);
+        ref readonly FloatDesc u = ref InCond(a.Signed, in b, in a);
+        if (s.Size > u.Size)
+        {
+            common = new(s.Size, signed: true, nullable: nullable);
+            return true;
+        }
+        if (TryGetFloatNextSize(Math.Max(s.Size, u.Size), out var size))
+        {
+            common = new(size, signed: true, nullable: nullable);
+            return true;
+        }
+        common = default;
+        return false;
+    }
 
-    public DefaultMembersEmitter(IntegerTypeSymbols intSymbols)
-        => IntSymbols = intSymbols;
+    private IntegerTypeSymbols IntSymbols { get; } = intSymbols;
+
+    private FloatingTypeSymbols FloatSymbols { get; } = floatSymbols;
 
     private bool IsInteger(ITypeSymbol type, out IntDesc desc)
     {
@@ -125,6 +170,42 @@ internal class DefaultMembersEmitter
             desc = new(8, false, true);
             return true;
         }
+        desc = default;
+        return false;
+    }
+
+    private bool IsFloating(ITypeSymbol type, out FloatDesc desc)
+    {
+        if (type.SpecialType == SpecialType.System_Single)
+        {
+            desc = new(4, true, false);
+            return true;
+        }
+        if (type.SpecialType == SpecialType.System_Double)
+        {
+            desc = new(8, true, false);
+            return true;
+        }
+        // if (type.SpecialType == SpecialType.System_Decimal)
+        // {
+        //     desc = new(16, true, false);
+        //     return true;
+        // }
+        if (SymbolEqualityComparer.Default.Equals(type, FloatSymbols.NullableSingle))
+        {
+            desc = new(4, true, true);
+            return true;
+        }
+        if (SymbolEqualityComparer.Default.Equals(type, FloatSymbols.NullableDouble))
+        {
+            desc = new(8, true, true);
+            return true;
+        }
+        // if (SymbolEqualityComparer.Default.Equals(type, FloatSymbols.NullableDecimal))
+        // {
+        //     desc = new(16, true, true);
+        //     return true;
+        // }
         desc = default;
         return false;
     }
@@ -549,14 +630,32 @@ internal class DefaultMembersEmitter
 
     private string EmitUnifyExpressionTypes(BuiltInDescriptorTarget target)
     {
-        if (IsInteger(target.TargetTypeSymbol, out var desc))
+        if (IsInteger(target.TargetTypeSymbol, out var idesc0))
         {
             var cases0 = new List<(ITypeSymbol RightType, ITypeSymbol CommonType)>();
             foreach (var ity in IntSymbols)
             {
-                if (IsInteger(ity, out var idesc) && TryGetCommonIntDesc(in desc, in idesc, out var common))
+                if (IsInteger(ity, out var idesc) && TryGetCommonIntDesc(in idesc0, in idesc, out var common))
                 {
                     cases0.Add((ity, IntSymbols[in common]));
+                }
+            }
+            var cases = cases0
+                .Select(tup => EmitUnifyExpressionTypesCase(target, tup.CommonType, tup.RightType));
+            return @$"protected override (Expression Left, Expression Right) UnifyExpressionTypes(Expression self, Expression right)
+    {{
+        {string.Join("\n        ", cases)}
+        throw new InvalidOperationException($""Unable to unify types {target.TargetFullName} and {{right.Type}}."");
+    }}";
+        }
+        if (IsFloating(target.TargetTypeSymbol, out var fdesc0))
+        {
+            var cases0 = new List<(ITypeSymbol RightType, ITypeSymbol CommonType)>();
+            foreach (var ity in FloatSymbols)
+            {
+                if (IsFloating(ity, out var fdesc) && TryGetCommonFloatDesc(in fdesc0, in fdesc, out var common))
+                {
+                    cases0.Add((ity, FloatSymbols[in common]));
                 }
             }
             var cases = cases0

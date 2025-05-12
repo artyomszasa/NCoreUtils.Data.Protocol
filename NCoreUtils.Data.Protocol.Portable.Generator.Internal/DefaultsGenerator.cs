@@ -162,7 +162,7 @@ public partial class PortableDataUtils
         );
         if (!opts.IsEmpty)
         {
-            var emitter = new DefaultMembersEmitter(new(target.SemanticModel.Compilation));
+            var emitter = new DefaultMembersEmitter(new(target.SemanticModel.Compilation), new(target.SemanticModel.Compilation));
             ctx.AddSource($"{target.TypeSymbol.Name}.def.cs", SourceText.From(emitter.EmitDefaultMembers(target, opts), Utf8));
         }
 

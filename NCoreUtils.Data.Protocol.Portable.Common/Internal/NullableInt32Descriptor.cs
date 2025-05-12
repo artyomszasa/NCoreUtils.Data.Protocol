@@ -9,6 +9,11 @@ namespace NCoreUtils.Data.Protocol.Internal;
 [BuiltInDescriptor(typeof(int?))]
 public sealed partial class NullableInt32Descriptor : ArithmeticTypeDescriptor
 {
+    public static int? ParseInt32(string value)
+        => string.IsNullOrEmpty(value)
+            ? default(int?)
+            : int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
+
     public override IReadOnlyList<PropertyInfo> Properties { get; } = new PropertyInfo[]
     {
         (PropertyInfo)((MemberExpression)((Expression<Func<int?, bool>>)(e => e.HasValue)).Body).Member,
@@ -19,7 +24,7 @@ public sealed partial class NullableInt32Descriptor : ArithmeticTypeDescriptor
         => baseType.Equals(typeof(int?));
 
     public override object Parse(string value)
-        => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        => ParseInt32(value)!;
 
     public override string? Stringify(object? value) => value is null ? default : ((int)value!).ToString("D", CultureInfo.InvariantCulture);
 }
