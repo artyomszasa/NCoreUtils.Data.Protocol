@@ -74,6 +74,15 @@ namespace NCoreUtils.Data.Protocol
         public ProtocolDescriptorAttribute(Type descriptorType)
             => DescriptorType = descriptorType;
     }
+
+    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
+    internal sealed class ProtocolOpaqueAttribute : Attribute
+    {
+        public Type Type { get; }
+
+        public ProtocolOpaqueAttribute(Type type)
+            => Type = type;
+    }
 }";
 
     private static UTF8Encoding Utf8 { get; } = new(false);
@@ -93,6 +102,10 @@ namespace NCoreUtils.Data.Protocol
     private static bool IsDescriptorAttribute(string? fullName)
         => fullName == "NCoreUtils.Data.Protocol.ProtocolDescriptorAttribute"
             || fullName == "global::NCoreUtils.Data.Protocol.ProtocolDescriptorAttribute";
+
+    private static bool IsOpaqueAttribute(string? fullName)
+        => fullName == "NCoreUtils.Data.Protocol.ProtocolOpaqueAttribute"
+            || fullName == "global::NCoreUtils.Data.Protocol.ProtocolOpaqueAttribute";
 
     private static T GetConstantAsEnum<T>(SemanticModel semanticModel, ExpressionSyntax expression)
         where T : struct
@@ -117,6 +130,7 @@ namespace NCoreUtils.Data.Protocol
             HashSet<ITypeSymbol>? entityTypes = null;
             HashSet<INamedTypeSymbol>? lambdaTypes = null;
             HashSet<ITypeSymbol>? explicitDescriptorTypes = null;
+            HashSet<ITypeSymbol>? opaqueTypes = null;
             var genMode = GenMode.Predicates | GenMode.Enumerable;
             INamedTypeSymbol func2T = semanticModel.Compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get System.Func<,> type.");
             var attributes = cds.AttributeLists.SelectMany(list => list.Attributes);
@@ -206,6 +220,27 @@ namespace NCoreUtils.Data.Protocol
                         (explicitDescriptorTypes ??= new(SymbolEqualityComparer.Default)).Add(descriptorType);
                     }
                 }
+                else if (IsOpaqueAttribute(fullName))
+                {
+                    var args = (IReadOnlyList<AttributeArgumentSyntax>?)attribute.ArgumentList?.Arguments ?? Array.Empty<AttributeArgumentSyntax>();
+                    ITypeSymbol? type = null;
+                    for (var i = 0; i < args.Count; ++i)
+                    {
+                        var arg = args[i];
+                        switch (i)
+                        {
+                            case 0:
+                                type = semanticModel.GetTypeInfo(arg.ChildNodes().Single().ChildNodes().Single()).ConvertedType;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    if (type is not null)
+                    {
+                        (opaqueTypes ??= new(SymbolEqualityComparer.Default)).Add(type);
+                    }
+                }
             }
             if (entityTypes is not null || lambdaTypes is not null)
             {
@@ -215,7 +250,8 @@ namespace NCoreUtils.Data.Protocol
                     genMode,
                     entityTypes ?? new(SymbolEqualityComparer.Default),
                     lambdaTypes ?? new(SymbolEqualityComparer.Default),
-                    explicitDescriptorTypes ?? new(SymbolEqualityComparer.Default)
+                    explicitDescriptorTypes ?? new(SymbolEqualityComparer.Default),
+                    opaqueTypes ?? new(SymbolEqualityComparer.Default)
                 );
                 return target;
             }
@@ -229,12 +265,15 @@ namespace NCoreUtils.Data.Protocol
         GenMode mode,
         bool root,
         IDictionary<ITypeSymbol, TypeData> targetTypes,
+        HashSet<ITypeSymbol> opaqueTypes,
         INamedTypeSymbol nullableT,
         INamedTypeSymbol enumerableT,
         INamedTypeSymbol func2T,
-        HashSet<ITypeSymbol> builtin)
+        HashSet<ITypeSymbol> builtin,
+        Func<ITypeSymbol, bool> isExplicitlyDescribed)
     {
-        if (root)
+        var explicitlyDescribed = isExplicitlyDescribed(symbol);
+        if (root && !explicitlyDescribed)
         {
             // add array type if not already present
             if (mode.HasFlag(GenMode.Array))
@@ -242,7 +281,7 @@ namespace NCoreUtils.Data.Protocol
                 var arraySymbol = compilation.CreateArrayTypeSymbol(symbol);
                 if (!targetTypes.ContainsKey(arraySymbol))
                 {
-                    targetTypes.Add(arraySymbol, TypeData.Create(arraySymbol, nullableT, enumerableT, func2T));
+                    targetTypes.Add(arraySymbol, TypeData.Create(arraySymbol, nullableT, enumerableT, func2T, opaqueTypes.Contains(arraySymbol)));
                 }
             }
             // add enumerable type if not already present
@@ -251,7 +290,7 @@ namespace NCoreUtils.Data.Protocol
                 var enumerableSymbol = enumerableT.Construct(symbol);
                 if (!targetTypes.ContainsKey(enumerableSymbol))
                 {
-                    targetTypes.Add(enumerableSymbol, TypeData.Create(enumerableSymbol, nullableT, enumerableT, func2T));
+                    targetTypes.Add(enumerableSymbol, TypeData.Create(enumerableSymbol, nullableT, enumerableT, func2T, opaqueTypes.Contains(enumerableSymbol)));
                 }
             }
             // add predicate lambda type
@@ -260,7 +299,7 @@ namespace NCoreUtils.Data.Protocol
                 var predicateSymbol = func2T.Construct(symbol, compilation.GetSpecialType(SpecialType.System_Boolean));
                 if (!targetTypes.ContainsKey(predicateSymbol))
                 {
-                    targetTypes.Add(predicateSymbol, TypeData.Create(predicateSymbol, nullableT, enumerableT, func2T));
+                    targetTypes.Add(predicateSymbol, TypeData.Create(predicateSymbol, nullableT, enumerableT, func2T, opaqueTypes.Contains(predicateSymbol)));
                 }
             }
         }
@@ -268,16 +307,21 @@ namespace NCoreUtils.Data.Protocol
         {
             return;
         }
+        var isOpaque = opaqueTypes.Contains(symbol);
         TypeData data;
         if (symbol is INamedTypeSymbol namedSymbol)
         {
-            data = TypeData.Create(namedSymbol, nullableT, enumerableT, func2T);
+            data = TypeData.Create(namedSymbol, nullableT, enumerableT, func2T, isOpaque);
             targetTypes.Add(namedSymbol, data);
+            if (isOpaque || explicitlyDescribed)
+            {
+                return;
+            }
             if (data.IsValueType)
             {
                 if (!data.IsNullable && mode.HasFlag(GenMode.Nullable))
                 {
-                    AddTargetType(compilation, nullableT.Construct(namedSymbol), mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, nullableT.Construct(namedSymbol), mode, true, targetTypes, opaqueTypes, nullableT, enumerableT, func2T, builtin, isExplicitlyDescribed);
                 }
             }
             else
@@ -287,7 +331,7 @@ namespace NCoreUtils.Data.Protocol
                     && baseType.SpecialType != SpecialType.System_Delegate
                     && baseType.SpecialType != SpecialType.System_MulticastDelegate)
                 {
-                    AddTargetType(compilation, baseType, mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, baseType, mode, true, targetTypes, opaqueTypes, nullableT, enumerableT, func2T, builtin, isExplicitlyDescribed);
                 }
             }
             if (data.IsEnumerable)
@@ -296,21 +340,21 @@ namespace NCoreUtils.Data.Protocol
                 if (!SymbolEqualityComparer.Default.Equals(namedSymbol, enumerableSymbol))
                 {
                     // add IEnumerable<T> for types implementing it!
-                    AddTargetType(compilation, enumerableSymbol, mode, false, targetTypes, nullableT, enumerableT, func2T, builtin);
+                    AddTargetType(compilation, enumerableSymbol, mode, false, targetTypes, opaqueTypes, nullableT, enumerableT, func2T, builtin, isExplicitlyDescribed);
                 }
             }
             foreach (var prop in data.Properties)
             {
-                AddTargetType(compilation, prop.Type, mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
+                AddTargetType(compilation, prop.Type, mode, true, targetTypes, opaqueTypes, nullableT, enumerableT, func2T, builtin, isExplicitlyDescribed);
             }
         }
         else if (symbol is IArrayTypeSymbol arraySymbol)
         {
-            data = TypeData.Create(arraySymbol, nullableT, enumerableT, func2T);
+            data = TypeData.Create(arraySymbol, nullableT, enumerableT, func2T, isOpaque);
             targetTypes.Add(arraySymbol, data);
-            AddTargetType(compilation, arraySymbol.ElementType, mode, true, targetTypes, nullableT, enumerableT, func2T, builtin);
+            AddTargetType(compilation, arraySymbol.ElementType, mode, true, targetTypes, opaqueTypes, nullableT, enumerableT, func2T, builtin, isExplicitlyDescribed);
             // add IEnumerable<T> for array types!
-            AddTargetType(compilation, enumerableT.Construct(arraySymbol.ElementType), mode, false, targetTypes, nullableT, enumerableT, func2T, builtin);
+            AddTargetType(compilation, enumerableT.Construct(arraySymbol.ElementType), mode, false, targetTypes, opaqueTypes, nullableT, enumerableT, func2T, builtin, isExplicitlyDescribed);
         }
         else
         {
@@ -396,7 +440,19 @@ namespace NCoreUtils.Data.Protocol
                 {
                     if (type is INamedTypeSymbol or IArrayTypeSymbol)
                     {
-                        AddTargetType(compilation, type, target.Mode, true, targetTypes, nullableT, enumerableT, func2T, builtinTypes);
+                        AddTargetType(
+                            compilation: compilation,
+                            symbol: type,
+                            mode: target.Mode,
+                            root: true,
+                            targetTypes: targetTypes,
+                            opaqueTypes: target.OpaqueTypes,
+                            nullableT: nullableT,
+                            enumerableT: enumerableT,
+                            func2T: func2T,
+                            builtin: builtinTypes,
+                            isExplicitlyDescribed: explicitDescritors.ContainsKey
+                        );
                     }
                     else
                     {

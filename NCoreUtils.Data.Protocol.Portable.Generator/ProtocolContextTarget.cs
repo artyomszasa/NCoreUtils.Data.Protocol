@@ -22,13 +22,16 @@ internal class ProtocolContextTarget
 
     public HashSet<ITypeSymbol> ExplicitDescriptorTypes { get; }
 
+    public HashSet<ITypeSymbol> OpaqueTypes { get; }
+
     public ProtocolContextTarget(
         SemanticModel semanticModel,
         ClassDeclarationSyntax cds,
         GenMode mode,
         HashSet<ITypeSymbol> entityTypes,
         HashSet<INamedTypeSymbol> lambdaTypes,
-        HashSet<ITypeSymbol> explicitDescriptorTypes)
+        HashSet<ITypeSymbol> explicitDescriptorTypes,
+        HashSet<ITypeSymbol> opaqueTypes)
     {
         SemanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
         Cds = cds ?? throw new ArgumentNullException(nameof(cds));
@@ -37,6 +40,7 @@ internal class ProtocolContextTarget
         EntityTypes = entityTypes ?? throw new ArgumentNullException(nameof(entityTypes));
         LambdaTypes = lambdaTypes ?? throw new ArgumentNullException(nameof(lambdaTypes));
         ExplicitDescriptorTypes = explicitDescriptorTypes ?? throw new ArgumentNullException(nameof(explicitDescriptorTypes));
+        OpaqueTypes = opaqueTypes ?? throw new ArgumentNullException(nameof(opaqueTypes));
     }
 
     public override string ToString()

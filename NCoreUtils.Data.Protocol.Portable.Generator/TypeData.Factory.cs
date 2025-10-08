@@ -69,7 +69,7 @@ public partial class TypeData
         return false;
     }
 
-    public static TypeData Create(ITypeSymbol symbol, INamedTypeSymbol nullableT, INamedTypeSymbol enumerableT, INamedTypeSymbol func2T)
+    public static TypeData Create(ITypeSymbol symbol, INamedTypeSymbol nullableT, INamedTypeSymbol enumerableT, INamedTypeSymbol func2T, bool isOpaque)
     {
         var name = symbol.Name;
         var safeName = GetSafeName(symbol);
@@ -84,7 +84,7 @@ public partial class TypeData
         var argResType = symbol is INamedTypeSymbol named1Symbol && SymbolEqualityComparer.Default.Equals(named1Symbol.ConstructedFrom, func2T)
             ? (named1Symbol.TypeArguments[0], named1Symbol.TypeArguments[1])
             : default((ITypeSymbol Arg, ITypeSymbol Res)?);
-        var properties = (symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct) && elementType is null
+        var properties = (symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct) && elementType is null && !isOpaque
             ? GetPropertiesRecursive(symbol)
             : Array.Empty<IPropertySymbol>();
         return new TypeData(
