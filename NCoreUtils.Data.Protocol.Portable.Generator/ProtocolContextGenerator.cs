@@ -415,6 +415,13 @@ namespace NCoreUtils.Data.Protocol
                     valuePrimitives.Add(dateOnlyType);
                 }
 
+                // NOTE: TimeOnly is only available on .NET6+
+                var timeOnlyType = compilation.GetTypeByMetadataName("System.TimeOnly");
+                if (timeOnlyType is not null)
+                {
+                    valuePrimitives.Add(timeOnlyType);
+                }
+
                 // ctx.ReportDiagnostic(Diagnostic.Create(
                 //     descriptor: new DiagnosticDescriptor(
                 //         id: "NCU1000",
