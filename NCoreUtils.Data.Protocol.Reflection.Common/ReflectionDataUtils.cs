@@ -19,26 +19,49 @@ public partial class ReflectionDataUtils : IDataUtils
         typeof(short),
         typeof(int),
         typeof(long),
+#if NET7_0_OR_GREATER
+        typeof(Int128),
+#endif
         typeof(byte),
         typeof(ushort),
         typeof(uint),
         typeof(ulong),
+#if NET7_0_OR_GREATER
+        typeof(UInt128),
+        typeof(Half),
+#endif
         typeof(decimal),
         typeof(float),
         typeof(double),
         typeof(DateTimeOffset),
+#if NET6_0_OR_GREATER
+        typeof(DateOnly),
+        typeof(TimeOnly),
+#endif
         typeof(sbyte?),
         typeof(short?),
         typeof(int?),
         typeof(long?),
+#if NET7_0_OR_GREATER
+        typeof(Int128?),
+#endif
         typeof(byte?),
         typeof(ushort?),
         typeof(uint?),
         typeof(ulong?),
+#if NET7_0_OR_GREATER
+        typeof(UInt128?),
+        typeof(Half?),
+#endif
         typeof(decimal?),
         typeof(float?),
         typeof(double?),
-        typeof(DateTimeOffset?)
+        typeof(DateTimeOffset?),
+#if NET6_0_OR_GREATER
+        typeof(DateOnly?),
+        typeof(TimeOnly?)
+#endif
+
     });
 
     private static ConcurrentDictionary<(Type ArgType, Type ResType), Type> LambdaTypeCache { get; } = new();
@@ -178,6 +201,16 @@ public partial class ReflectionDataUtils : IDataUtils
                 ? Guid.Empty
                 : Guid.Parse(value);
         }
+#if NET6_0_OR_GREATER
+        if (type == typeof(DateOnly))
+        {
+            return DateOnly.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces);
+        }
+        if (type == typeof(TimeOnly))
+        {
+            return TimeOnly.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces);
+        }
+#endif
         return Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
     }
 
