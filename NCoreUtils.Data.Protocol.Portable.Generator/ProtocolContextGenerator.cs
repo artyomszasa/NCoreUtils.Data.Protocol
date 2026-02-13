@@ -10,8 +10,8 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace NCoreUtils.Data.Protocol.Generator;
 
-[Generator(LanguageNames.CSharp)]
-public class ProtocolContextGenerator : IIncrementalGenerator
+// [Generator(LanguageNames.CSharp)]
+public class ProtocolContextGenerator //: IIncrementalGenerator
 {
     private const string attributeSource = @"#nullable enable
 using System;

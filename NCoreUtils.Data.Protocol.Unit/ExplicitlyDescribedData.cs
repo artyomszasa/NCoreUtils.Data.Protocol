@@ -48,6 +48,7 @@ public sealed class SomeComplexData(Stream stream) : IDisposable
     }
 }
 
+[DescribedType(typeof(SomeComplexData))]
 public sealed class ExplicitComplexDataDescriptor : ITypeDescriptor<SomeComplexData>
 {
     public sealed class Box(SomeComplexData? value)
