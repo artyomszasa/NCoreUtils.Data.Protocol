@@ -288,7 +288,7 @@ internal class ProtocolContextEmitter
         {{
             {(data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL2026\")]" : string.Empty)}
             {(data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL2111\")]" : string.Empty)}
-            {(data.IsEnum || data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL3050\")]" : string.Empty)}
+            {(data.IsEnum || data.IsLambda || data.IsArray ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL3050\")]" : string.Empty)}
             get => typeof({data.FullName});
         }}
 
