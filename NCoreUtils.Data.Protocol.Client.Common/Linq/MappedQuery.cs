@@ -6,24 +6,30 @@ using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
-public record MappedQuery<TSource, TResult>(Query<TSource> Source, Func<TSource, TResult> Selector)
-    : Query<TResult>(Source.Provider)
+internal class MappedQuery<TSource, TResult>(Query<TSource> source, Func<TSource, TResult> selector)
+    : Query<TResult>(source.Provider)
 {
+    public Query<TSource> Source { get; } = source;
+
+    public Func<TSource, TResult> Selector { get; } = selector;
+
     public override Query ApplyLimit(int limit)
-        => this with { Source = (Query<TSource>)Source.ApplyLimit(limit) };
+        => new MappedQuery<TSource, TResult>(
+            source: (Query<TSource>)Source.ApplyLimit(limit),
+            selector: Selector
+        );
 
     public override Query ApplyOffset(int offset)
-        => this with { Source = (Query<TSource>)Source.ApplyOffset(offset) };
+        => new MappedQuery<TSource, TResult>(
+            source: (Query<TSource>)Source.ApplyOffset(offset),
+            selector: Selector
+        );
 
     public override Query ApplyOrderBy(Lambda node, bool isDescending)
-    {
-        throw new NotSupportedException("Ordering should be performed prior transforming query.");
-    }
+        => throw new NotSupportedException("Ordering should be performed prior transforming query.");
 
     public override Query ApplyWhere(Lambda node)
-    {
-        throw new NotSupportedException("Filtering should be performed prior transforming query.");
-    }
+        => throw new NotSupportedException("Filtering should be performed prior transforming query.");
 
     internal override async IAsyncEnumerable<TResult> ExecuteEnumerationAsync(IDataQueryExecutor executor)
     {
@@ -33,19 +39,16 @@ public record MappedQuery<TSource, TResult>(Query<TSource> Source, Func<TSource,
         }
     }
 
-    internal override async Task<T> ExecuteReductionAsync<T>(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken)
+    internal override async Task<object?> ExecuteReductionAsync(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken)
     {
-        if (typeof(T).IsAssignableFrom(typeof(TResult)))
+        var res = await Source.ExecuteReductionAsync(executor, reduction, cancellationToken);
+        if (reduction is Reductions.First or Reductions.Last or Reductions.Single)
         {
-            var res = await Source.ExecuteReductionAsync<TSource>(executor, reduction, cancellationToken);
-            if (res is null && reduction.AllowNull)
-            {
-                return default!;
-            }
-            // FIXME: if source object is null then source.Xxx should be null and not throw...
-            return ((T?)(object?)Selector(res))!;
+            return res is null
+                ? null
+                : Selector((TSource)res);
         }
-        return await Source.ExecuteReductionAsync<T>(executor, reduction, cancellationToken);
+        return res;
     }
 
     public override string ToString()

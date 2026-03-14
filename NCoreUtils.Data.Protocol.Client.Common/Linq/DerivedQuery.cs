@@ -6,17 +6,17 @@ using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
-internal record DerivedQuery<
+internal class DerivedQuery<
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TBase,
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TDerived>(
-        IProtocolQueryProvider Provider,
-        Lambda? Filter = default,
-        Lambda? SortBy = default,
-        bool IsDescending = false,
-        int Offset = 0,
-        int? Limit = default
+        IProtocolQueryProvider provider,
+        Lambda? filter = default,
+        Lambda? sortBy = default,
+        bool isDescending = false,
+        int offset = 0,
+        int? limit = default
     )
-    : DirectQuery<TDerived>(Provider, Filter, SortBy, IsDescending, Offset, Limit)
+    : DirectQuery<TDerived>(provider, filter, sortBy, isDescending, offset, limit)
 {
     public override string Target => typeof(TDerived).Name.ToLowerInvariant();
 
@@ -40,28 +40,45 @@ internal record DerivedQuery<
         }
     }
 
-    internal override Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken)
-        => executor.ExecuteReductionAsync<TBase, TResult>(
-            Target,
-            reduction,
-            Filter,
-            SortBy,
-            IsDescending,
-            Offset,
-            Limit,
-            cancellationToken);
-
     public override Query ApplyWhere(Lambda node)
-        => this with { Filter = null == Filter ? node : Filter.AndAlso(node) };
+        => new DerivedQuery<TBase, TDerived>(
+            provider: Provider,
+            filter: Filter is null ? node : Filter.AndAlso(node),
+            sortBy: SortBy,
+            isDescending: IsDescending,
+            offset: Offset,
+            limit: Limit
+        );
 
     public override Query ApplyOrderBy(Lambda node, bool isDescending)
-        => this with { IsDescending = isDescending };
+        => new DerivedQuery<TBase, TDerived>(
+            provider: Provider,
+            filter: Filter,
+            sortBy: node,
+            isDescending: isDescending,
+            offset: Offset,
+            limit: Limit
+        );
 
     public override Query ApplyOffset(int offset)
-        => this with { Offset = offset };
+        => new DerivedQuery<TBase, TDerived>(
+            provider: Provider,
+            filter: Filter,
+            sortBy: SortBy,
+            isDescending: IsDescending,
+            offset: offset,
+            limit: Limit
+        );
 
     public override Query ApplyLimit(int limit)
-        => this with { Limit = limit };
+        => new DerivedQuery<TBase, TDerived>(
+            provider: Provider,
+            filter: Filter,
+            sortBy: SortBy,
+            isDescending: IsDescending,
+            offset: Offset,
+            limit: limit
+        );
 
     public override string ToString()
         => $"[{typeof(TBase)} as {GetType().Name}, Filter = {Filter}, SortBy = {SortBy}, IsDescending = {IsDescending}, Offset = {Offset}, Limit = {Limit}]";

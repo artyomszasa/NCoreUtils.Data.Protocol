@@ -72,6 +72,7 @@ public partial class QueryProvider
     private IEnumerable<T> ExecuteEnumerable<T>(Expression expression)
         => ExecuteEnumerableAsync<T>(expression).ToBlockingEnumerable();
 
+    // FIXME: remote generics
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private T ExecuteReduction<T>(Expression expression)
         => ExecuteAsync<T>(expression, CancellationToken.None).Result;

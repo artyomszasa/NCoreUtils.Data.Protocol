@@ -11,8 +11,11 @@ using NCoreUtils.Data.Protocol.Internal;
 namespace NCoreUtils.Data.Protocol.Linq;
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-public abstract record Query(IProtocolQueryProvider Provider) : IOrderedQueryable
+public abstract class Query(IProtocolQueryProvider provider)
+    : IOrderedQueryable
 {
+    public IProtocolQueryProvider Provider { get; } = provider;
+
     IQueryProvider IQueryable.Provider => Provider;
 
     protected IDataUtils Util => Provider.Util;
@@ -25,7 +28,7 @@ public abstract record Query(IProtocolQueryProvider Provider) : IOrderedQueryabl
 
     protected abstract IEnumerator GetBoxedEnumerator();
 
-    internal abstract Task<TResult> ExecuteReductionAsync<TResult>(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken);
+    internal abstract Task<object?> ExecuteReductionAsync(IDataQueryExecutor executor, Reduction reduction, CancellationToken cancellationToken);
 
     public abstract Query ApplyWhere(Ast.Lambda node);
 
@@ -42,7 +45,9 @@ public abstract record Query(IProtocolQueryProvider Provider) : IOrderedQueryabl
     public abstract Query Derive(Type targetType);
 }
 
-public abstract record Query<T>(IProtocolQueryProvider Provider) : Query(Provider), IOrderedQueryable<T>
+public abstract class Query<T>(IProtocolQueryProvider provider)
+    : Query(provider)
+    , IOrderedQueryable<T>
 {
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     private sealed class ApplySelectVisitor : IDataTypeVisitor
@@ -78,7 +83,7 @@ public abstract record Query<T>(IProtocolQueryProvider Provider) : Query(Provide
         => Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
 
     public override Query ApplyWhere(Expression expression)
-        => QueryExtensions.Where<T>(this, expression);
+        => QueryExtensions.Where(this, expression);
 
     public override Query ApplySelect(LambdaExpression expression)
     {

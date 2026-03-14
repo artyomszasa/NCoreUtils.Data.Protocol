@@ -9,25 +9,35 @@ using System.Threading.Tasks;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
+internal static class Preconditions
+{
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void NotNull<T>([NotNull] T? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
+        where T : class
+    {
+#if NET6_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(argument, paramName);
+#else
+        if (argument is null)
+        {
+            throw new ArgumentNullException(paramName);
+        }
+#endif
+    }
+}
+
 public partial class QueryProvider
 {
-    private static async Task<TResult> TaskCastResult<TSource, TResult>(Task<TSource> source)
+    private static async Task<T> TaskUnbox<T>(Task<object?> source)
     {
-        var result = await source.ConfigureAwait(false);
-        return (TResult)(object)result!;
-    }
-
-    private static Task<TResult> TaskCast<TSource, TResult>(Task<TSource> source)
-    {
-        if (source is null)
+        Preconditions.NotNull(source);
+        var res = await source;
+        if (typeof(T).IsValueType)
         {
-            throw new ArgumentNullException(nameof(source));
+            // FIXME: use Unsafe for value types
+            return res is null ? default! : (T)res;
         }
-        if (typeof(Task<TResult>).Equals(source.GetType()))
-        {
-            return Unsafe.As<Task<TResult>>(source);
-        }
-        return TaskCastResult<TSource, TResult>(source);
+        return res is null ? default! : (T)res;
     }
 
     private static bool TryExtractQueryableCall(

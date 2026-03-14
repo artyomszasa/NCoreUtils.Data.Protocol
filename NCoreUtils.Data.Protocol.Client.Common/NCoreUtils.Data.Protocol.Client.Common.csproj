@@ -9,6 +9,9 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
     <Compile Include="..\shared\CodeAnalysis\**" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
+    <Compile Remove="Compat\**" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Client.Abstractions\NCoreUtils.Data.Protocol.Client.Abstractions.csproj" />
   </ItemGroup>

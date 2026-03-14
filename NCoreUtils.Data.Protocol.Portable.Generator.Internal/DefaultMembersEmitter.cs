@@ -257,7 +257,8 @@ internal class DefaultMembersEmitter(IntegerTypeSymbols intSymbols, FloatingType
     {
         if (opts.GenerateType)
         {
-            if (target.TargetTypeSymbol.Name == "Guid")
+            if (target.TargetTypeSymbol.Name == "Guid"
+                || (target.TargetTypeSymbol.Name == "Nullable" && target.TargetTypeSymbol.TypeArguments[0].Name == "Guid"))
             {
                 return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     [UnconditionalSuppressMessage(""Trimming"", ""IL3050"")]
