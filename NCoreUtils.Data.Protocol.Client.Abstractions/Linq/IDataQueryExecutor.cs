@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
@@ -7,6 +8,7 @@ namespace NCoreUtils.Data.Protocol.Linq;
 
 public interface IDataQueryExecutor
 {
+    [Obsolete("Use variation that handles thenBy instead.")]
     IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
         string target,
         Ast.Node? filter = default,
@@ -15,7 +17,33 @@ public interface IDataQueryExecutor
         IReadOnlyList<string>? fields = default,
         IReadOnlyList<string>? includes = default,
         int offset = 0,
-        int? limit = default);
+        int? limit = default)
+#if NET6_0_OR_GREATER
+        => ExecuteEnumerationAsync<T>(
+            target,
+            filter,
+            sortBy,
+            isDescending,
+            default,
+            fields,
+            includes,
+            offset,
+            limit
+        )
+#endif
+        ;
+
+    IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
+        string target,
+        Ast.Node? filter = default,
+        Ast.Node? sortBy = default,
+        bool isDescending = false,
+        IReadOnlyList<ThenByOrdering>? thenBy = default,
+        IReadOnlyList<string>? fields = default,
+        IReadOnlyList<string>? includes = default,
+        int offset = 0,
+        int? limit = default
+    );
 
     /// <summary>
     /// Executes reduction defined by the arguments.
@@ -31,6 +59,7 @@ public interface IDataQueryExecutor
     /// <typeparam name="TSource">Type of the source entity.</typeparam>
     /// <typeparam name="TResult">Type of the result.</typeparam>
     /// <returns>Reduction result.</returns>
+    [Obsolete("Use variation that handles thenBy instead.")]
     Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
         string target,
         Reduction reduction,
@@ -39,5 +68,31 @@ public interface IDataQueryExecutor
         bool isDescending = false,
         int offset = 0,
         int? limit = default,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+#if NET6_0_OR_GREATER
+        => ExecuteReductionAsync<TSource, TResult>(
+            target,
+            reduction,
+            filter,
+            sortBy,
+            isDescending,
+            default,
+            offset,
+            limit,
+            cancellationToken
+        )
+#endif
+        ;
+
+    Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
+        string target,
+        Reduction reduction,
+        Ast.Node? filter = default,
+        Ast.Node? sortBy = default,
+        bool isDescending = false,
+        IReadOnlyList<ThenByOrdering>? thenBy = default,
+        int offset = 0,
+        int? limit = default,
+        CancellationToken cancellationToken = default
+    );
 }

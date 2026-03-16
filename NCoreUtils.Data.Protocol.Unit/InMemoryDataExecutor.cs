@@ -38,6 +38,7 @@ public class InMemoryDataExecutor : IDataQueryExecutor
         Node? filter = null,
         Node? sortBy = null,
         bool isDescending = false,
+        IReadOnlyList<ThenByOrdering>? thenBy = default,
         IReadOnlyList<string>? fields = null,
         IReadOnlyList<string>? includes = null,
         int offset = 0,
@@ -58,6 +59,10 @@ public class InMemoryDataExecutor : IDataQueryExecutor
                 .GetMethod(nameof(SortBy), BindingFlags.Public | BindingFlags.Static)!
                 .MakeGenericMethod(typeof(T), rtype)
                 .Invoke(default, new object[] { items, sortByExpr, isDescending })!;
+            if (thenBy is { Count: > 0 })
+            {
+                throw new NotSupportedException();
+            }
         }
         if (offset != 0)
         {
@@ -78,6 +83,7 @@ public class InMemoryDataExecutor : IDataQueryExecutor
         Node? filter = null,
         Node? sortBy = null,
         bool isDescending = false,
+        IReadOnlyList<ThenByOrdering>? thenBy = default,
         int offset = 0,
         int? limit = default,
         CancellationToken cancellationToken = default)
@@ -97,6 +103,10 @@ public class InMemoryDataExecutor : IDataQueryExecutor
                 .GetMethod(nameof(SortBy), BindingFlags.Public | BindingFlags.Static)!
                 .MakeGenericMethod(typeof(TSource), rtype)
                 .Invoke(default, new object[] { items, sortByExpr, isDescending })!;
+            if (thenBy is { Count: > 0 })
+            {
+                throw new NotSupportedException();
+            }
         }
         if (offset != 0)
         {

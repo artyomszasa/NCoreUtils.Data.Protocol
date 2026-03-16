@@ -34,6 +34,8 @@ public abstract class Query(IProtocolQueryProvider provider)
 
     public abstract Query ApplyOrderBy(Ast.Lambda node, bool isDescending);
 
+    public abstract Query ApplyThenBy(Ast.Lambda node, bool isDescending);
+
     public abstract Query ApplyOffset(int offset);
 
     public abstract Query ApplyLimit(int limit);

@@ -19,6 +19,7 @@ public partial class TestDataQueryExecutor : IDataQueryExecutor
         Node? filter = null,
         Node? sortBy = null,
         bool isDescending = false,
+        IReadOnlyList<ThenByOrdering>? thenBy = default,
         IReadOnlyList<string>? fields = null,
         IReadOnlyList<string>? includes = null,
         int offset = 0,
@@ -43,6 +44,7 @@ public partial class TestDataQueryExecutor : IDataQueryExecutor
         Node? filter = null,
         Node? sortBy = null,
         bool isDescending = false,
+        IReadOnlyList<ThenByOrdering>? thenBy = default,
         int offset = 0,
         int? limit = default,
         CancellationToken cancellationToken = default)

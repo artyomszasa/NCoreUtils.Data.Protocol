@@ -51,10 +51,16 @@ public partial class QueryProvider(IDataUtils util, ExpressionParser expressionP
                         return query.ApplyWhere(node);
                     case nameof(Queryable.OrderBy):
                         node = ExpressionParser.ParseLambdaExpression(arguments[1]);
-                        return query.ApplyOrderBy(node, false);
+                        return query.ApplyOrderBy(node, isDescending: false);
                     case nameof(Queryable.OrderByDescending):
                         node = ExpressionParser.ParseLambdaExpression(arguments[1]);
-                        return query.ApplyOrderBy(node, true);
+                        return query.ApplyOrderBy(node, isDescending: true);
+                    case nameof(Queryable.ThenBy):
+                        node = ExpressionParser.ParseLambdaExpression(arguments[1]);
+                        return query.ApplyThenBy(node, isDescending: false);
+                    case nameof(Queryable.ThenByDescending):
+                        node = ExpressionParser.ParseLambdaExpression(arguments[1]);
+                        return query.ApplyThenBy(node, isDescending: true);
                     case nameof(Queryable.Select):
                         if (arguments[1].TryExtractLambda(out var lambda) && lambda.Parameters.Count == 1)
                         {

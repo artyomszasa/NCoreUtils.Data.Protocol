@@ -19,6 +19,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
         Lambda? filter = default,
         Lambda? sortBy = default,
         bool isDescending = default,
+        IReadOnlyList<ThenByOrdering>? thenBy = default,
         int offset = default,
         int? limit = default
     ) : Query<T>(provider)
@@ -43,6 +44,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
                 q.Filter,
                 q.SortBy,
                 q.IsDescending,
+                q.ThenBy,
                 q.Offset,
                 q.Limit
             );
@@ -54,6 +56,8 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
     public Lambda? Filter { get; } = filter;
 
     public Lambda? SortBy { get; } = sortBy;
+
+    public IReadOnlyList<ThenByOrdering>? ThenBy { get; } = thenBy;
 
     public bool IsDescending { get; } = isDescending;
 
@@ -67,6 +71,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             Filter,
             SortBy,
             IsDescending,
+            ThenBy,
             default,
             default,
             Offset,
@@ -80,6 +85,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             Filter,
             SortBy,
             IsDescending,
+            ThenBy,
             Offset,
             Limit,
             cancellationToken
@@ -100,6 +106,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             filter: Filter is null ? node : Filter.AndAlso(node),
             sortBy: SortBy,
             isDescending: IsDescending,
+            thenBy: ThenBy,
             offset: Offset,
             limit: Limit
         );
@@ -110,6 +117,20 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             filter: Filter,
             sortBy: node,
             isDescending: isDescending,
+            thenBy: ThenBy,
+            offset: Offset,
+            limit: Limit
+        );
+
+    public override Query ApplyThenBy(Lambda node, bool isDescending)
+        => new DirectQuery<T>(
+            provider: Provider,
+            filter: Filter,
+            sortBy: SortBy,
+            isDescending: isDescending,
+            thenBy: ThenBy is null
+                ? [new ThenByOrdering(node, isDescending)]
+                : [..ThenBy, new(node, isDescending)],
             offset: Offset,
             limit: Limit
         );
@@ -120,6 +141,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             filter: Filter,
             sortBy: SortBy,
             isDescending: IsDescending,
+            thenBy: ThenBy,
             offset: offset,
             limit: Limit
         );
@@ -130,6 +152,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             filter: Filter,
             sortBy: SortBy,
             isDescending: IsDescending,
+            thenBy: ThenBy,
             offset: Offset,
             limit: limit
         );

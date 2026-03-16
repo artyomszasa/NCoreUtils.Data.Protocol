@@ -28,6 +28,9 @@ internal class MappedQuery<TSource, TResult>(Query<TSource> source, Func<TSource
     public override Query ApplyOrderBy(Lambda node, bool isDescending)
         => throw new NotSupportedException("Ordering should be performed prior transforming query.");
 
+    public override Query ApplyThenBy(Lambda node, bool isDescending)
+        => throw new NotSupportedException("Ordering should be performed prior transforming query.");
+
     public override Query ApplyWhere(Lambda node)
         => throw new NotSupportedException("Filtering should be performed prior transforming query.");
 
