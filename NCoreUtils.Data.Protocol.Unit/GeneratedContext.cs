@@ -19,10 +19,12 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolLambda(typeof(Item), typeof(Func<SubItem, bool>))]
 [ProtocolEntity(typeof(ItemF))]
 [ProtocolEntity(typeof(DerivedEntity))]
+[ProtocolEntity(typeof(Alt.DerivedEntity))]
 [ProtocolEntity(typeof(List<int>))]
 [ProtocolEntity(typeof(HashSet<int>))]
 [ProtocolEntity(typeof(int[]))]
 [ProtocolEntity(typeof(MyFlags))]
 [ProtocolEntity(typeof(SomeComplexData))]
 [ProtocolDescriptor(typeof(ExplicitComplexDataDescriptor))]
+[ProtocolSafeName(typeof(Alt.DerivedEntity), "AltDerivedEntity")]
 public partial class GeneratedContext { }

@@ -8,17 +8,17 @@ namespace NCoreUtils.Data.Protocol.Generator;
 
 public partial class TypeData
 {
-    private static string GetSafeName(ITypeSymbol symbol)
+    private static string GetSafeName(ITypeSymbol symbol, Func<ITypeSymbol, string?> safeNameFactory)
     {
         if (symbol is INamedTypeSymbol named && named.IsGenericType)
         {
-            return $"{symbol.Name}Of{string.Join(string.Empty, named.TypeArguments.Select(GetSafeName))}";
+            return $"{symbol.Name}Of{string.Join(string.Empty, named.TypeArguments.Select(ty => GetSafeName(ty, safeNameFactory)))}";
         }
         if (symbol is IArrayTypeSymbol array)
         {
-            return $"ArrayOf{GetSafeName(array.ElementType)}";
+            return $"ArrayOf{GetSafeName(array.ElementType, safeNameFactory)}";
         }
-        return symbol.Name;
+        return safeNameFactory(symbol) ?? symbol.Name;
     }
 
     private static void GetPropertiesRecursive(ITypeSymbol symbol, Dictionary<string, IPropertySymbol> properties)
@@ -69,10 +69,16 @@ public partial class TypeData
         return false;
     }
 
-    public static TypeData Create(ITypeSymbol symbol, INamedTypeSymbol nullableT, INamedTypeSymbol enumerableT, INamedTypeSymbol func2T, bool isOpaque)
+    public static TypeData Create(
+        ITypeSymbol symbol,
+        INamedTypeSymbol nullableT,
+        INamedTypeSymbol enumerableT,
+        INamedTypeSymbol func2T,
+        Func<ITypeSymbol, string?> safeNameFactory,
+        bool isOpaque)
     {
         var name = symbol.Name;
-        var safeName = GetSafeName(symbol);
+        var safeName = GetSafeName(symbol, safeNameFactory);
         var fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var nullName = symbol.IsValueType ? fullName : $"{fullName}?";
         var nullableType = symbol is INamedTypeSymbol namedSymbol && SymbolEqualityComparer.Default.Equals(namedSymbol.ConstructedFrom, nullableT)

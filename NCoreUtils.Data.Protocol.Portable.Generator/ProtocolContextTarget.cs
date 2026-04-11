@@ -24,6 +24,8 @@ internal class ProtocolContextTarget
 
     public HashSet<ITypeSymbol> OpaqueTypes { get; }
 
+    public IReadOnlyDictionary<ITypeSymbol, string> SafeNames { get; }
+
     public ProtocolContextTarget(
         SemanticModel semanticModel,
         ClassDeclarationSyntax cds,
@@ -31,7 +33,8 @@ internal class ProtocolContextTarget
         HashSet<ITypeSymbol> entityTypes,
         HashSet<INamedTypeSymbol> lambdaTypes,
         HashSet<ITypeSymbol> explicitDescriptorTypes,
-        HashSet<ITypeSymbol> opaqueTypes)
+        HashSet<ITypeSymbol> opaqueTypes,
+        IReadOnlyDictionary<ITypeSymbol, string> safeNames)
     {
         SemanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
         Cds = cds ?? throw new ArgumentNullException(nameof(cds));
@@ -41,6 +44,7 @@ internal class ProtocolContextTarget
         LambdaTypes = lambdaTypes ?? throw new ArgumentNullException(nameof(lambdaTypes));
         ExplicitDescriptorTypes = explicitDescriptorTypes ?? throw new ArgumentNullException(nameof(explicitDescriptorTypes));
         OpaqueTypes = opaqueTypes ?? throw new ArgumentNullException(nameof(opaqueTypes));
+        SafeNames = safeNames ?? throw new ArgumentNullException(nameof(safeNames));
     }
 
     public override string ToString()

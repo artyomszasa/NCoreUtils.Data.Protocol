@@ -127,7 +127,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
             provider: Provider,
             filter: Filter,
             sortBy: SortBy,
-            isDescending: isDescending,
+            isDescending: IsDescending,
             thenBy: ThenBy is null
                 ? [new ThenByOrdering(node, isDescending)]
                 : [..ThenBy, new(node, isDescending)],
