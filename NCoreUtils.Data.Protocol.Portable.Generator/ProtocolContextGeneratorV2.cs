@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -122,60 +123,87 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
 
     private static UTF8Encoding Utf8 { get; } = new(false);
 
-    /*
     private static TypeSyntax PredefinedType(SyntaxKind kind)
         => SyntaxFactory.PredefinedType(SyntaxFactory.Token(kind));
 
-    private static PrimitiveValueTypeData[] CommonPrimitiveValueTypes { get; } =
-    [
-        new("bool", "Boolean", PredefinedType(SyntaxKind.BoolKeyword)),
-        new("global::System.Guid", "Guid"),
-        new("global::System.DateTime", "DateTime"),
-        new("global::System.DateTimeOffset", "DateTimeOffset"),
-        new("sbyte", "SByte", PredefinedType(SyntaxKind.SByteKeyword)),
-        new("short", "Int16", PredefinedType(SyntaxKind.ShortKeyword)),
-        new("int", "Int32", PredefinedType(SyntaxKind.IntKeyword)),
-        new("long", "Int64", PredefinedType(SyntaxKind.LongKeyword)),
-        new("byte", "Byte", PredefinedType(SyntaxKind.ByteKeyword)),
-        new("ushort", "UInt16", PredefinedType(SyntaxKind.UShortKeyword)),
-        new("uint", "UInt32", PredefinedType(SyntaxKind.UIntKeyword)),
-        new("ulong", "UInt64", PredefinedType(SyntaxKind.ULongKeyword)),
-        new("float", "Single", PredefinedType(SyntaxKind.FloatKeyword)),
-        new("double", "Double", PredefinedType(SyntaxKind.DoubleKeyword)),
-        new("decimal", "Decimal", PredefinedType(SyntaxKind.DecimalKeyword))
-    ];
-
-    private IReadOnlyList<PrimitiveValueTypeData> GetPrimitiveValueTypes(Compilation compilation)
+    private static Dictionary<SpecialType, PrimitiveValueTypeData> CommonPrimitiveValueTypes { get; } = new()
     {
-        var types = new List<PrimitiveValueTypeData>(CommonPrimitiveValueTypes);
-        // DateOnly is supported (.NET5+)
-        if (compilation.GetTypeByMetadataName("System.DateOnly") is not null)
+        { SpecialType.System_Boolean, new PrimitiveValueTypeData("bool", "Boolean", PredefinedType(SyntaxKind.BoolKeyword)) },
+        // { SpecialType., new PrimitiveValueTypeData("global::System.Guid", "Guid") },
+        { SpecialType.System_DateTime, new PrimitiveValueTypeData("global::System.DateTime", "DateTime") },
+        // { SpecialType, new PrimitiveValueTypeData("global::System.DateTimeOffset", "DateTimeOffset") },
+        { SpecialType.System_SByte, new PrimitiveValueTypeData("sbyte", "SByte", PredefinedType(SyntaxKind.SByteKeyword)) },
+        { SpecialType.System_Int16, new PrimitiveValueTypeData("short", "Int16", PredefinedType(SyntaxKind.ShortKeyword)) },
+        { SpecialType.System_Int32, new PrimitiveValueTypeData("int", "Int32", PredefinedType(SyntaxKind.IntKeyword)) },
+        { SpecialType.System_Int64, new PrimitiveValueTypeData("long", "Int64", PredefinedType(SyntaxKind.LongKeyword)) },
+        { SpecialType.System_Byte, new PrimitiveValueTypeData("byte", "Byte", PredefinedType(SyntaxKind.ByteKeyword)) },
+        { SpecialType.System_UInt16, new PrimitiveValueTypeData("ushort", "UInt16", PredefinedType(SyntaxKind.UShortKeyword)) },
+        { SpecialType.System_UInt32, new PrimitiveValueTypeData("uint", "UInt32", PredefinedType(SyntaxKind.UIntKeyword)) },
+        { SpecialType.System_UInt64, new PrimitiveValueTypeData("ulong", "UInt64", PredefinedType(SyntaxKind.ULongKeyword)) },
+        { SpecialType.System_Single, new PrimitiveValueTypeData("float", "Single", PredefinedType(SyntaxKind.FloatKeyword)) },
+        { SpecialType.System_Double, new PrimitiveValueTypeData("double", "Double", PredefinedType(SyntaxKind.DoubleKeyword)) },
+        { SpecialType.System_Decimal, new PrimitiveValueTypeData("decimal", "Decimal", PredefinedType(SyntaxKind.DecimalKeyword)) },
+        { SpecialType.System_String, new PrimitiveValueTypeData("string", "String", PredefinedType(SyntaxKind.StringKeyword)) },
+    };
+
+    private static void AddPrimitiveValueType(Compilation compilation, Dictionary<ITypeSymbol, ITypeData> types, SpecialType specialType)
+    {
+        if (CommonPrimitiveValueTypes.TryGetValue(specialType, out var type))
         {
-            types.Add(new("global::System.DateOnly", "DateOnly"));
+            types.Add(compilation.GetSpecialType(specialType), type);
         }
-        // TimeOnly is supported (.NET5+)
-        if (compilation.GetTypeByMetadataName("System.TimeOnly") is not null)
-        {
-            types.Add(new("global::System.TimeOnly", "TimeOnly"));
-        }
-        // Half is supported (.NET5+)
-        if (compilation.GetTypeByMetadataName("System.Half") is not null)
-        {
-            types.Add(new("global::System.Half", "Half"));
-        }
-        // Int128 is supported (.NET7+)
-        if (compilation.GetTypeByMetadataName("System.Int128") is not null)
-        {
-            types.Add(new("global::System.Int128", "Int128"));
-        }
-        // UInt128 is supported (.NET7+)
-        if (compilation.GetTypeByMetadataName("System.UInt128") is not null)
-        {
-            types.Add(new("global::System.UInt128", "UInt128"));
-        }
-        return types;
     }
-    */
+
+    private static void AddPrimitiveValueType(Compilation compilation, Dictionary<ITypeSymbol, ITypeData> types, string qualifiedName, string name)
+    {
+        if (compilation.GetTypeByMetadataName(qualifiedName) is ITypeSymbol symbol)
+        {
+            // FIXME: cache
+            types.Add(symbol, new PrimitiveValueTypeData(qualifiedName, name));
+        }
+    }
+
+    private static (SpecialType? TypeData, Action<Compilation, Dictionary<ITypeSymbol, ITypeData>>? Factory) GetPrimitiveType(ProtocolPrimitiveType key) => key switch
+    {
+        ProtocolPrimitiveType.Boolean => (SpecialType.System_Boolean, null),
+        ProtocolPrimitiveType.Guid => (null, static (compilation, types) => AddPrimitiveValueType(compilation, types, "global::System.Guid", "Guid")),
+        ProtocolPrimitiveType.DateTime => (SpecialType.System_DateTime, null),
+        ProtocolPrimitiveType.DateTimeOffset => (null, static (compilation, types) => AddPrimitiveValueType(compilation, types, "System.DateTimeOffset", "DateTimeOffset")),
+        ProtocolPrimitiveType.SByte => (SpecialType.System_SByte, null),
+        ProtocolPrimitiveType.Int16 => (SpecialType.System_Int16, null),
+        ProtocolPrimitiveType.Int32 => (SpecialType.System_Int32, null),
+        ProtocolPrimitiveType.Int64 => (SpecialType.System_Int64, null),
+        ProtocolPrimitiveType.Int128 => (null, static (compilation, types) => AddPrimitiveValueType(compilation, types, "global::System.Int128", "Int128")),
+        ProtocolPrimitiveType.Byte => (SpecialType.System_Byte, null),
+        ProtocolPrimitiveType.UInt16 => (SpecialType.System_UInt16, null),
+        ProtocolPrimitiveType.UInt32 => (SpecialType.System_UInt32, null),
+        ProtocolPrimitiveType.UInt64 => (SpecialType.System_UInt64, null),
+        ProtocolPrimitiveType.UInt128 => (null, static (compilation, types) => AddPrimitiveValueType(compilation, types, "global::System.UInt128", "UInt128")),
+        ProtocolPrimitiveType.Half => (null, static (compilation, types) => AddPrimitiveValueType(compilation, types, "global::System.Half", "Half")),
+        ProtocolPrimitiveType.Single => (SpecialType.System_Single, null),
+        ProtocolPrimitiveType.Double => (SpecialType.System_Double, null),
+        ProtocolPrimitiveType.Decimal => (SpecialType.System_Decimal, null),
+        ProtocolPrimitiveType.DateOnly => (null, static (compilation, types) => AddPrimitiveValueType(compilation, types, "global::System.DateOnly", "DateOnly")),
+        ProtocolPrimitiveType.TimeOnly => (null, static (compilation, types) => AddPrimitiveValueType(compilation, types, "global::System.TimeOnly", "TimeOnly")),
+        ProtocolPrimitiveType.String => (SpecialType.System_String, null),
+        _ => throw new InvalidOperationException("Unsupported protocol primitive value type.")
+    };
+
+    private void AddPrimitiveValueTypes(Compilation compilation, Dictionary<ITypeSymbol, ITypeData> types)
+    {
+        foreach (ProtocolPrimitiveType value in Enum.GetValues(typeof(ProtocolPrimitiveType)))
+        {
+            var (stype0, factory) = GetPrimitiveType(value);
+            if (stype0 is SpecialType stype)
+            {
+                types.Add(compilation.GetSpecialType(stype), CommonPrimitiveValueTypes[stype]);
+            }
+            else
+            {
+                factory!(compilation, types);
+            }
+        }
+    }
 
     private HashSet<ITypeSymbol> GetBuiltInTypes(Compilation compilation, INamedTypeSymbol nullableT)
     {
@@ -196,6 +224,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             compilation.GetSpecialType(SpecialType.System_Single),
             compilation.GetSpecialType(SpecialType.System_Double),
             compilation.GetSpecialType(SpecialType.System_DateTime),
+            compilation.GetSpecialType(SpecialType.System_Decimal),
         };
 
         // NOTE: DateOnly is only available on .NET5+
@@ -240,10 +269,11 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         Queue<(ITypeSymbol Symbol, bool Root)> pending,
         CompilationContext compilation,
         GenMode mode,
-        IDictionary<ITypeSymbol, TypeDataV2> targetTypes,
+        IDictionary<ITypeSymbol, ITypeData> targetTypes,
         HashSet<ITypeSymbol> opaqueTypes,
         HashSet<ITypeSymbol> builtin,
         Func<ITypeSymbol, bool> isExplicitlyDescribed,
+        Func<ITypeSymbol, string?> safeNameFactory,
         CancellationToken cancellationToken)
     {
         while (pending.TryDequeue(out var symbol, out var root))
@@ -251,7 +281,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             cancellationToken.ThrowIfCancellationRequested();
             if (builtin.Contains(symbol) || targetTypes.ContainsKey(symbol) || isExplicitlyDescribed(symbol))
             {
-                return;
+                continue;
             }
             if (root)
             {
@@ -275,7 +305,8 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             TypeDataV2 data;
             if (symbol is INamedTypeSymbol namedSymbol)
             {
-                data = TypeDataV2.Create(compilation, symbol, isOpaque, out var elementType, out var properties);
+                data = TypeDataV2.Create(compilation, symbol, isOpaque, safeNameFactory, out var elementType, out var properties);
+                // throw new InvalidOperationException(string.Join(", ", properties.Select(p => p.Name)));
                 targetTypes.Add(namedSymbol, data);
                 if (isOpaque)
                 {
@@ -320,7 +351,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             }
             else if (symbol is IArrayTypeSymbol arraySymbol)
             {
-                data = TypeDataV2.Create(compilation, arraySymbol, isOpaque, out var elementType, out _);
+                data = TypeDataV2.Create(compilation, arraySymbol, isOpaque, safeNameFactory, out var elementType, out _);
                 targetTypes.Add(arraySymbol, data);
                 pending.Enqueue(elementType!);
                 // AddTargetType(compilation, arraySymbol.ElementType, mode, true, targetTypes, opaqueTypes, nullableT, enumerableT, func2T, builtin, isExplicitlyDescribed);
@@ -334,6 +365,16 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             }
         }
     }
+
+    private static SymbolDisplayFormat MaybeNullableFullyQualifiedFormat { get; } =
+            new SymbolDisplayFormat(
+                globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
+                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+                genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+                miscellaneousOptions:
+                    SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers |
+                    SymbolDisplayMiscellaneousOptions.UseSpecialTypes |
+                    SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
     private ProtocolContextTargetV2 ExtractTarget(
         SemanticModel semanticModel,
@@ -349,6 +390,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         var descriptors = new Dictionary<ITypeSymbol, ITypeSymbol>(SymbolEqualityComparer.Default);
         var opaqueTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
         var genMode = GenMode.Predicates | GenMode.Enumerable;
+        var safeNames = new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.Default);
 
         foreach (var attributeData in symbol.GetAttributes())
         {
@@ -377,6 +419,10 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             {
                 genMode = explicitMode;
             }
+            else if (cctx.IsSafeName(attributeData, out var targetType, out var safeName))
+            {
+                safeNames.Add(targetType, safeName);
+            }
         }
 
         // var nullableT = compilation.GetSpecialType(SpecialType.System_Nullable_T)!;
@@ -384,8 +430,10 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         // var readOnlyListT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IReadOnlyList_T)!;
         // var func2T = compilation.GetTypeByMetadataName("System.Func`2") ?? throw new InvalidOperationException("Unable to get type symbol for System.Func<>.");
         var builtInTypes = GetBuiltInTypes(compilation, cctx.nullable);
-        var targetTypes = new Dictionary<ITypeSymbol, TypeDataV2>(SymbolEqualityComparer.Default);
+        var targetTypes = new Dictionary<ITypeSymbol, ITypeData>(SymbolEqualityComparer.Default);
+        AddPrimitiveValueTypes(compilation, targetTypes);
         var pending = new Queue<(ITypeSymbol Symbol, bool Root)>(rootEntityTypes.Select(ty => (ty, true)));
+        string? safeNameFactory(ITypeSymbol ty) => safeNames.TryGetValue(ty, out var name) ? name : default;
 
         // PASS 1: collect types starting from root
         cancellationToken.ThrowIfCancellationRequested();
@@ -397,6 +445,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             opaqueTypes: opaqueTypes,
             builtin: builtInTypes,
             isExplicitlyDescribed: descriptors.ContainsKey,
+            safeNameFactory: safeNameFactory,
             cancellationToken: cancellationToken
         );
         // PASS 2: find indirect types (type args)
@@ -404,7 +453,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         foreach (var kv in targetTypes)
         {
             var type = kv.Key;
-            if (cctx.TryGetEnumerableElementType(type, out var elementSymbol)
+            if (cctx.TryGetEnumerableElementType(type, out var elementSymbol, out _)
                 || cctx.TryGetArrayElementType(type, out elementSymbol)
                 || cctx.TryGetNullableElementType(type, out elementSymbol))
             {
@@ -424,53 +473,122 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             opaqueTypes: opaqueTypes,
             builtin: builtInTypes,
             isExplicitlyDescribed: descriptors.ContainsKey,
+            safeNameFactory: safeNameFactory,
             cancellationToken: cancellationToken
         );
         // PASS 3: connect types
         cancellationToken.ThrowIfCancellationRequested();
+
+        SomeType GetSomeType(ITypeSymbol requestedType)
+        {
+            if (targetTypes.TryGetValue(requestedType, out var data))
+            {
+                return new(data);
+            }
+            return new(requestedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        }
+
         foreach (var kv in targetTypes)
         {
-            var type = kv.Key;
-            var data = kv.Value;
-            if (cctx.TryGetEnumerableElementType(type, out var elementSymbol)
-                || cctx.TryGetArrayElementType(type, out elementSymbol))
+            if (kv.Value is TypeDataV2 data)
             {
-                if (!targetTypes.TryGetValue(elementSymbol, out var elementData))
+                var type = kv.Key;
+                // NOTE: collect base types
+                var assignableTos = new HashSet<SomeType>();
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void AddAssignableTo(ITypeSymbol atype) => assignableTos.Add(GetSomeType(atype));
+
+                var baseType = type;
+                while (baseType is not null && baseType.SpecialType != SpecialType.System_Object
+                    && baseType.SpecialType != SpecialType.System_ValueType
+                    && baseType.SpecialType != SpecialType.System_Enum)
                 {
-                    throw new GenerationException(new DiagnosticData(
-                        DiagnosticDescriptors.TypeNotFound,
-                        default,
-                        [elementSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
-                    ));
+                    AddAssignableTo(baseType);
+                    baseType = baseType.BaseType;
                 }
-                data.ElementType = elementData;
+                if (type.IsValueType)
+                {
+                    var ntype = cctx.CreateNullableTypeSymbol(type);
+                    if (targetTypes.TryGetValue(ntype, out var btype))
+                    {
+                        assignableTos.Add(new(btype));
+                    }
+                    else
+                    {
+                        assignableTos.Add(new(ntype.ToDisplayString(MaybeNullableFullyQualifiedFormat)));
+                    }
+                }
+                data.AssignableToTypes = assignableTos;
+                // ------------------------------------------------------
+                if (cctx.TryGetArrayElementType(type, out var elementSymbol))
+                {
+                    if (!targetTypes.TryGetValue(elementSymbol, out var elementData))
+                    {
+                        throw new GenerationException(new DiagnosticData(
+                            DiagnosticDescriptors.TypeNotFound,
+                            default,
+                            [elementSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
+                        ));
+                    }
+                    AddAssignableTo(cctx.CreateIEnumerableTypeSymbol(type));
+                    AddAssignableTo(cctx.CreateIReadOnlyListTypeSymbol(type));
+                    data.ElementType = elementData;
+                }
+                else if (cctx.TryGetEnumerableElementType(type, out elementSymbol, out var isIEnumerable))
+                {
+                    if (!targetTypes.TryGetValue(elementSymbol, out var elementData))
+                    {
+                        throw new GenerationException(new DiagnosticData(
+                            DiagnosticDescriptors.TypeNotFound,
+                            default,
+                            [elementSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
+                        ));
+                    }
+                    if (!isIEnumerable)
+                    {
+                        AddAssignableTo(cctx.CreateIEnumerableTypeSymbol(type));
+                    }
+                    data.ElementType = elementData;
+                }
+                else if (cctx.TryGetNullableElementType(type, out var nullableSymbol))
+                {
+                    data.UnderlyingType = targetTypes.TryGetValue(nullableSymbol, out var nullableData)
+                        ? new SomeType(nullableData)
+                        : new SomeType(nullableSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                }
+                else if (cctx.TryGetLambdaTypes(type, out var argType, out var resType))
+                {
+                    if (!targetTypes.TryGetValue(argType, out var argData))
+                    {
+                        throw new GenerationException(new DiagnosticData(
+                            DiagnosticDescriptors.TypeNotFound,
+                            default,
+                            [argType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
+                        ));
+                    }
+                    if (!targetTypes.TryGetValue(resType, out var resData))
+                    {
+                        throw new GenerationException(new DiagnosticData(
+                            DiagnosticDescriptors.TypeNotFound,
+                            default,
+                            [resType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
+                        ));
+                    }
+                    data.LambdaArg = argData;
+                    data.LambdaRes = resData;
+                }
             }
-            else if (cctx.TryGetNullableElementType(type, out var nullableSymbol))
+        }
+        // PASS 4: collect lambda types
+        foreach (var type in targetTypes.Keys.Where(ty => !builtInTypes.Contains(ty) && !cctx.IsLambda(ty) && ty is not IArrayTypeSymbol))
+        {
+            foreach (var biType in builtInTypes)
             {
-                data.UnderlyingType = targetTypes.TryGetValue(nullableSymbol, out var nullableData)
-                    ? new SomeType(nullableData)
-                    : new SomeType(nullableSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-            }
-            else if (cctx.TryGetLambdaTypes(type, out var argType, out var resType))
-            {
-                if (!targetTypes.TryGetValue(argType, out var argData))
-                {
-                    throw new GenerationException(new DiagnosticData(
-                        DiagnosticDescriptors.TypeNotFound,
-                        default,
-                        [argType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
-                    ));
-                }
-                if (!targetTypes.TryGetValue(resType, out var resData))
-                {
-                    throw new GenerationException(new DiagnosticData(
-                        DiagnosticDescriptors.TypeNotFound,
-                        default,
-                        [resType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
-                    ));
-                }
-                data.LambdaArg = argData;
-                data.LambdaRes = resData;
+                lambdaTypes.Add(new (
+                    argType: type,
+                    resType: biType
+                ));
             }
         }
 
@@ -485,9 +603,10 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             explicitDescriptors: descriptors.ToDictionary(
                 kv => kv.Key.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 kv => new SomeType(kv.Value.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))),
-            lambdaTypes: new HashSet<(SomeType, SomeType)>(lambdaTypes.Select(tup => (
-                new SomeType(tup.ArgType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
-                new SomeType(tup.ResType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)))))
+            lambdaTypes: [.. lambdaTypes.Select(tup => (
+                GetSomeType(tup.ArgType),
+                GetSomeType(tup.ResType)
+            ))]
         );
     }
 

@@ -70,6 +70,8 @@ internal static class Identifiers
 
     public static SyntaxToken EnumerableOfType { get; } = Identifier("EnumerableOfType");
 
+    public static SyntaxToken Equal { get; } = Identifier("Equal");
+
     public static new SyntaxToken Equals { get; } = Identifier("Equals");
 
     public static SyntaxToken Field { get; } = Identifier("Field");
@@ -96,7 +98,7 @@ internal static class Identifiers
 
     public static SyntaxToken Method { get; } = Identifier("Method");
 
-    public static SyntaxToken NotEquals { get; } = Identifier("NotEquals");
+    public static SyntaxToken NotEqual { get; } = Identifier("NotEqual");
 
     public static SyntaxToken IsArithmetic { get; } = Identifier("IsArithmetic");
 
@@ -197,6 +199,8 @@ internal static class IdentifierNames
 
     public static IdentifierNameSyntax EnumerableOfType { get; } = IdentifierName(Identifiers.EnumerableOfType);
 
+    public static IdentifierNameSyntax Equal { get; } = IdentifierName(Identifiers.Equal);
+
     public static new IdentifierNameSyntax Equals { get; } = IdentifierName(Identifiers.Equals);
 
     public static IdentifierNameSyntax Field { get; } = IdentifierName(Identifiers.Field);
@@ -213,7 +217,7 @@ internal static class IdentifierNames
 
     public static IdentifierNameSyntax Method { get; } = IdentifierName(Identifiers.Method);
 
-    public static IdentifierNameSyntax NotEquals { get; } = IdentifierName(Identifiers.NotEquals);
+    public static IdentifierNameSyntax NotEqual { get; } = IdentifierName(Identifiers.NotEqual);
 
     public static IdentifierNameSyntax IsArithmetic { get; } = IdentifierName(Identifiers.IsArithmetic);
 
@@ -297,7 +301,7 @@ internal class ProtocolContextEmitterV2
 {
     private static readonly string SelfVersion = typeof(ProtocolContextEmitterV2).Assembly.GetName()?.Version.ToString() ?? string.Empty;
 
-    private static AttributeSyntax GeneratedCodeAttribute { get; } = Attribute(
+    private static AttributeSyntax GeneratedCodeAttribute => field ??= Attribute(
         ParseName("System.CodeDom.Compiler.GeneratedCodeAttribute"),
         AttributeArgumentList(SeparatedList(new AttributeArgumentSyntax[]
         {
@@ -306,7 +310,7 @@ internal class ProtocolContextEmitterV2
         }))
     );
 
-    private static AccessorListSyntax AccessorAutoGet { get; } = AccessorList(
+    private static AccessorListSyntax AccessorAutoGet => field ??= AccessorList(
         openBraceToken: Token(SyntaxKind.OpenBraceToken),
         accessors: List(new AccessorDeclarationSyntax[]
         {
@@ -315,29 +319,39 @@ internal class ProtocolContextEmitterV2
         closeBraceToken: Token(SyntaxKind.CloseBraceToken)
     );
 
-    private static MemberAccessExpressionSyntax NumberStylesInteger { get; } = SimpleMemberAccessExpression(
+    private static MemberAccessExpressionSyntax NumberStylesInteger => field ??= SimpleMemberAccessExpression(
         type: ParseTypeName("global::System.Globalization.NumberStyles"),
         name: IdentifierName("Integer")
     );
 
-    private static MemberAccessExpressionSyntax InvariantCulture { get; } = SimpleMemberAccessExpression(
+    private static MemberAccessExpressionSyntax InvariantCulture => field ??= SimpleMemberAccessExpression(
         type: ParseTypeName("global::System.Globalization.CultureInfo"),
         name: IdentifierName("InvariantCulture")
     );
 
-    private static AttributeListSyntax DynamicallyAccesedMembersAll { get; } = AttributeList(SeparatedList(new AttributeSyntax[]
-    {
+    private static AttributeListSyntax DynamicallyAccesedMembersAll => field ??= AttributeList(SingletonSeparatedList(
         Attribute(T.CodeAnalysis.DynamicallyAccessedMembersAttribute, AttributeArgumentList(
             openParenToken: Token(SyntaxKind.OpenParenToken),
-            arguments: SeparatedList(new AttributeArgumentSyntax[]
-            {
+            arguments: SingletonSeparatedList(
                 AttributeArgument(SimpleMemberAccessExpression(T.CodeAnalysis.DynamicallyAccessedMemberTypes, IdentifierNames.All))
-            }),
+            ),
             closeParenToken: Token(SyntaxKind.CloseParenToken)
         ))
-    }));
+    ));
 
-    private static ThrowExpressionSyntax ThrowNotSupportedExpression { get; } = ThrowExpression(
+    private static AttributeListSyntax SuppressArrayTypeWarning => field ??= AttributeList(SingletonSeparatedList(
+        Attribute(T.CodeAnalysis.UnconditionalSuppressMessageAttribute, AttributeArgumentList(
+            openParenToken: Token(SyntaxKind.OpenParenToken),
+            arguments: SeparatedList(
+            [
+                AttributeArgument(StringLiteralExpression("Trimming")),
+                AttributeArgument(StringLiteralExpression("IL3050")),
+            ]),
+            closeParenToken: Token(SyntaxKind.CloseParenToken)
+        ))
+    ));
+
+    private static ThrowExpressionSyntax ThrowNotSupportedExpression => field ??= ThrowExpression(
         ObjectCreationExpression(
             type: T.NotSupportedException,
             argumentList: Args(),
@@ -345,14 +359,14 @@ internal class ProtocolContextEmitterV2
         )
     );
 
-    private static LiteralExpressionSyntax NullLiteralExpression { get; } = LiteralExpression(SyntaxKind.NullLiteralExpression);
+    private static LiteralExpressionSyntax NullLiteralExpression => field ??= LiteralExpression(SyntaxKind.NullLiteralExpression);
 
     private static InterpolatedStringTextSyntax InterpolatedStringText(string raw)
         => SyntaxFactory.InterpolatedStringText(Token(
             leading: default,
             kind: SyntaxKind.InterpolatedStringTextToken,
-            text: "Unable to parse ",
-            valueText: "Unable to parse ",
+            text: raw,
+            valueText: raw,
             trailing: default
         ));
 
@@ -425,7 +439,7 @@ internal class ProtocolContextEmitterV2
             Token(
                 leading: default,
                 kind: SyntaxKind.StringLiteralToken,
-                text: raw,
+                text: $"\"{raw.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"", // FIXME: optimize
                 valueText: raw,
                 trailing: default
             )
@@ -561,9 +575,9 @@ internal class ProtocolContextEmitterV2
                     attributeLists: default,
                     modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
                     returnType: data.TypeName,
-                    explicitInterfaceSpecifier: default,
+                    explicitInterfaceSpecifier: default!,
                     identifier: Identifiers.SingleFromRawValue,
-                    typeParameterList: default,
+                    typeParameterList: default!,
                     parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
                     {
                         Parameter(
@@ -631,9 +645,9 @@ internal class ProtocolContextEmitterV2
                         attributeLists: default,
                         modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
                         returnType: T.Object,
-                        explicitInterfaceSpecifier: default,
+                        explicitInterfaceSpecifier: default!,
                         identifier: Identifiers.FromRawValue,
-                        typeParameterList: default,
+                        typeParameterList: default!,
                         parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
                         {
                             Parameter(
@@ -666,9 +680,9 @@ internal class ProtocolContextEmitterV2
                     attributeLists: default,
                     modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
                     returnType: data.TypeName,
-                    explicitInterfaceSpecifier: default,
+                    explicitInterfaceSpecifier: default!,
                     identifier: Identifiers.FromRawValue,
-                    typeParameterList: default,
+                    typeParameterList: default!,
                     parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
                     {
                         Parameter(
@@ -736,7 +750,7 @@ internal class ProtocolContextEmitterV2
         IdentifierNameSyntax methodId)
     {
         var throwExpression = EmitThrowCannotCreateException(data, methodName, SimpleMemberAccessExpression(
-            IdentifierNames.rawValue,
+            IdentifierNames.right,
             IdentifierNames.Type
         ));
 
@@ -821,34 +835,34 @@ internal class ProtocolContextEmitterV2
     }
 
     private static ExpressionSyntax EmitCreateEqualMethodBodyForValueType(ITypeData data)
-        => EmitCreateLinqMethodBodyForValueType(data, "Equals", IdentifierNames.Equals);
+        => EmitCreateLinqMethodBodyForValueType(data, "Equal", IdentifierNames.Equal);
 
     private static ExpressionSyntax EmitCreateEqualMethodBodyForNullableType(ITypeData data, SomeType nested)
-        => EmitCreateLinqMethodBodyForNullableType(data, nested, "Equals", IdentifierNames.Equals);
+        => EmitCreateLinqMethodBodyForNullableType(data, nested, "Equal", IdentifierNames.Equal);
 
     private static ArrowExpressionClauseSyntax EmitCreateEqualMethodBody(ITypeData data) => ArrowExpressionClause(data switch
     {
         { IsValueType: true, IsNullable: true } => EmitCreateEqualMethodBodyForNullableType(data, data.UnderlyingType.Value),
         { IsValueType: true } => EmitCreateEqualMethodBodyForValueType(data),
         _ => SimpleInvocationExpression(
-            T.Expression, IdentifierNames.Equals,
+            T.Expression, IdentifierNames.Equal,
             Argument(IdentifierNames.self),
             Argument(IdentifierNames.right)
         )
     });
 
     private static ExpressionSyntax EmitCreateNotEqualMethodBodyForValueType(ITypeData data)
-        => EmitCreateLinqMethodBodyForValueType(data, "NotEquals", IdentifierNames.NotEquals);
+        => EmitCreateLinqMethodBodyForValueType(data, "NotEqual", IdentifierNames.NotEqual);
 
     private static ExpressionSyntax EmitCreateNotEqualMethodBodyForNullableType(ITypeData data, SomeType nested)
-        => EmitCreateLinqMethodBodyForNullableType(data, nested, "NotEquals", IdentifierNames.NotEquals);
+        => EmitCreateLinqMethodBodyForNullableType(data, nested, "NotEqual", IdentifierNames.NotEqual);
 
     private static ArrowExpressionClauseSyntax EmitCreateNotEqualMethodBody(ITypeData data) => ArrowExpressionClause(data switch
     {
         { IsValueType: true, IsNullable: true } => EmitCreateNotEqualMethodBodyForNullableType(data, data.UnderlyingType.Value),
         { IsValueType: true } => EmitCreateNotEqualMethodBodyForValueType(data),
         _ => SimpleInvocationExpression(
-            T.Expression, IdentifierNames.NotEquals,
+            T.Expression, IdentifierNames.NotEqual,
             Argument(IdentifierNames.self),
             Argument(IdentifierNames.right)
         )
@@ -885,7 +899,7 @@ internal class ProtocolContextEmitterV2
                     @default: default
                 )
             })),
-            initializer: default,
+            initializer: default!,
             expressionBody: ArrowExpressionClause(
                 AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
@@ -971,7 +985,8 @@ internal class ProtocolContextEmitterV2
                         )
                     )
                 })
-            )
+            ),
+            semicolonToken: Tokens.Semicolon
         );
 
     private static FieldDeclarationSyntax EmitBoxValueField(ITypeData data)
@@ -984,7 +999,7 @@ internal class ProtocolContextEmitterV2
             attributeLists: default,
             modifiers: TokenList(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.ReadOnlyKeyword)),
             declaration: VariableDeclaration(
-                type: valueType,
+                type: T.FieldInfo,
                 variables: SeparatedList(new VariableDeclaratorSyntax[]
                 {
                     VariableDeclarator(
@@ -1001,13 +1016,15 @@ internal class ProtocolContextEmitterV2
                                                 ParenthesizedExpression(
                                                     CastExpression(
                                                         T.ExpressionFuncOf(IdentifierNames.Box, valueType),
-                                                        SimpleLambdaExpression(
-                                                            modifiers: default,
-                                                            parameter: Parameter(Identifiers.e),
-                                                            block: default,
-                                                            expressionBody: SimpleMemberAccessExpression(
-                                                                IdentifierNames.e,
-                                                                IdentifierNames.Value
+                                                        ParenthesizedExpression(
+                                                            SimpleLambdaExpression(
+                                                                modifiers: default,
+                                                                parameter: Parameter(Identifiers.e),
+                                                                block: default,
+                                                                expressionBody: SimpleMemberAccessExpression(
+                                                                    IdentifierNames.e,
+                                                                    IdentifierNames.Value
+                                                                )
                                                             )
                                                         )
                                                     )
@@ -1085,7 +1102,9 @@ internal class ProtocolContextEmitterV2
                     SyntaxKind.GetAccessorDeclaration,
                     attributeLists: [ ..methodAttributes ],
                     modifiers: TokenList(),
-                    expressionBody: ArrowExpressionClause(TypeOfExpression(data.TypeName))
+                    keyword: Token(SyntaxKind.GetKeyword),
+                    expressionBody: ArrowExpressionClause(TypeOfExpression(data.TypeName)),
+                    semicolonToken: Tokens.Semicolon
                 )
             }))
         );
@@ -1119,7 +1138,8 @@ internal class ProtocolContextEmitterV2
             identifier: identifier,
             accessorList: default,
             expressionBody: ArrowExpressionClause(body),
-            initializer: default
+            initializer: default,
+            semicolonToken: Tokens.Semicolon
         );
 
     private static PropertyDeclarationSyntax ArrowPropertyDeclaration(
@@ -1134,7 +1154,8 @@ internal class ProtocolContextEmitterV2
             identifier: identifier,
             accessorList: default,
             expressionBody: ArrowExpressionClause(body),
-            initializer: default
+            initializer: default,
+            semicolonToken: Tokens.Semicolon
         );
 
     private static MethodDeclarationSyntax EmitParse(ITypeData data)
@@ -1159,7 +1180,7 @@ internal class ProtocolContextEmitterV2
                     type: T.InvalidOperationException,
                     argumentList: ArgumentList(SeparatedList(new ArgumentSyntax[]
                     {
-                        Argument(StringLiteralExpression("{data.FullName} cannot be coverted from literal."))
+                        Argument(StringLiteralExpression($"{data.FullName} cannot be coverted from literal."))
                     })),
                     initializer: default
                 )
@@ -1168,7 +1189,7 @@ internal class ProtocolContextEmitterV2
         return MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Object),
+            returnType: T.Object,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.Parse,
             typeParameterList: default,
@@ -1274,12 +1295,11 @@ internal class ProtocolContextEmitterV2
         return MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Expression),
+            returnType: T.Expression,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.CreateBoxedConstant,
             typeParameterList: default,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
+            parameterList: ParameterList(SingletonSeparatedList(
                 Parameter(
                     attributeLists: default,
                     modifiers: default,
@@ -1287,7 +1307,7 @@ internal class ProtocolContextEmitterV2
                     identifier: Identifiers.value,
                     @default: default
                 )
-            })),
+            )),
             constraintClauses: default,
             body: null,
             expressionBody: ArrowExpressionClause(
@@ -1299,13 +1319,13 @@ internal class ProtocolContextEmitterV2
                             type: IdentifierNames.Box,
                             argumentList: Args(
                                 Argument(SuppressNullableWarningExpression(
-                                    CastExpression(valueType, IdentifierNames.value)
+                                    ParenthesizedExpression(CastExpression(valueType, IdentifierNames.value))
                                 ))
                             ),
                             initializer: default
-                        )),
-                        Argument(IdentifierNames.BoxValueField)
-                    ))
+                        ))
+                    )),
+                    Argument(IdentifierNames.BoxValueField)
                 )
             ),
             semicolonToken: Tokens.Semicolon
@@ -1316,7 +1336,7 @@ internal class ProtocolContextEmitterV2
         => MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Expression),
+            returnType: T.Expression,
             explicitInterfaceSpecifier: default,
             identifier: identifier,
             typeParameterList: default,
@@ -1325,14 +1345,14 @@ internal class ProtocolContextEmitterV2
                 Parameter(
                     attributeLists: default,
                     modifiers: default,
-                    type: NullableType(T.Expression),
+                    type: T.Expression,
                     identifier: Identifiers.self,
                     @default: default
                 ),
                 Parameter(
                     attributeLists: default,
                     modifiers: default,
-                    type: NullableType(T.Expression),
+                    type: T.Expression,
                     identifier: Identifiers.right,
                     @default: default
                 )
@@ -1356,7 +1376,7 @@ internal class ProtocolContextEmitterV2
         => MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Expression),
+            returnType: T.Expression,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.CreateEqual,
             typeParameterList: default,
@@ -1365,14 +1385,14 @@ internal class ProtocolContextEmitterV2
                 Parameter(
                     attributeLists: default,
                     modifiers: default,
-                    type: NullableType(T.Expression),
+                    type: T.Expression,
                     identifier: Identifiers.self,
                     @default: default
                 ),
                 Parameter(
                     attributeLists: default,
                     modifiers: default,
-                    type: NullableType(T.Expression),
+                    type: T.Expression,
                     identifier: Identifiers.right,
                     @default: default
                 )
@@ -1405,7 +1425,7 @@ internal class ProtocolContextEmitterV2
         => MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Expression),
+            returnType: T.Expression,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.CreateNotEqual,
             typeParameterList: default,
@@ -1414,14 +1434,14 @@ internal class ProtocolContextEmitterV2
                 Parameter(
                     attributeLists: default,
                     modifiers: default,
-                    type: NullableType(T.Expression),
+                    type: T.Expression,
                     identifier: Identifiers.self,
                     @default: default
                 ),
                 Parameter(
                     attributeLists: default,
                     modifiers: default,
-                    type: NullableType(T.Expression),
+                    type: T.Expression,
                     identifier: Identifiers.right,
                     @default: default
                 )
@@ -1437,6 +1457,93 @@ internal class ProtocolContextEmitterV2
 
     private static MethodDeclarationSyntax EmitCreateSubtract(ITypeData data)
         => EmitCreateExpressionNotSupportedMethod(Identifiers.CreateSubtract);
+
+    private static AccessorDeclarationSyntax EmptyGetAccessor => field ??= AccessorDeclaration(
+        kind: SyntaxKind.GetAccessorDeclaration,
+        attributeLists: default,
+        modifiers: default,
+        keyword: Token(SyntaxKind.GetKeyword),
+        expressionBody: default!,
+        semicolonToken: Tokens.Semicolon
+    );
+
+    private static TupleTypeSyntax LambdaDataType => field ??= TupleType(SeparatedList(
+    [
+        TupleElement(type: T.Type, identifier: Identifiers.ArgType),
+        TupleElement(type: T.Type, identifier: Identifiers.ResType),
+        TupleElement(type: T.Type, identifier: Identifiers.LambdaType)
+    ]));
+
+    private static MethodDeclarationSyntax EmitLambdaTypesInitializer(IEnumerable<(SomeType ArgType, SomeType ResType)> items)
+    {
+        int supply = 0;
+        var access = new Dictionary<SomeType, ExpressionSyntax>();
+        var declarators = new List<VariableDeclaratorSyntax>();
+        foreach (var (argType, resType) in items)
+        {
+            AddType(ref supply, access, declarators, argType);
+            AddType(ref supply, access, declarators, resType);
+        }
+        var fields = LocalDeclarationStatement(
+            modifiers: default,
+            declaration: VariableDeclaration(
+                type: T.Type,
+                variables: SeparatedList(declarators)
+            ),
+            semicolonToken: Tokens.Semicolon
+        );
+        var ret = ReturnStatement(
+            returnKeyword: Token(SyntaxKind.ReturnKeyword),
+            expression: ArrayCreationExpression(
+                type: ArrayType(LambdaDataType, SingletonList(ArrayRankSpecifier())),
+                initializer: InitializerExpression(SyntaxKind.ArrayInitializerExpression,
+                    expressions: SeparatedList(items.Select(tup =>
+                    {
+                        var (arg, res) = tup;
+                        var argSyntax = access[arg];
+                        var resSyntax = access[res];
+                        var lambdaType = T.FuncOf(arg.TypeName, res.TypeName);
+
+                        return (ExpressionSyntax)TupleExpression(SeparatedList(
+                        [
+                            Argument(argSyntax),
+                            Argument(resSyntax),
+                            Argument(TypeOfExpression(lambdaType))
+                        ]));
+                    }))
+                )
+            ),
+            semicolonToken: Tokens.Semicolon
+        );
+        return MethodDeclaration(
+            attributeLists: default,
+            modifiers: TokenList(Tokens.Private, Tokens.Static),
+            returnType: ArrayType(LambdaDataType, SingletonList(ArrayRankSpecifier())),
+            explicitInterfaceSpecifier: default!,
+            identifier: Identifier("InitializeLambdaTypes"),
+            typeParameterList: default!,
+            parameterList: ParameterList(SeparatedList<ParameterSyntax>()),
+            constraintClauses: default,
+            body: Block(List<StatementSyntax>([fields, ret])),
+            semicolonToken: default
+        );
+
+        static void AddType(ref int supply, Dictionary<SomeType, ExpressionSyntax> access, List<VariableDeclaratorSyntax> declarators, SomeType type)
+        {
+            if (!access.ContainsKey(type))
+            {
+                var id0 = supply;
+                ++supply;
+                var id = Identifier($"type{id0}");
+                declarators.Add(VariableDeclarator(
+                    identifier: id,
+                    argumentList: default,
+                    initializer: EqualsValueClause(TypeOfExpression(type.TypeName))
+                ));
+                access.Add(type, IdentifierName(id));
+            }
+        }
+    }
 
     private static ClassDeclarationSyntax EmitDescriptorImpl(ITypeData data)
     {
@@ -1456,18 +1563,18 @@ internal class ProtocolContextEmitterV2
         members.Add(EmitTypeProperty(data));
         // prop:ArrayOfType
         members.Add(ArrowPropertyDeclaration(
-            attributeLists: List([DynamicallyAccesedMembersAll]),
+            attributeLists: List([DynamicallyAccesedMembersAll, SuppressArrayTypeWarning]),
             modifiers: TokenList(Tokens.Public),
             type: T.Type,
             identifier: Identifiers.ArrayOfType,
-            body: TypeOfExpression(ArrayType(data.TypeName))
+            body: TypeOfExpression(ArrayType(data.TypeName, SingletonList(ArrayRankSpecifier())))
         ));
         // prop:EnumerableOfType
         members.Add(ArrowPropertyDeclaration(
             attributeLists: List([DynamicallyAccesedMembersAll]),
             modifiers: TokenList(Tokens.Public),
             type: T.Type,
-            identifier: Identifiers.ArrayOfType,
+            identifier: Identifiers.EnumerableOfType,
             body: TypeOfExpression(T.IEnumerableOf(data.TypeName))
         ));
         // prop: Properties
@@ -1485,7 +1592,7 @@ internal class ProtocolContextEmitterV2
         // prop: IsEnum
         members.Add(ArrowPropertyDeclaration(
             type: T.Boolean,
-            identifier: Identifiers.IsArithmetic,
+            identifier: Identifiers.IsEnum,
             body: BooleanLiteralExpression(data.IsEnum)
         ));
         // prop: IsValue
@@ -1517,17 +1624,55 @@ internal class ProtocolContextEmitterV2
             expressionBody: ArrowExpressionClause(ThrowNotSupportedExpression),
             semicolonToken: Tokens.Semicolon
         ));
-        // method:IsAssignableTo // FIXME
+        // method:IsAssignableTo
+        members.Add(MethodDeclaration(
+            attributeLists: default,
+            modifiers: TokenList(Tokens.Public),
+            returnType: T.Boolean,
+            explicitInterfaceSpecifier: default!,
+            identifier: Identifiers.IsAssignableTo,
+            typeParameterList: default!,
+            parameterList: ParameterList(SingletonSeparatedList(
+                Parameter(
+                    attributeLists: default,
+                    modifiers: default,
+                    type: T.Type,
+                    identifier: Identifier("baseType"),
+                    @default: default
+                )
+            )),
+            constraintClauses: default,
+            body: default,
+            expressionBody: ArrowExpressionClause(
+                data.AssignableToTypes
+                    .Select(ty => BinaryExpression(
+                        kind: SyntaxKind.EqualsExpression,
+                        left: IdentifierName("baseType"),
+                        right: TypeOfExpression(ty.TypeName)
+                    ))
+                    .Prepend(BinaryExpression(
+                        kind: SyntaxKind.EqualsExpression,
+                        left: IdentifierName("baseType"),
+                        right: TypeOfExpression(data.TypeName)
+                    ))
+                    .Aggregate((a, b) => BinaryExpression(
+                        kind: SyntaxKind.LogicalOrExpression,
+                        left: a,
+                        right: b
+                    ))
+            ),
+            semicolonToken: Tokens.Semicolon
+        ));
+
         // method:IsEnumerable
         members.Add(MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Boolean),
-            explicitInterfaceSpecifier: default,
+            returnType: T.Boolean,
+            explicitInterfaceSpecifier: default!,
             identifier: Identifiers.IsEnumerable,
-            typeParameterList: default,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
+            typeParameterList: default!,
+            parameterList: ParameterList(SingletonSeparatedList(
                 Parameter(
                     attributeLists: AttrMaybeNullWhenFalse,
                     modifiers: TokenList(Tokens.Out),
@@ -1535,7 +1680,7 @@ internal class ProtocolContextEmitterV2
                     identifier: Identifiers.elementType,
                     @default: default
                 )
-            })),
+            )),
             constraintClauses: default,
             body: Block(
                 ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, data.IsEnumerable
@@ -1549,10 +1694,10 @@ internal class ProtocolContextEmitterV2
         members.Add(MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Boolean),
-            explicitInterfaceSpecifier: default,
+            returnType: T.Boolean,
+            explicitInterfaceSpecifier: default!,
             identifier: Identifiers.IsArray,
-            typeParameterList: default,
+            typeParameterList: default!,
             parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
             {
                 Parameter(
@@ -1576,10 +1721,10 @@ internal class ProtocolContextEmitterV2
         members.Add(MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Boolean),
-            explicitInterfaceSpecifier: default,
+            returnType: T.Boolean,
+            explicitInterfaceSpecifier: default!,
             identifier: Identifiers.IsLambda,
-            typeParameterList: default,
+            typeParameterList: default!,
             parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
             {
                 Parameter(
@@ -1613,10 +1758,10 @@ internal class ProtocolContextEmitterV2
         members.Add(MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Boolean),
-            explicitInterfaceSpecifier: default,
+            returnType: T.Boolean,
+            explicitInterfaceSpecifier: default!,
             identifier: Identifiers.IsMaybe,
-            typeParameterList: default,
+            typeParameterList: default!,
             parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
             {
                 Parameter(
@@ -1638,10 +1783,10 @@ internal class ProtocolContextEmitterV2
         members.Add(MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Boolean),
-            explicitInterfaceSpecifier: default,
+            returnType: T.Boolean,
+            explicitInterfaceSpecifier: default!,
             identifier: Identifiers.IsNullable,
-            typeParameterList: default,
+            typeParameterList: default!,
             parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
             {
                 Parameter(
@@ -1669,10 +1814,10 @@ internal class ProtocolContextEmitterV2
         members.Add(MethodDeclaration(
             attributeLists: default,
             modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Boolean),
-            explicitInterfaceSpecifier: default,
+            returnType: T.Boolean,
+            explicitInterfaceSpecifier: default!,
             identifier: Identifiers.TryGetEnumFactory,
-            typeParameterList: default,
+            typeParameterList: default!,
             parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
             {
                 Parameter(
@@ -1730,10 +1875,7 @@ internal class ProtocolContextEmitterV2
             type: T.MethodInfo,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.EnumerableAnyMethod,
-            accessorList: AccessorList(List(new AccessorDeclarationSyntax[]
-            {
-                AccessorDeclaration(kind: SyntaxKind.GetAccessorDeclaration)
-            })),
+            accessorList: AccessorList(SingletonList(EmptyGetAccessor)),
             expressionBody: default,
             initializer: EqualsValueClause(
                 SimpleInvocationExpression(
@@ -1758,10 +1900,7 @@ internal class ProtocolContextEmitterV2
             type: T.MethodInfo,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.EnumerableAllMethod,
-            accessorList: AccessorList(List(new AccessorDeclarationSyntax[]
-            {
-                AccessorDeclaration(kind: SyntaxKind.GetAccessorDeclaration)
-            })),
+            accessorList: AccessorList(SingletonList(EmptyGetAccessor)),
             expressionBody: default,
             initializer: EqualsValueClause(
                 SimpleInvocationExpression(
@@ -1786,10 +1925,7 @@ internal class ProtocolContextEmitterV2
             type: T.MethodInfo,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.EnumerableContainsMethod,
-            accessorList: AccessorList(List(new AccessorDeclarationSyntax[]
-            {
-                AccessorDeclaration(kind: SyntaxKind.GetAccessorDeclaration)
-            })),
+            accessorList: AccessorList(SingletonList(EmptyGetAccessor)),
             expressionBody: default,
             initializer: EqualsValueClause(
                 SimpleInvocationExpression(
@@ -1852,6 +1988,9 @@ internal class ProtocolContextEmitterV2
                     })))
                 }))
             )
+            .AddBaseListTypes(
+                SimpleBaseType(T.Internal.ITypeDescriptor)
+            )
             .AddModifiers(
                 Tokens.Public,
                 Token(SyntaxKind.SealedKeyword)
@@ -1859,7 +1998,7 @@ internal class ProtocolContextEmitterV2
             .AddMembers([.. members]);
     }
 
-    private static int BuildVersion { get; set; }
+    // private static int BuildVersion { get; set; }
 
     public static CompilationUnitSyntax EmitContext(
         string @namespace,
@@ -1874,22 +2013,22 @@ internal class ProtocolContextEmitterV2
             List<MemberDeclarationSyntax> members = new(types.Count + 12);
 
             // class*:type descriptors
-            members.AddRange(types.Select(EmitDescriptorImpl));
+            members.AddRange(types.Where(ty => ty is not PrimitiveValueTypeData).Select(EmitDescriptorImpl));
             // field:_descriptors
             members.Add(FieldDeclaration(
                 attributeLists: default,
                 modifiers: TokenList(Tokens.Private, Tokens.Static, Tokens.ReadOnly),
                 declaration: VariableDeclaration(
-                    type: ArrayType(T.Internal.ITypeDescriptor),
+                    type: ArrayType(T.Internal.ITypeDescriptor, SingletonList(ArrayRankSpecifier())),
                     variables: SeparatedList(new VariableDeclaratorSyntax[]
                     {
                         VariableDeclarator(
                             identifier: Identifiers._descriptors,
                             argumentList: default,
                             initializer: EqualsValueClause(ArrayCreationExpression(
-                                type: ArrayType(T.Internal.ITypeDescriptor),
+                                type: ArrayType(T.Internal.ITypeDescriptor, SingletonList(ArrayRankSpecifier())),
                                 InitializerExpression(SyntaxKind.ArrayInitializerExpression,
-                                    expressions: SeparatedList(types.Select(data =>
+                                    expressions: SeparatedList(types.Where(ty => ty is not PrimitiveValueTypeData).Select(data =>
                                     {
                                         var typeName = explicitDescriptors.TryGetValue(data.FullName, out var ty)
                                             ? ty.TypeName
@@ -1907,42 +2046,17 @@ internal class ProtocolContextEmitterV2
                 semicolonToken: Tokens.Semicolon
             ));
             // field:_lambdaTypes
-            var tupleType = TupleType(SeparatedList(new TupleElementSyntax[]
-            {
-                TupleElement(type: T.Type, identifier: Identifiers.ArgType),
-                TupleElement(type: T.Type, identifier: Identifiers.ResType),
-                TupleElement(type: T.Type, identifier: Identifiers.LambdaType)
-            }));
+            members.Add(EmitLambdaTypesInitializer(lambdaTypes));
             members.Add(FieldDeclaration(
                 attributeLists: default,
                 modifiers: TokenList(Tokens.Private, Tokens.Static, Tokens.ReadOnly),
                 declaration: VariableDeclaration(
-                    type: ArrayType(tupleType),
-                    variables: SeparatedList(new VariableDeclaratorSyntax[]
-                    {
-                        VariableDeclarator(
-                            identifier: Identifiers._lambdaTypes,
-                            argumentList: default,
-                            initializer: EqualsValueClause(ArrayCreationExpression(
-                                type: ArrayType(tupleType),
-                                InitializerExpression(SyntaxKind.ArrayInitializerExpression,
-                                    expressions: SeparatedList(lambdaTypes.Select(tup =>
-                                    {
-                                        var (arg, res) = tup;
-                                        var argType = arg.TypeName;
-                                        var resType = res.TypeName;
-                                        var lambdaType = T.FuncOf(argType, resType);
-
-                                        return (ExpressionSyntax)TupleExpression(SeparatedList(new ArgumentSyntax[]
-                                        {
-                                            Argument(TypeOfExpression(argType)),
-                                            Argument(TypeOfExpression(resType)),
-                                            Argument(TypeOfExpression(lambdaType))
-                                        }));
-                                    }).ToArray()))
-                            ))
-                        )
-                    })
+                    type: ArrayType(LambdaDataType, SingletonList(ArrayRankSpecifier())),
+                    variables: SingletonSeparatedList(VariableDeclarator(
+                        identifier: Identifiers._lambdaTypes,
+                        argumentList: default,
+                        initializer: EqualsValueClause(SimpleInvocationExpression(IdentifierName("InitializeLambdaTypes")))
+                    ))
                 ),
                 semicolonToken: Tokens.Semicolon
             ));
@@ -1953,10 +2067,7 @@ internal class ProtocolContextEmitterV2
                 type: T.Internal.IPortableDataContext,
                 explicitInterfaceSpecifier: default,
                 identifier: Identifiers.Singleton,
-                accessorList: AccessorList(List(new AccessorDeclarationSyntax[]
-                {
-                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                })),
+                accessorList: AccessorList(SingletonList(EmptyGetAccessor)),
                 expressionBody: default,
                 initializer: EqualsValueClause(ObjectCreationExpression(IdentifierName(name), Args(), initializer: default)),
                 semicolonToken: Tokens.Semicolon
@@ -2007,7 +2118,7 @@ internal class ProtocolContextEmitterV2
             members.Add(MethodDeclaration(
                 attributeLists: default,
                 modifiers:  TokenList(Tokens.Public),
-                returnType: T.IEnumerableOf(tupleType),
+                returnType: T.IEnumerableOf(LambdaDataType),
                 explicitInterfaceSpecifier: default,
                 identifier: Identifiers.GetLambdaTypes,
                 typeParameterList: default,
@@ -2023,6 +2134,9 @@ internal class ProtocolContextEmitterV2
                 .AddAttributeLists(
                     AttributeList(SeparatedList(new AttributeSyntax[] { GeneratedCodeAttribute }))
                 )
+                .AddBaseListTypes(
+                    SimpleBaseType(T.Internal.IPortableDataContext)
+                )
                 .AddModifiers(
                     Token(SyntaxKind.PartialKeyword)
                 )
@@ -2034,6 +2148,15 @@ internal class ProtocolContextEmitterV2
             );
 
             return CompilationUnit()
+                .AddUsings(
+                    UsingDirective(
+                        usingKeyword: Token(SyntaxKind.UsingKeyword),
+                        staticKeyword: default,
+                        alias: NameEquals(IdentifierName("PropertyInfo")),
+                        name: ParseName("System.Reflection.PropertyInfo"),
+                        semicolonToken: Tokens.Semicolon
+                    )
+                )
                 .AddMembers(
                     NamespaceDeclaration(IdentifierName(@namespace))
                         .WithLeadingTrivia(syntaxTriviaList)

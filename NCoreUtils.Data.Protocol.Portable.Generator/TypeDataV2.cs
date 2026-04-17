@@ -63,6 +63,7 @@ internal sealed class PropertyDataV2(string name, string typeFullName)
 }
 
 internal interface ITypeData
+    : IEquatable<ITypeData>
 {
     string SafeName { get; }
 
@@ -76,6 +77,8 @@ internal interface ITypeData
 
     IReadOnlyList<PropertyDataV2> Properties { get; }
 
+    HashSet<SomeType> AssignableToTypes { get; }
+
     #region array/enumerable
 
     [MemberNotNullWhen(true, nameof(ElementType))]
@@ -84,7 +87,7 @@ internal interface ITypeData
     [MemberNotNullWhen(true, nameof(ElementType))]
     bool IsEnumerable { get; }
 
-    TypeDataV2? ElementType { get; }
+    ITypeData? ElementType { get; }
 
     #endregion
 
@@ -93,9 +96,9 @@ internal interface ITypeData
     [MemberNotNullWhen(true, nameof(LambdaArg), nameof(LambdaRes))]
     bool IsLambda { get; }
 
-    TypeDataV2? LambdaArg { get; }
+    ITypeData? LambdaArg { get; }
 
-    TypeDataV2? LambdaRes { get; }
+    ITypeData? LambdaRes { get; }
 
     #endregion
 
@@ -180,6 +183,14 @@ internal sealed partial class TypeDataV2(
 
     public IReadOnlyList<PropertyDataV2> Properties { get; } = properties;
 
+    #region assignable to
+
+    public HashSet<SomeType>? AssignableToTypes { get; set; }
+
+    HashSet<SomeType> ITypeData.AssignableToTypes => AssignableToTypes!;
+
+    #endregion
+
     #region array/enumerable
 
     [MemberNotNullWhen(true, nameof(ElementType))]
@@ -192,7 +203,7 @@ internal sealed partial class TypeDataV2(
     /// When either <see cref="IsArray"/> or <see cref="IsEnumerable"/> is <see langword="true" /> holds description of
     /// the underlying type, i.e. <c>T</c> type of the <see cref="IEnumerable{T}"/> or <c>T[]</c>.
     /// </summary>
-    public TypeDataV2? ElementType { get; set; }
+    public ITypeData? ElementType { get; set; }
 
     #endregion
 
@@ -201,9 +212,9 @@ internal sealed partial class TypeDataV2(
     [MemberNotNullWhen(true, nameof(LambdaArg), nameof(LambdaRes))]
     public bool IsLambda { get; } = isLambda;
 
-    public TypeDataV2? LambdaArg { get; set; }
+    public ITypeData? LambdaArg { get; set; }
 
-    public TypeDataV2? LambdaRes { get; set; }
+    public ITypeData? LambdaRes { get; set; }
 
     #endregion
 
@@ -245,6 +256,8 @@ internal sealed partial class TypeDataV2(
 
     #endregion
 
+    #region equality
+
     public bool Equals([NotNullWhen(false)] TypeDataV2? other)
     {
         if (ReferenceEquals(this, other)) { return true; }
@@ -264,13 +277,13 @@ internal sealed partial class TypeDataV2(
             return false;
         }
         if ((IsArray || IsEnumerable)
-            && ElementType != other.ElementType)
+            && !ElementType.Equals(other.ElementType!)) // NOTE: null handled in implementation
         {
             return false;
         }
         if (IsLambda
-            && (LambdaArg != other.LambdaArg
-                || LambdaRes != other.LambdaRes))
+            && (!LambdaArg.Equals(other.LambdaArg!)
+                || !LambdaRes.Equals(other.LambdaRes!))) // NOTE: null handled in implementation
         {
             return false;
         }
@@ -282,8 +295,15 @@ internal sealed partial class TypeDataV2(
         {
             return false;
         }
+        if (!AssignableToTypes!.SetEquals(other.AssignableToTypes!))
+        {
+            return false;
+        }
         return true;
     }
+
+    public bool Equals([NotNullWhen(false)] ITypeData? obj)
+        => Equals(obj as TypeDataV2);
 
     public override bool Equals([NotNullWhen(false)] object? obj)
         => Equals(obj as TypeDataV2);
@@ -301,6 +321,33 @@ internal sealed partial class TypeDataV2(
         return unchecked((int)code);
     }
 
+    #endregion
+
+}
+
+internal enum ProtocolPrimitiveType
+{
+    Boolean,
+    Guid,
+    DateTime,
+    DateTimeOffset,
+    SByte,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Byte,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Half,
+    Single,
+    Double,
+    Decimal,
+    DateOnly,
+    TimeOnly,
+    String
 }
 
 internal sealed class PrimitiveValueTypeData(
@@ -308,7 +355,10 @@ internal sealed class PrimitiveValueTypeData(
     string safeName,
     TypeSyntax? typeName = default)
     : ITypeData
+    , IEquatable<PrimitiveValueTypeData>
 {
+    private static HashSet<SomeType> NoTypes { get; } = [];
+
     public string SafeName { get; } = safeName;
 
     public string FullName { get; } = fullName;
@@ -325,13 +375,13 @@ internal sealed class PrimitiveValueTypeData(
 
     public bool IsEnumerable => false;
 
-    public TypeDataV2? ElementType => default;
+    public ITypeData? ElementType => default;
 
     public bool IsLambda => false;
 
-    public TypeDataV2? LambdaArg => default;
+    public ITypeData? LambdaArg => default;
 
-    public TypeDataV2? LambdaRes => default;
+    public ITypeData? LambdaRes => default;
 
     public bool IsNullable => false;
 
@@ -346,6 +396,26 @@ internal sealed class PrimitiveValueTypeData(
     public string? EnumUndelyingTypeFullName => default;
 
     public TypeSyntax TypeName { get; } = typeName ?? SyntaxFactory.ParseTypeName(fullName);
+
+    public HashSet<SomeType> AssignableToTypes => NoTypes;
+
+    #region equality
+
+    public bool Equals([NotNullWhen(true)] PrimitiveValueTypeData? other)
+        => ReferenceEquals(this, other)
+            || (other is not null
+                && StringComparer.Ordinal.Equals(FullName, other.FullName));
+
+    public bool Equals([NotNullWhen(true)] ITypeData? other)
+        => Equals(other as PrimitiveValueTypeData);
+
+    public override bool Equals([NotNullWhen(true)] object? obj)
+        => Equals(obj as PrimitiveValueTypeData);
+
+    public override int GetHashCode()
+        => StringComparer.Ordinal.GetHashCode(FullName);
+
+    #endregion
 }
 
 internal readonly struct SomeType
@@ -357,7 +427,7 @@ internal readonly struct SomeType
     public static bool operator!=(SomeType a, SomeType b)
         => !a.Equals(b);
 
-    private readonly TypeDataV2? _data;
+    private readonly ITypeData? _data;
 
     private readonly string? _fullName;
 
@@ -367,21 +437,21 @@ internal readonly struct SomeType
         ? typeName
         : SyntaxFactory.ParseTypeName(_fullName ?? throw new InvalidOperationException());
 
-    private SomeType(TypeDataV2? data, string? fullName)
+    private SomeType(ITypeData? data, string? fullName)
     {
         _data = data;
         _fullName = fullName;
     }
 
-    public SomeType(TypeDataV2 data) : this(data.ThrowIfNull(), default) { }
+    public SomeType(ITypeData data) : this(data.ThrowIfNull(), default) { }
 
     public SomeType(string fullName) : this(null, fullName.ThrowIfNull()) { }
 
     public bool Equals(SomeType other)
     {
-        if (_data is TypeDataV2 data)
+        if (_data is ITypeData data)
         {
-            return other._data is TypeDataV2 otherData && data == otherData;
+            return other._data is ITypeData otherData && data.Equals(otherData);
         }
         if (_fullName is string fullName)
         {
@@ -395,14 +465,17 @@ internal readonly struct SomeType
 
     public override int GetHashCode()
     {
-        if (_data is TypeDataV2 data)
+        if (_data is ITypeData data)
         {
-            return unchecked((int)(0x010000000u | (uint)data.GetHashCode()));
+            return unchecked((int)(0x00000001u | (uint)data.GetHashCode()));
         }
         if (_fullName is string fullName)
         {
-            return unchecked((int)(0x07FFFFFFFu & (uint)fullName.GetHashCode()));
+            return unchecked((int)(0xFFFFFFFFEu & (uint)fullName.GetHashCode()));
         }
         return default;
     }
+
+    public override string ToString()
+        => _data is null ? $"explicit:{FullName}" : $"type:{FullName}";
 }

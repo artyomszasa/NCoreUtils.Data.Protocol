@@ -10,6 +10,9 @@
     <Compile Include="..\shared\CodeAnalysis.NetFramework\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\shared\RequiredMemberTypes.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="NCoreUtils.Extensions.Collections" Version="8.0.0" />
     <PackageReference Include="NCoreUtils.Extensions.Memory" Version="8.0.0" />
   </ItemGroup>

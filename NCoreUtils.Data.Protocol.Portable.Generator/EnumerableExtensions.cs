@@ -49,4 +49,17 @@ internal static class EnumerableeExtensions
 
     public static void Enqueue<T>(this Queue<(T, bool)> queue, T item, bool root = false)
         => queue.Enqueue((item, root));
+
+    public static IEnumerable<T> Prepend<T>(this IEnumerable<T> source, T value)
+    {
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+        yield return value;
+        foreach (var item in source)
+        {
+            yield return item;
+        }
+    }
 }

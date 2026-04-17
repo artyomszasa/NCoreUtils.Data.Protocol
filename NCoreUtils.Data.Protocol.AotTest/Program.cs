@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -27,6 +28,8 @@ internal class Program
 
     private static void Main(string[] args)
     {
+        var desc = DataQueryContext.Singleton.GetTypeDescriptors().FirstOrDefault(e => e.Type == typeof(DataEntity));
+
         using var services = new ServiceCollection()
             .AddSingleton(typeof(ILogger<>), typeof(DummyLogger<>))
             .AddDataQueryServices(DataQueryContext.Singleton)

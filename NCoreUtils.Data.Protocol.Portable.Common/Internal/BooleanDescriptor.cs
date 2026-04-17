@@ -29,7 +29,7 @@ public sealed partial class BooleanDescriptor : ITypeDescriptor
             : throw new InvalidOperationException($"Cannot create OrElse expression from bool and {right.Type}.");
 
     public bool IsAssignableTo(Type baseType)
-        => baseType == typeof(bool);
+        => baseType == typeof(bool) || baseType == typeof(bool?);
 
     public object Parse(string value) => value switch
     {

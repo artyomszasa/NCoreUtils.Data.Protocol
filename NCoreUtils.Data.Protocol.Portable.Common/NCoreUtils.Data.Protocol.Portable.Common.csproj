@@ -9,6 +9,9 @@
     <Compile Remove="CompilerServices\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\shared\RequiredMemberTypes.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Portable.Generator.Internal\NCoreUtils.Data.Protocol.Portable.Generator.Internal.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.csproj" />
   </ItemGroup>

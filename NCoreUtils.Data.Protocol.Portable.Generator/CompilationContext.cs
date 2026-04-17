@@ -13,6 +13,7 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
     public readonly INamedTypeSymbol attrProtocolLambda = compilation.GetTypeSymbol("NCoreUtils.Data.Protocol.ProtocolLambdaAttribute");
     public readonly INamedTypeSymbol attrProtocolDescriptor = compilation.GetTypeSymbol("NCoreUtils.Data.Protocol.ProtocolDescriptorAttribute");
     public readonly INamedTypeSymbol attrProtocolOpaque = compilation.GetTypeSymbol("NCoreUtils.Data.Protocol.ProtocolOpaqueAttribute");
+    public readonly INamedTypeSymbol attrProtocolSafeName = compilation.GetTypeSymbol("NCoreUtils.Data.Protocol.ProtocolSafeNameAttribute");
     public readonly INamedTypeSymbol attrDescribedType = compilation.GetTypeSymbol("NCoreUtils.Data.Protocol.Internal.DescribedTypeAttribute");
 
     public readonly INamedTypeSymbol @bool = compilation.GetSpecialType(SpecialType.System_Boolean);
@@ -22,6 +23,8 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
     public readonly INamedTypeSymbol func = compilation.GetTypeSymbol("System.Func`2");
 
     public readonly INamedTypeSymbol iEnumerable = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T);
+
+    public readonly INamedTypeSymbol iReadOnlyList = compilation.GetTypeSymbol("System.Collections.Generic.IReadOnlyList`1");
 
     public readonly INamedTypeSymbol? iParseable = compilation.GetTypeSymbolOrDefault("System.IParsable`1");
 
@@ -39,6 +42,9 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
 
     public INamedTypeSymbol CreateIEnumerableTypeSymbol(ITypeSymbol elementType)
         => iEnumerable.Construct(elementType);
+
+    public INamedTypeSymbol CreateIReadOnlyListTypeSymbol(ITypeSymbol elementType)
+        => iReadOnlyList.Construct(elementType);
 
     public INamedTypeSymbol CreateFuncTypeSymbol(ITypeSymbol argType, ITypeSymbol resType)
         => func.Construct(argType, resType);
@@ -71,11 +77,11 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
             {
                 if (args[0].Value is not ITypeSymbol targetArgType)
                 {
-                    throw new InvalidOperationException($"ProtocolLambdaAttribute must have type symbol as parameter (found: {args[0].Value ?? "<<null>>"}).");
+                    throw new InvalidOperationException($"ProtocolLambdaAttribute must have type symbol as argument (found: {args[0].Value ?? "<<null>>"}).");
                 }
                 if (args[0].Value is not ITypeSymbol targetResType)
                 {
-                    throw new InvalidOperationException($"ProtocolLambdaAttribute must have type symbol as parameter (found: {args[1].Value ?? "<<null>>"}).");
+                    throw new InvalidOperationException($"ProtocolLambdaAttribute must have type symbol as argument (found: {args[1].Value ?? "<<null>>"}).");
                 }
                 argType = targetArgType;
                 resType = targetResType;
@@ -96,7 +102,7 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
                 var value = args[0].Value;
                 if (value is not int val)
                 {
-                    throw new InvalidOperationException($"ProtocolGenerationOptionsAttribute must have type symbol as parameter (found: {value ?? "<<null>>"} of type {value?.GetType()}).");
+                    throw new InvalidOperationException($"ProtocolGenerationOptionsAttribute must have int/enum as argument (found: {value ?? "<<null>>"} of type {value?.GetType()}).");
                 }
                 mode = (GenMode)val;
                 return true;
@@ -115,7 +121,7 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
             {
                 if (args[0].Value is not ITypeSymbol typeSymbol)
                 {
-                    throw new InvalidOperationException($"ProtocolDescriptorAttribute must have type symbol as parameter (found: {args[0].Value ?? "<<null>>"}).");
+                    throw new InvalidOperationException($"ProtocolDescriptorAttribute must have type symbol as argument (found: {args[0].Value ?? "<<null>>"}).");
                 }
                 if (typeSymbol.GetAttributes()
                     .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attrDescribedType))
@@ -155,22 +161,55 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
         return false;
     }
 
-    public bool TryGetEnumerableElementType(ITypeSymbol symbol, [MaybeNullWhen(false)] out ITypeSymbol elementType)
+    public bool IsSafeName(AttributeData data, [MaybeNullWhen(false)] out ITypeSymbol targetType, [MaybeNullWhen(false)] out string safeName)
     {
+        if (SymbolEqualityComparer.Default.Equals(data.AttributeClass, attrProtocolSafeName))
+        {
+            var args = data.ConstructorArguments;
+            if (args.Length == 2)
+            {
+                if (args[0].Value is not ITypeSymbol typeSymbol)
+                {
+                    throw new InvalidOperationException($"ProtocolSafeNameAttribute must have type symbol as first argument (found: {args[0].Value ?? "<<null>>"}).");
+                }
+                if (args[1].Value is not string name)
+                {
+                    throw new InvalidOperationException($"ProtocolSafeNameAttribute must have string as second argument (found: {args[0].Value ?? "<<null>>"}).");
+                }
+                targetType = typeSymbol;
+                safeName = name;
+                return true;
+            }
+        }
+        (targetType, safeName) = (default, default);
+        return false;
+    }
+
+    public bool TryGetEnumerableElementType(ITypeSymbol symbol, [MaybeNullWhen(false)] out ITypeSymbol elementType, out bool isDirect)
+    {
+        if (symbol.SpecialType == SpecialType.System_String)
+        {
+            elementType = default;
+            isDirect = default;
+            return false;
+        }
         if (symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, iEnumerable))
         {
             elementType = named.TypeArguments[0];
+            isDirect = true;
             return true;
         }
         foreach (var isymbol in symbol.AllInterfaces)
         {
-            if (TryGetEnumerableElementType(isymbol, out var etype))
+            if (TryGetEnumerableElementType(isymbol, out var etype, out _))
             {
                 elementType = etype;
+                isDirect = false;
                 return true;
             }
         }
         elementType = default;
+        isDirect = default;
         return false;
     }
 
@@ -195,6 +234,9 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
         elementType = default;
         return false;
     }
+
+    public bool IsLambda(ITypeSymbol symbol)
+        => symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, func);
 
     public bool TryGetLambdaTypes(ITypeSymbol symbol, [MaybeNullWhen(false)] out ITypeSymbol argType, [MaybeNullWhen(false)] out ITypeSymbol resType)
     {

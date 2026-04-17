@@ -110,7 +110,7 @@ public partial interface IDataUtils
 
     Type GetEnumerableOfType(Type elementType);
 
-    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    [return: DynamicallyAccessedMembers(RequiredMemberTypes.Default)]
     Type Ensure(Type type);
 
     #region instantiation

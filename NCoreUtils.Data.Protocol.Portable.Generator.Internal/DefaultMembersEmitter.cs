@@ -275,6 +275,7 @@ internal class DefaultMembersEmitter(IntegerTypeSymbols intSymbols, FloatingType
         if (opts.GenerateArrayOfType)
         {
             return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+    [UnconditionalSuppressMessage(""Trimming"", ""IL3050"")]
     public{target.Modifier} Type ArrayOfType => typeof({target.TargetFullName}[]);";
         }
         return string.Empty;

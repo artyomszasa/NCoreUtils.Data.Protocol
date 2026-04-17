@@ -72,5 +72,19 @@ namespace NCoreUtils.Data.Protocol
         public ProtocolOpaqueAttribute(Type type)
             => Type = type;
     }
+
+    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
+    internal sealed class ProtocolSafeNameAttribute : Attribute
+    {
+        public Type Type { get; }
+
+        public string Name { get; }
+
+        public ProtocolSafeNameAttribute(Type type, string name)
+        {
+            Type = type;
+            Name = name;
+        }
+    }
 }";
 }

@@ -63,7 +63,7 @@ internal static class T
 
     public static TypeSyntax PropertyInfo { get; } = ParseTypeName("global::System.Reflection.PropertyInfo");
 
-    public static ArrayTypeSyntax ArrayOfPropertyInfo { get; } = ArrayType(PropertyInfo);
+    public static ArrayTypeSyntax ArrayOfPropertyInfo { get; } = ArrayType(PropertyInfo, SingletonList(ArrayRankSpecifier()));
 
     #region generics
 

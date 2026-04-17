@@ -8,17 +8,17 @@ namespace NCoreUtils.Data.Protocol.Generator;
 
 internal partial class TypeDataV2
 {
-    private static string GetSafeName(ITypeSymbol symbol)
+    private static string GetSafeName(ITypeSymbol symbol, Func<ITypeSymbol, string?> safeNameFactory)
     {
         if (symbol is INamedTypeSymbol named && named.IsGenericType)
         {
-            return $"{symbol.Name}Of{string.Join(string.Empty, named.TypeArguments.Select(GetSafeName))}";
+            return $"{symbol.Name}Of{string.Join(string.Empty, named.TypeArguments.Select(ty => GetSafeName(ty, safeNameFactory)))}";
         }
         if (symbol is IArrayTypeSymbol array)
         {
-            return $"ArrayOf{GetSafeName(array.ElementType)}";
+            return $"ArrayOf{GetSafeName(array.ElementType, safeNameFactory)}";
         }
-        return symbol.Name;
+        return safeNameFactory(symbol) ?? symbol.Name;
     }
 
     private static bool TypeIsParseable(CompilationContext compilation, ITypeSymbol symbol)
@@ -110,14 +110,15 @@ internal partial class TypeDataV2
         CompilationContext compilation,
         ITypeSymbol symbol,
         bool isOpaque,
+        Func<ITypeSymbol, string?> safeNameFactory,
         out ITypeSymbol? elementType,
         out IPropertySymbol[] properties)
     {
-        var safeName = GetSafeName(symbol);
+        var safeName = GetSafeName(symbol, safeNameFactory);
         var fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         elementType = symbol is IArrayTypeSymbol arrayType
             ? arrayType.ElementType
-            : compilation.TryGetEnumerableElementType(symbol, out var etype) ? etype : default;
+            : compilation.TryGetEnumerableElementType(symbol, out var etype, out _) ? etype : default;
         properties = (symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct) && elementType is null && !isOpaque
             ? GetPropertiesRecursive(symbol)
             : [];
