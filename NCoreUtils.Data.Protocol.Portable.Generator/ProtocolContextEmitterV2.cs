@@ -310,15 +310,6 @@ internal class ProtocolContextEmitterV2
         }))
     );
 
-    private static AccessorListSyntax AccessorAutoGet => field ??= AccessorList(
-        openBraceToken: Token(SyntaxKind.OpenBraceToken),
-        accessors: List(new AccessorDeclarationSyntax[]
-        {
-            AccessorDeclaration(SyntaxKind.GetKeyword)
-        }),
-        closeBraceToken: Token(SyntaxKind.CloseBraceToken)
-    );
-
     private static MemberAccessExpressionSyntax NumberStylesInteger => field ??= SimpleMemberAccessExpression(
         type: ParseTypeName("global::System.Globalization.NumberStyles"),
         name: IdentifierName("Integer")
@@ -491,11 +482,11 @@ internal class ProtocolContextEmitterV2
 
             var singleton = PropertyDeclaration(
                 attributeLists: default,
-                modifiers: TokenList(Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.StaticKeyword)),
+                modifiers: TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)),
                 type: enumFactoryTypeName,
                 explicitInterfaceSpecifier: default,
                 identifier: Identifiers.Singleton,
-                accessorList: AccessorAutoGet,
+                accessorList: AccessorList(SingletonList(EmptyGetAccessor)),
                 expressionBody: default,
                 initializer: EqualsValueClause(ObjectCreationExpression(
                     type: enumFactoryTypeName,
@@ -540,10 +531,10 @@ internal class ProtocolContextEmitterV2
                 );
 
                 static StatementSyntax EmitFlagNameCheck(
-                StatementSyntax elseStatement,
-                int index,
-                ITypeData data,
-                IReadOnlyList<EnumFieldData> fields)
+                    StatementSyntax elseStatement,
+                    int index,
+                    ITypeData data,
+                    IReadOnlyList<EnumFieldData> fields)
                 {
                     if (index < 0)
                     {
@@ -557,20 +548,36 @@ internal class ProtocolContextEmitterV2
                             Argument(StringLiteralExpression(field.Name)),
                             Argument(IdentifierNames.rawValue)
                         ),
-                        statement: ReturnStatement(
+                        statement: BracedBlock(ReturnStatement(
                             returnKeyword: Token(SyntaxKind.ReturnKeyword),
                             expression: SimpleMemberAccessExpression(data.TypeName, IdentifierName(field.Name)),
                             semicolonToken: Token(SyntaxKind.SemicolonToken)
-                        ),
-                        @else: ElseClause(elseStatement)
+                        )),
+                        @else: ElseClause(EmitFlagNameCheck(elseStatement, index - 1, data, fields))
                     );
                 }
             }
             // MethodDeclarationSyntax singleFromRawValue;
+            var tryParseExpression = SimpleInvocationExpression(
+                type: ParseTypeName(intType),
+                name: IdentifierNames.TryParse,
+                args:
+                [
+                    Argument(IdentifierNames.rawValue),
+                    Argument(NumberStylesInteger),
+                    Argument(InvariantCulture),
+                    Argument(
+                        nameColon: default,
+                        refKindKeyword: Token(SyntaxKind.OutKeyword),
+                        expression: DeclarationExpression(
+                            type: IdentifierNames.var,
+                            designation: SingleVariableDesignation(Identifiers.i)
+                        )
+                    )
+                ]
+            );
             if (data.IsEnumFlags)
             {
-
-
                 var singleFromRawValue = MethodDeclaration(
                     attributeLists: default,
                     modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
@@ -578,8 +585,7 @@ internal class ProtocolContextEmitterV2
                     explicitInterfaceSpecifier: default!,
                     identifier: Identifiers.SingleFromRawValue,
                     typeParameterList: default!,
-                    parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-                    {
+                    parameterList: ParameterList(SingletonSeparatedList(
                         Parameter(
                             attributeLists: default,
                             modifiers: default,
@@ -587,7 +593,7 @@ internal class ProtocolContextEmitterV2
                             identifier: Identifiers.rawValue,
                             @default: default
                         )
-                    })),
+                    )),
                     constraintClauses: default,
                     body: singleFromRawValueBody,
                     semicolonToken: default
@@ -622,25 +628,6 @@ internal class ProtocolContextEmitterV2
                         ReturnStatement(IdentifierNames.res)
                     );
 
-                    var tryParseExpression = SimpleInvocationExpression(
-                        type: ParseTypeName(intType),
-                        name: IdentifierNames.TryParse,
-                        args:
-                        [
-                            Argument(IdentifierNames.TryParse),
-                            Argument(NumberStylesInteger),
-                            Argument(InvariantCulture),
-                            Argument(
-                                nameColon: default,
-                                refKindKeyword: Token(SyntaxKind.OutKeyword),
-                                expression: DeclarationExpression(
-                                    type: IdentifierNames.var,
-                                    designation: SingleVariableDesignation(Identifiers.i)
-                                )
-                            )
-                        ]
-                    );
-
                     fromRawValue = MethodDeclaration(
                         attributeLists: default,
                         modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
@@ -648,16 +635,14 @@ internal class ProtocolContextEmitterV2
                         explicitInterfaceSpecifier: default!,
                         identifier: Identifiers.FromRawValue,
                         typeParameterList: default!,
-                        parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-                        {
+                        parameterList: ParameterList(SingletonSeparatedList(
                             Parameter(
                                 attributeLists: default,
                                 modifiers: default,
                                 type: T.String,
                                 identifier: Identifiers.rawValue,
                                 @default: default
-                            )
-                        })),
+                            ))),
                         constraintClauses: default,
                         body: BracedBlock(
                             IfStatement(
@@ -679,12 +664,11 @@ internal class ProtocolContextEmitterV2
                 var fromRawValue = MethodDeclaration(
                     attributeLists: default,
                     modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
-                    returnType: data.TypeName,
+                    returnType: T.Object,
                     explicitInterfaceSpecifier: default!,
                     identifier: Identifiers.FromRawValue,
                     typeParameterList: default!,
-                    parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-                    {
+                    parameterList: ParameterList(SingletonSeparatedList(
                         Parameter(
                             attributeLists: default,
                             modifiers: default,
@@ -692,9 +676,18 @@ internal class ProtocolContextEmitterV2
                             identifier: Identifiers.rawValue,
                             @default: default
                         )
-                    })),
+                    )),
                     constraintClauses: default,
-                    body: singleFromRawValueBody,
+                    //body: singleFromRawValueBody,
+                    body: BracedBlock(
+                        IfStatement(
+                            condition: tryParseExpression,
+                            statement: BracedBlock(
+                                ReturnStatement(CastExpression(data.TypeName, IdentifierNames.i))
+                            ),
+                            @else: ElseClause(singleFromRawValueBody)
+                        )
+                    ),
                     semicolonToken: default
                 );
                 methods = [fromRawValue];
@@ -1091,7 +1084,7 @@ internal class ProtocolContextEmitterV2
         }
 
         return PropertyDeclaration(
-            attributeLists: List([DynamicallyAccesedMembersAll]),
+            attributeLists: default,
             modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
             type: T.Type,
             explicitInterfaceSpecifier: default,
@@ -1319,7 +1312,7 @@ internal class ProtocolContextEmitterV2
                             type: IdentifierNames.Box,
                             argumentList: Args(
                                 Argument(SuppressNullableWarningExpression(
-                                    ParenthesizedExpression(CastExpression(valueType, IdentifierNames.value))
+                                    CastExpression(valueType, IdentifierNames.value)
                                 ))
                             ),
                             initializer: default
@@ -1563,7 +1556,7 @@ internal class ProtocolContextEmitterV2
         members.Add(EmitTypeProperty(data));
         // prop:ArrayOfType
         members.Add(ArrowPropertyDeclaration(
-            attributeLists: List([DynamicallyAccesedMembersAll, SuppressArrayTypeWarning]),
+            attributeLists: default,
             modifiers: TokenList(Tokens.Public),
             type: T.Type,
             identifier: Identifiers.ArrayOfType,
@@ -1571,7 +1564,7 @@ internal class ProtocolContextEmitterV2
         ));
         // prop:EnumerableOfType
         members.Add(ArrowPropertyDeclaration(
-            attributeLists: List([DynamicallyAccesedMembersAll]),
+            attributeLists: default,
             modifiers: TokenList(Tokens.Public),
             type: T.Type,
             identifier: Identifiers.EnumerableOfType,
@@ -2000,6 +1993,9 @@ internal class ProtocolContextEmitterV2
 
     // private static int BuildVersion { get; set; }
 
+    private static bool IsNotBuiltIn(ITypeData data)
+        => !(data is PrimitiveValueTypeData or NullablePrimitiveValueTypeData);
+
     public static CompilationUnitSyntax EmitContext(
         string @namespace,
         string name,
@@ -2013,7 +2009,7 @@ internal class ProtocolContextEmitterV2
             List<MemberDeclarationSyntax> members = new(types.Count + 12);
 
             // class*:type descriptors
-            members.AddRange(types.Where(ty => ty is not PrimitiveValueTypeData).Select(EmitDescriptorImpl));
+            members.AddRange(types.Where(IsNotBuiltIn).Select(EmitDescriptorImpl));
             // field:_descriptors
             members.Add(FieldDeclaration(
                 attributeLists: default,
@@ -2028,7 +2024,7 @@ internal class ProtocolContextEmitterV2
                             initializer: EqualsValueClause(ArrayCreationExpression(
                                 type: ArrayType(T.Internal.ITypeDescriptor, SingletonList(ArrayRankSpecifier())),
                                 InitializerExpression(SyntaxKind.ArrayInitializerExpression,
-                                    expressions: SeparatedList(types.Where(ty => ty is not PrimitiveValueTypeData).Select(data =>
+                                    expressions: SeparatedList(types.Where(IsNotBuiltIn).Select(data =>
                                     {
                                         var typeName = explicitDescriptors.TryGetValue(data.FullName, out var ty)
                                             ? ty.TypeName
@@ -2167,15 +2163,13 @@ internal class ProtocolContextEmitterV2
         catch (Exception exn)
         {
             reportDiagnostics(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "NCU0000",
-                    "An exception was thrown by the ProtocolContextEmitter generator",
-                    "An exception was thrown by the ProtocolContextEmitter generator: '{0}'",
-                    "ProtocolContextEmitter",
-                    DiagnosticSeverity.Error,
-                    isEnabledByDefault: true),
+                DiagnosticDescriptors.GenericError,
                 Location.None,
-                exn.ToString()
+                [
+                    exn.GetType().Name,
+                    exn.Message,
+                    exn.StackTrace.Replace('\n', ' ').Replace('\r', ' ')
+                ]
             ));
             return CompilationUnit();
         }

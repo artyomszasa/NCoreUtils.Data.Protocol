@@ -33,7 +33,7 @@ public abstract class BoxedConstantBuilder
     protected abstract Expression BuildExpression(object? value);
 }
 
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
 [UnconditionalSuppressMessage("Trimming", "IL2109", Justification = "Only required for base type because instances of this type are created using reflection.")]
 public sealed class BoxedConstantBuilder<T> : BoxedConstantBuilder
 {

@@ -20,7 +20,7 @@ internal sealed class StringLengthDescriptor : IFunctionDescriptor
 
     public static StringLengthDescriptor Singleton { get; } = new();
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type ResultType => typeof(int);
 
     public ReadOnlyConstraintedTypeList ArgumentTypes => _argumentTypes;

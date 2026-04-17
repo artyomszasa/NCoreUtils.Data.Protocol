@@ -12,7 +12,7 @@ internal sealed class CollectionContainsDescriptor : IFunctionDescriptor
 {
     private MethodInfo MethodContains { get; }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type ResultType => typeof(bool);
 
     public ReadOnlyConstraintedTypeList ArgumentTypes { get; }
@@ -21,8 +21,8 @@ internal sealed class CollectionContainsDescriptor : IFunctionDescriptor
 
     public CollectionContainsDescriptor(
         MethodInfo methodContains,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type enumerableType,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type elementType)
+         Type enumerableType,
+         Type elementType)
     {
         MethodContains = methodContains;
         ArgumentTypes = new ReadOnlyConstraintedTypeListBuilder

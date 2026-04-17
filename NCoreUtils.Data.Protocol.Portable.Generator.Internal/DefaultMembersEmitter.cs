@@ -260,11 +260,11 @@ internal class DefaultMembersEmitter(IntegerTypeSymbols intSymbols, FloatingType
             if (target.TargetTypeSymbol.Name == "Guid"
                 || (target.TargetTypeSymbol.Name == "Nullable" && target.TargetTypeSymbol.TypeArguments[0].Name == "Guid"))
             {
-                return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+                return @$"
     [UnconditionalSuppressMessage(""Trimming"", ""IL3050"")]
     public{target.Modifier} Type Type => typeof({target.TargetFullName});";
             }
-            return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            return @$"
     public{target.Modifier} Type Type => typeof({target.TargetFullName});";
         }
         return string.Empty;
@@ -274,7 +274,7 @@ internal class DefaultMembersEmitter(IntegerTypeSymbols intSymbols, FloatingType
     {
         if (opts.GenerateArrayOfType)
         {
-            return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            return @$"
     [UnconditionalSuppressMessage(""Trimming"", ""IL3050"")]
     public{target.Modifier} Type ArrayOfType => typeof({target.TargetFullName}[]);";
         }
@@ -285,7 +285,7 @@ internal class DefaultMembersEmitter(IntegerTypeSymbols intSymbols, FloatingType
     {
         if (opts.GenerateEnumerableOfType)
         {
-            return @$"[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            return @$"
     public{target.Modifier} Type EnumerableOfType => typeof(IEnumerable<{target.TargetFullName}>);";
         }
         return string.Empty;

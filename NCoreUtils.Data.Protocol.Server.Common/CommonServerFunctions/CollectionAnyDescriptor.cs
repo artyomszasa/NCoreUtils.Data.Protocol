@@ -14,7 +14,7 @@ internal sealed class CollectionAnyDescriptor : IFunctionDescriptor
 
     public Type ResultType
     {
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
         get => typeof(bool);
     }
 
@@ -28,8 +28,8 @@ internal sealed class CollectionAnyDescriptor : IFunctionDescriptor
 
     public CollectionAnyDescriptor(
         MethodInfo methodAny,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type enumerableType,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type lambdaType)
+         Type enumerableType,
+         Type lambdaType)
     {
         MethodAny = methodAny ?? throw new ArgumentNullException(nameof(methodAny));
         ArgumentTypes = new ReadOnlyConstraintedTypeListBuilder

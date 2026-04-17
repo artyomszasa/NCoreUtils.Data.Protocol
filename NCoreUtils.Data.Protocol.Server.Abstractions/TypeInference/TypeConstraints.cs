@@ -9,8 +9,6 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 public partial record TypeConstraints(
     ImmutableHashSet<string> Members,
     ImmutableHashSet<Type> Interfaces,
-    [property: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    [param: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     Type? Base,
     bool? IsNumeric,
     bool? IsNullable,

@@ -38,14 +38,26 @@ internal class Program
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         var builder = scope.ServiceProvider.GetRequiredService<IDataQueryExpressionBuilder>();
         var parser = scope.ServiceProvider.GetRequiredService<ExpressionParser>();
-        foreach (var arg in args)
+        if (args.Length == 0)
         {
-            var expression = builder.BuildExpression(typeof(DataEntity), arg);
+            var expression = builder.BuildExpression(typeof(DataEntity), "e => some(e.Meta, x => x = \"hu-HU\")");
             // logger.LogInformation("Expression: {Expression}", expression);
             Console.WriteLine("----");
             Console.WriteLine(expression);
             var ast = parser.ParseExpression(expression);
             Console.WriteLine(ast);
+        }
+        else
+        {
+            foreach (var arg in args)
+            {
+                var expression = builder.BuildExpression(typeof(DataEntity), arg);
+                // logger.LogInformation("Expression: {Expression}", expression);
+                Console.WriteLine("----");
+                Console.WriteLine(expression);
+                var ast = parser.ParseExpression(expression);
+                Console.WriteLine(ast);
+            }
         }
     }
 }

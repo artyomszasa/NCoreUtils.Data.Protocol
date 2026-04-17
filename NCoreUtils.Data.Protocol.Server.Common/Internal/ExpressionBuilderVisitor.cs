@@ -103,6 +103,7 @@ public partial class ExpressionBuilderVisitor : ITypedNodeVisitor<Type, IPropert
     public ParameterExpression VisitIdentifier(Identifier<Type> identifier, IPropertyResolver propertyResolver, NameMap nameMap)
         => nameMap.GetParameter(identifier.Value);
 
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Delegate types should be preserved via descriptors.")]
     public LambdaExpression VisitLambda(Lambda<Type> lambda, IPropertyResolver propertyResolver, NameMap nameMap)
     {
         var parameter = nameMap.Add(lambda.Arg.Value, lambda.Arg.Type);

@@ -27,7 +27,7 @@ public sealed class DateTimeOffsetDescriptor : IFunctionDescriptor
             ?? throw new InvalidOperationException("Unable to get DateTimeOffset constructor.");
     }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type ResultType => typeof(DateTimeOffset);
 
     public ReadOnlyConstraintedTypeList ArgumentTypes => _argumentTypes;

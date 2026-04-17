@@ -9,7 +9,7 @@ using NCoreUtils.Linq;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
 public partial class QueryProvider(IDataUtils util, ExpressionParser expressionParser, IDataQueryExecutor executor)
     : IAsyncQueryProvider
     , IProtocolQueryProvider

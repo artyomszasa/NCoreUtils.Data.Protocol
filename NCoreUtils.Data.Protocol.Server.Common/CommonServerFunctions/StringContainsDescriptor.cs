@@ -21,7 +21,7 @@ internal sealed class StringContainsDescriptor : IFunctionDescriptor
 
     public static StringContainsDescriptor Singleton { get; } = new();
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type ResultType => typeof(bool);
 
     public ReadOnlyConstraintedTypeList ArgumentTypes => _argumentTypes;

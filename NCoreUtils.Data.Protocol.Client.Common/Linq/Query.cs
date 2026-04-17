@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -10,7 +9,6 @@ using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public abstract class Query(IProtocolQueryProvider provider)
     : IOrderedQueryable
 {
@@ -51,7 +49,7 @@ public abstract class Query<T>(IProtocolQueryProvider provider)
     : Query(provider)
     , IOrderedQueryable<T>
 {
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     private sealed class ApplySelectVisitor : IDataTypeVisitor
     {
         public static Func<Query<T>, LambdaExpression, Query> Visit(IDataUtils util, Type resType)

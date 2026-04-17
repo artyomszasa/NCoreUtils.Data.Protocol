@@ -8,13 +8,13 @@ namespace NCoreUtils.Data.Protocol.Internal;
 
 public interface ITypeDescriptor
 {
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     Type Type { get; }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     Type ArrayOfType { get; }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     Type EnumerableOfType { get; }
 
     IReadOnlyList<PropertyInfo> Properties { get; }
@@ -82,8 +82,8 @@ public interface ITypeDescriptor
     void Accept(IDataTypeVisitor visitor);
 }
 
-public interface ITypeDescriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : ITypeDescriptor
+public interface ITypeDescriptor< T> : ITypeDescriptor
 {
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     Type ITypeDescriptor.Type => typeof(T);
 }

@@ -283,7 +283,7 @@ internal class ProtocolContextEmitter
 
         private FieldInfo BoxValueField {{ get; }} = (FieldInfo)((MemberExpression)((Expression<global::System.Func<Box, {data.NullName}>>)(e => e.Value)).Body).Member;
 
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
         public global::System.Type Type
         {{
             {(data.IsLambda ? "[UnconditionalSuppressMessage(\"Trimming\", \"IL2026\")]" : string.Empty)}
@@ -292,10 +292,10 @@ internal class ProtocolContextEmitter
             get => typeof({data.FullName});
         }}
 
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
         public global::System.Type ArrayOfType => typeof({data.FullName}[]);
 
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
         public global::System.Type EnumerableOfType => typeof(global::System.Collections.Generic.IEnumerable<{data.FullName}>);
 
         public global::System.Collections.Generic.IReadOnlyList<PropertyInfo> Properties => _properties;

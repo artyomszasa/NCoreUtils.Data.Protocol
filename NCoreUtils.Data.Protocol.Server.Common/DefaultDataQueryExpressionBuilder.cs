@@ -43,7 +43,7 @@ public class DefaultDataQueryExpressionBuilder(
     /// <param name="expression">Internal expression without type information.</param>
     /// <returns>Internal expression with resolved type information.</returns>
     protected virtual Lambda<Type> ResolveExpression(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
+         Type rootType,
         Lambda expression)
         => Inferrer.InferTypes(rootType, expression);
 
@@ -55,7 +55,7 @@ public class DefaultDataQueryExpressionBuilder(
     /// <param name="rawExpression">If input could be successfully parsed stores raw expression.</param>
     /// <returns>LINQ Expression representation of the input query.</returns>
     public LambdaExpression BuildExpression(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
+         Type rootType,
         string input,
         out Node rawExpression)
     {
@@ -81,7 +81,7 @@ public class DefaultDataQueryExpressionBuilder(
 
     /// <inheritdoc />
     public LambdaExpression BuildExpression(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
+         Type rootType,
         string input)
         => BuildExpression(rootType, input, out _);
 }

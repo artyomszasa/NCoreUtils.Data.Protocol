@@ -33,7 +33,7 @@ public class InMemoryDataExecutor : IDataQueryExecutor
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026")]
-    public IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
+    public IAsyncEnumerable<T> ExecuteEnumerationAsync< T>(
         string target,
         Node? filter = null,
         Node? sortBy = null,
@@ -77,7 +77,7 @@ public class InMemoryDataExecutor : IDataQueryExecutor
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Unit only.")]
     [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Unit only.")]
-    public Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
+    public Task<TResult> ExecuteReductionAsync< TSource, TResult>(
         string target,
         Reduction reduction,
         Node? filter = null,

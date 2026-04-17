@@ -21,7 +21,7 @@ public class DefaultTypeInferer(
     protected virtual Func<TypeUid, Type> CreateResolver(TypeInferenceContext context)
         => typeUid => context.InstantiateType(PropertyResolver, typeUid);
 
-    public virtual Lambda<Type> InferTypes([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType, Lambda expression)
+    public virtual Lambda<Type> InferTypes( Type rootType, Lambda expression)
     {
         var typedExpression = (Lambda<TypeUid>)Helpers.Idfy(expression);
         var initialContext = Helpers.CollectIds(Util, typedExpression);

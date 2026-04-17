@@ -237,7 +237,7 @@ public partial class ReflectionDataUtils : IDataUtils
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2046", Justification = "Warnings are shown on service registration.")]
-    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type Ensure(Type type) => type;
 
     private static MethodInfo? _gVisit;

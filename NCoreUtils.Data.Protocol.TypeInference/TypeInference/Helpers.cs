@@ -19,7 +19,7 @@ public static class Helpers
         public Type ResultType
         {
             [UnconditionalSuppressMessage("Trimming", "IL2063", Justification = "Method always throws.")]
-            [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
             get => throw new InvalidOperationException();
         }
 
@@ -458,7 +458,7 @@ public static class Helpers
 
     public static TypeInferenceContext CollectConstraintsRoot(
         this TypeInferenceContext ctx,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType,
+         Type rootType,
         IPropertyResolver propertyResolver,
         IFunctionDescriptorResolver functionResolver,
         Lambda<TypeUid> node,

@@ -14,7 +14,7 @@ public interface IFunctionDescriptor : IHasName
     /// <summary>
     /// Gets result type.
     /// </summary>
-    Type ResultType { [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] get; }
+    Type ResultType {  get; }
 
     /// <summary>
     /// Gets arguments types.

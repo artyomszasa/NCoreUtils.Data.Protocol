@@ -14,7 +14,7 @@ public partial class TestDataQueryExecutor : IDataQueryExecutor
 
     public List<ExecuteReductionData> ExecutedReductions { get; } = new();
 
-    public IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
+    public IAsyncEnumerable<T> ExecuteEnumerationAsync< T>(
         string target,
         Node? filter = null,
         Node? sortBy = null,
@@ -38,7 +38,7 @@ public partial class TestDataQueryExecutor : IDataQueryExecutor
         return Enumerable.Empty<T>().ToAsyncEnumerable();
     }
 
-    public Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
+    public Task<TResult> ExecuteReductionAsync< TSource, TResult>(
         string target,
         Reduction reduction,
         Node? filter = null,

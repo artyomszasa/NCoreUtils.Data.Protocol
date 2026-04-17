@@ -32,7 +32,7 @@ internal static class AsyncEnumerableToEnumerableHelper
 
 public partial class QueryProvider
 {
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     private sealed class ExecuteEnumerableVisitor : IDataTypeVisitor
     {
         public static Func<QueryProvider, Expression, object> Visit(QueryProvider provider, Type elementType)
@@ -50,7 +50,7 @@ public partial class QueryProvider
         }
     }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     private sealed class ExecuteReductionVisitor : IDataTypeVisitor
     {
         public static Func<QueryProvider, Expression, object?> Visit(QueryProvider provider, Type elementType)

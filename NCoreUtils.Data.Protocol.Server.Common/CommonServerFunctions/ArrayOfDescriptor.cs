@@ -11,7 +11,7 @@ internal sealed class ArrayOfDescriptor : IFunctionDescriptor
 {
     public Type ElementType { get; }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type ResultType {  get; }
 
     public ReadOnlyConstraintedTypeList ArgumentTypes { get; }
@@ -19,8 +19,8 @@ internal sealed class ArrayOfDescriptor : IFunctionDescriptor
     public string Name => Names.Array;
 
     internal ArrayOfDescriptor(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type arrayType,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type elementType,
+         Type arrayType,
+         Type elementType,
         int count)
     {
         ElementType = elementType;

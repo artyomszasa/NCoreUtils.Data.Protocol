@@ -33,22 +33,23 @@ internal static class EnumerableeExtensions
         return false;
     }
 
-    public static bool TryDequeue<T1, T2>(
-        this Queue<(T1, T2)> queue,
+    public static bool TryDequeue<T1, T2, T3>(
+        this Queue<(T1, T2, T3)> queue,
         [MaybeNullWhen(false)] out T1 item1,
-        [MaybeNullWhen(false)] out T2 item2)
+        [MaybeNullWhen(false)] out T2 item2,
+        [MaybeNullWhen(false)] out T3 item3)
     {
         if (queue.TryDequeue(out var tup))
         {
-            (item1, item2) = tup;
+            (item1, item2, item3) = tup;
             return true;
         }
-        (item1, item2) = (default, default);
+        (item1, item2, item3) = (default, default, default);
         return false;
     }
 
-    public static void Enqueue<T>(this Queue<(T, bool)> queue, T item, bool root = false)
-        => queue.Enqueue((item, root));
+    public static void Enqueue<T>(this Queue<(T, bool, bool)> queue, T item, bool root = false, bool fromProperty = false)
+        => queue.Enqueue((item, root, fromProperty));
 
     public static IEnumerable<T> Prepend<T>(this IEnumerable<T> source, T value)
     {

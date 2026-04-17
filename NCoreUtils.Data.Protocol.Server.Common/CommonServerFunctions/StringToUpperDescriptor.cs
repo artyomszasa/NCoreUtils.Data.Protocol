@@ -20,7 +20,7 @@ internal sealed class StringToUpperDescriptor : IFunctionDescriptor
 
     public static StringToUpperDescriptor Singleton { get; } = new();
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type ResultType => typeof(string);
 
     public ReadOnlyConstraintedTypeList ArgumentTypes => _argumentTypes;

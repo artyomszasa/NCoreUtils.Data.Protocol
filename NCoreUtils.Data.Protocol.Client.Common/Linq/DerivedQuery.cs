@@ -1,12 +1,9 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
-internal class DerivedQuery<
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TBase,
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TDerived>(
+internal class DerivedQuery<TBase, TDerived>(
         IProtocolQueryProvider provider,
         Lambda? filter = default,
         Lambda? sortBy = default,

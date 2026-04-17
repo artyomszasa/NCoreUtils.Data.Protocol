@@ -20,7 +20,7 @@ internal sealed class StringToLowerDescriptor : IFunctionDescriptor
 
     public static StringToLowerDescriptor Singleton { get; } = new();
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type ResultType => typeof(string);
 
     public ReadOnlyConstraintedTypeList ArgumentTypes => _argumentTypes;

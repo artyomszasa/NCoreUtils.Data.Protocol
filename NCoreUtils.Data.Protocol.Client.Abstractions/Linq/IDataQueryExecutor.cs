@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,7 +8,7 @@ namespace NCoreUtils.Data.Protocol.Linq;
 public interface IDataQueryExecutor
 {
     [Obsolete("Use variation that handles thenBy instead.")]
-    IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
+    IAsyncEnumerable<T> ExecuteEnumerationAsync<T>(
         string target,
         Ast.Node? filter = default,
         Ast.Node? sortBy = default,
@@ -33,7 +32,7 @@ public interface IDataQueryExecutor
 #endif
         ;
 
-    IAsyncEnumerable<T> ExecuteEnumerationAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
+    IAsyncEnumerable<T> ExecuteEnumerationAsync<T>(
         string target,
         Ast.Node? filter = default,
         Ast.Node? sortBy = default,
@@ -60,7 +59,7 @@ public interface IDataQueryExecutor
     /// <typeparam name="TResult">Type of the result.</typeparam>
     /// <returns>Reduction result.</returns>
     [Obsolete("Use variation that handles thenBy instead.")]
-    Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
+    Task<TResult> ExecuteReductionAsync<TSource, TResult>(
         string target,
         Reduction reduction,
         Ast.Node? filter = default,
@@ -84,7 +83,7 @@ public interface IDataQueryExecutor
 #endif
         ;
 
-    Task<TResult> ExecuteReductionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TSource, TResult>(
+    Task<TResult> ExecuteReductionAsync<TSource, TResult>(
         string target,
         Reduction reduction,
         Ast.Node? filter = default,

@@ -10,11 +10,11 @@ namespace NCoreUtils.Data.Protocol.Linq;
 
 public static class DirectQuery
 {
-    public static Query<T> Create<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IProtocolQueryProvider provider)
+    public static Query<T> Create<T>(IProtocolQueryProvider provider)
         => new DirectQuery<T>(provider);
 }
 
-internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(
+internal class DirectQuery<T>(
         IProtocolQueryProvider provider,
         Lambda? filter = default,
         Lambda? sortBy = default,
@@ -24,7 +24,7 @@ internal class DirectQuery<[DynamicallyAccessedMembers(DynamicallyAccessedMember
         int? limit = default
     ) : Query<T>(provider)
 {
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     private sealed class DeriveVisitor : IDataTypeVisitor
     {
         public static Func<DirectQuery<T>, Query> Visit(IDataUtils util, Type targetType)

@@ -79,7 +79,7 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
                 {
                     throw new InvalidOperationException($"ProtocolLambdaAttribute must have type symbol as argument (found: {args[0].Value ?? "<<null>>"}).");
                 }
-                if (args[0].Value is not ITypeSymbol targetResType)
+                if (args[1].Value is not ITypeSymbol targetResType)
                 {
                     throw new InvalidOperationException($"ProtocolLambdaAttribute must have type symbol as argument (found: {args[1].Value ?? "<<null>>"}).");
                 }
@@ -235,9 +235,6 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
         return false;
     }
 
-    public bool IsLambda(ITypeSymbol symbol)
-        => symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, func);
-
     public bool TryGetLambdaTypes(ITypeSymbol symbol, [MaybeNullWhen(false)] out ITypeSymbol argType, [MaybeNullWhen(false)] out ITypeSymbol resType)
     {
         if (symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, func))
@@ -249,4 +246,13 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
         (argType, resType) = (default, default);
         return false;
     }
+
+    public bool IsArray(ITypeSymbol symbol)
+        => symbol is IArrayTypeSymbol;
+
+    public bool IsEnumerable(ITypeSymbol symbol)
+        => symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, iEnumerable);
+
+    public bool IsLambda(ITypeSymbol symbol)
+        => symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, func);
 }

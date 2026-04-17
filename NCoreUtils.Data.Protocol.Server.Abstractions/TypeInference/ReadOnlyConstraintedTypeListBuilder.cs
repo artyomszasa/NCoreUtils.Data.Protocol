@@ -21,7 +21,7 @@ public class ReadOnlyConstraintedTypeListBuilder : IEnumerable
     { }
 
     public ReadOnlyConstraintedTypeListBuilder Add(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
+         Type type)
     {
         Types.Add(type);
         return this;

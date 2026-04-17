@@ -18,5 +18,5 @@ public interface ITypeInferrer
     /// <param name="rootType">Argument type of root lambda expression.</param>
     /// <param name="expression">Expression to infer types within.</param>
     /// <returns>Expression with inferred types.</returns>
-    Lambda<Type> InferTypes([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type rootType, Lambda expression);
+    Lambda<Type> InferTypes( Type rootType, Lambda expression);
 }

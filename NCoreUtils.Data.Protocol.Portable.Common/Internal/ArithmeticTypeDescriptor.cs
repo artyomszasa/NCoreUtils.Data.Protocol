@@ -10,13 +10,13 @@ public abstract class ArithmeticTypeDescriptor : ITypeDescriptor
 {
     public virtual IReadOnlyList<PropertyInfo> Properties => Array.Empty<PropertyInfo>();
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public abstract Type Type { get; }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public abstract Type ArrayOfType { get; }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public abstract Type EnumerableOfType { get; }
 
     public bool IsArithmetic => true;

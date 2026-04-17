@@ -135,7 +135,7 @@ public partial class PortableDataUtils : IDataUtils
     public Type GetEnumerableOfType(Type type)
         => GetDescriptor(type).EnumerableOfType;
 
-    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
     public Type Ensure(Type type)
         => GetDescriptor(type).Type;
 

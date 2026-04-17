@@ -14,7 +14,7 @@ public class ReadOnlyConstraintedTypeList : IReadOnlyList<Type>
     public Type this[int index]
     {
         [UnconditionalSuppressMessage("Trimming", "IL2073", Justification = "Builder has necessary attributes.")]
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+
         get => _types[index];
     }
 
