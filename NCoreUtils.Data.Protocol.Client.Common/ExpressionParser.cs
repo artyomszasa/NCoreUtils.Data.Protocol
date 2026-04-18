@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 using NCoreUtils.Data.Protocol.Ast;
 using NCoreUtils.Data.Protocol.Internal;
@@ -30,7 +28,7 @@ public class ExpressionParser(IDataUtils utils, IFunctionMatcher functionMatcher
     protected IFunctionMatcher FunctionMatcher { get; } = functionMatcher ?? throw new ArgumentNullException(nameof(functionMatcher));
 
     protected bool IsNullableHasValue(MemberExpression expression)
-        => expression.Member.Name == nameof(Nullable<int>.HasValue)
+        => expression.Member.Name == nameof(Nullable<>.HasValue)
             && expression.Expression is not null
             && Utils.IsNullable(expression.Type);
 
@@ -157,5 +155,8 @@ public class ExpressionParser(IDataUtils utils, IFunctionMatcher functionMatcher
     }
 
     public Node ParseExpression(Expression expression)
-        => Visit(expression, new UniqueStringMap(), FunctionMatcher);
+    {
+        Check.ThrowIfNull(expression);
+        return Visit(expression, new UniqueStringMap(), FunctionMatcher);
+    }
 }

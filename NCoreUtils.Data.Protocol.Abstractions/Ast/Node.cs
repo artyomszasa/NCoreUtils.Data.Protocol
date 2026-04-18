@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -8,7 +6,10 @@ using NCoreUtils.Memory;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
+public abstract class Node
+    : IEquatable<Node>
+    , IFormattable
+    , ISpanExactEmplaceable
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator==(Node? a, Node? b)
@@ -96,8 +97,8 @@ public abstract class Node : IEquatable<Node>, ISpanExactEmplaceable
     public abstract TResult Accept<TArg1, TArg2, TResult>(INodeVisitor<TArg1, TArg2, TResult> visitor, TArg1 arg1, TArg2 arg2);
 
     public bool Equals(Node? node)
-        => node is not null
-            && (ReferenceEquals(this, node) || DeepEq(this, node, ImmutableDictionary<UniqueString, UniqueString>.Empty));
+        => ReferenceEquals(this, node) || (node is not null
+            && DeepEq(this, node, ImmutableDictionary<UniqueString, UniqueString>.Empty));
 
     public override bool Equals(object? obj)
         => obj is Node other && Equals(other);

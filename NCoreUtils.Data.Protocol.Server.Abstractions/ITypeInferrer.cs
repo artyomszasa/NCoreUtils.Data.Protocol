@@ -1,5 +1,3 @@
-using System;
-using System.Diagnostics.CodeAnalysis;
 using NCoreUtils.Data.Protocol.Ast;
 using NCoreUtils.Data.Protocol.TypeInference;
 using NCoreUtils.Data.Protocol.TypeInference.Ast;

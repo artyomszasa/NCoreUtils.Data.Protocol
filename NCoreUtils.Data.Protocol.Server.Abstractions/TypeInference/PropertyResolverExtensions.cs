@@ -1,5 +1,3 @@
-using System;
-
 namespace NCoreUtils.Data.Protocol.TypeInference;
 
 public static class PropertyResolverExtensions

@@ -1,5 +1,3 @@
-using System;
-
 namespace NCoreUtils.Data.Protocol.IO;
 
 public ref struct StringSource(string source)

@@ -6,7 +6,7 @@ namespace NCoreUtils.Data.Protocol;
 
 public sealed class CompositeFunctionMatcherBuilder(IServiceCollection services)
 {
-    public IServiceCollection Services { get; } = services ?? throw new ArgumentNullException(nameof(services));
+    public IServiceCollection Services { get; } = services.ThrowIfNull();
 
     public CompositeFunctionMatcherBuilder AddRegisteredService<T>()
         where T : IFunctionMatcher

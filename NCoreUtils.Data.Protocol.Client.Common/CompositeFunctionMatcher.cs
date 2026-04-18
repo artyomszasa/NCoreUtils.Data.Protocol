@@ -1,10 +1,10 @@
-using System.Collections.Generic;
 using System.Linq.Expressions;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol;
 
-public class CompositeFunctionMatcher : IFunctionMatcher
+public class CompositeFunctionMatcher
+    : IFunctionMatcher
 {
     private IEnumerable<IFunctionMatcherWrapper> Matchers { get; }
 

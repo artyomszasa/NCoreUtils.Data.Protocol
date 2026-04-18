@@ -1,17 +1,17 @@
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public sealed class Identifier : Node
+public sealed class Identifier
+    : Node
 {
     public UniqueString Value { get; }
 
     [DebuggerStepThrough]
     internal Identifier(UniqueString value)
-        => Value = value ?? throw new ArgumentNullException(nameof(value));
+        => Value = value.ThrowIfNull();
 
     internal override void Accept(NodeExtensions.EmplaceVisitor visitor, bool complex, ref SpanBuilder builder)
         => visitor.VisitIdentifier(this, complex, ref builder);

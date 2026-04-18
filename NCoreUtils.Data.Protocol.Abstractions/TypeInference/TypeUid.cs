@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -10,7 +9,8 @@ namespace NCoreUtils.Data.Protocol.TypeInference;
 /// </summary>
 [method: DebuggerStepThrough]
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
-public readonly struct TypeUid(int uid) : IEquatable<TypeUid>
+public readonly struct TypeUid(int uid)
+    : IEquatable<TypeUid>
 {
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

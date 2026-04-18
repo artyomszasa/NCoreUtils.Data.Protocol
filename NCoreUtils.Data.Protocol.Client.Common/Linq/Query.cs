@@ -1,10 +1,5 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Linq;
@@ -12,7 +7,7 @@ namespace NCoreUtils.Data.Protocol.Linq;
 public abstract class Query(IProtocolQueryProvider provider)
     : IOrderedQueryable
 {
-    public IProtocolQueryProvider Provider { get; } = provider;
+    public IProtocolQueryProvider Provider { get; } = provider.ThrowIfNull();
 
     IQueryProvider IQueryable.Provider => Provider;
 

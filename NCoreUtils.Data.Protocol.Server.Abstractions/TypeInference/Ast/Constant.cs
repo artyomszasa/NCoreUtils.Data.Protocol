@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using HashTags = NCoreUtils.Data.Protocol.Internal.NodeHashTags;
 
 namespace NCoreUtils.Data.Protocol.TypeInference.Ast;

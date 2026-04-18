@@ -1,11 +1,11 @@
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public sealed class Constant : Node
+public sealed class Constant
+    : Node
 {
     public string? RawValue { get; }
 

@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public sealed class Call : Node
+public sealed class Call
+    : Node
 {
     public string Name { get; }
 
@@ -15,12 +14,8 @@ public sealed class Call : Node
     [DebuggerStepThrough]
     internal Call(string name, IReadOnlyList<Node> arguments)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
-        }
-        Name = name;
-        Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
+        Name = name.ThrowIfNullOrWhiteSpace();
+        Arguments = arguments.ThrowIfNull();
     }
 
     internal override void Accept(NodeExtensions.EmplaceVisitor visitor, bool complex, ref SpanBuilder builder)

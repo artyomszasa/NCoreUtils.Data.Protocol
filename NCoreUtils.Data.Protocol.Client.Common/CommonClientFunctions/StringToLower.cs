@@ -7,13 +7,13 @@ namespace NCoreUtils.Data.Protocol.CommonClientFunctions;
 
 public sealed class StringToLower : IFunctionMatcher
 {
-    private static readonly MethodInfo _mToLower = ReflectionHelpers.GetMethod<string>("".ToLower);
+    private static readonly MethodInfo _mToLower = ReflectionHelpers.GetMethod("".ToLower);
 
     public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {
         if (expression is MethodCallExpression call && call.Method.Equals(_mToLower) && call.Object is not null)
         {
-            return new(Names.Lower, new Expression[] { call.Object });
+            return new(Names.Lower, [call.Object]);
         }
         return default;
     }

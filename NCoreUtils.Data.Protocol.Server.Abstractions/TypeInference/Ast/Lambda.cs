@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using HashTags = NCoreUtils.Data.Protocol.Internal.NodeHashTags;
 
 namespace NCoreUtils.Data.Protocol.TypeInference.Ast;
@@ -13,8 +11,8 @@ public sealed class Lambda<T> : Node<T>
     internal Lambda(T type, Identifier<T> arg, Node<T> body)
         : base(type)
     {
-        Arg = arg ?? throw new ArgumentNullException(nameof(arg));
-        Body = body ?? throw new ArgumentNullException(nameof(body));
+        Arg = arg.ThrowIfNull();
+        Body = body.ThrowIfNull();
     }
 
     public override TResult Accept<TArg1, TArg2, TResult>(

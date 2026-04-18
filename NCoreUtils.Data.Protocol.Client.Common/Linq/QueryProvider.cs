@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 using NCoreUtils.Linq;
 
 namespace NCoreUtils.Data.Protocol.Linq;
@@ -14,22 +8,16 @@ public partial class QueryProvider(IDataUtils util, ExpressionParser expressionP
     : IAsyncQueryProvider
     , IProtocolQueryProvider
 {
-    private ExpressionParser ExpressionParser { get; } = expressionParser ?? throw new ArgumentNullException(nameof(expressionParser));
+    private ExpressionParser ExpressionParser { get; } = expressionParser.ThrowIfNull();
 
-    private IDataQueryExecutor Executor { get; } = executor ?? throw new ArgumentNullException(nameof(executor));
+    private IDataQueryExecutor Executor { get; } = executor.ThrowIfNull();
 
-    public IDataUtils Util { get; } = util;
+    public IDataUtils Util { get; } = util.ThrowIfNull();
 
     private static Query CreateDerivedQuery(Query query, Type derivedType)
     {
-        if (query is null)
-        {
-            throw new ArgumentNullException(nameof(query));
-        }
-        if (derivedType is null)
-        {
-            throw new ArgumentNullException(nameof(derivedType));
-        }
+        Check.ThrowIfNull(query);
+        Check.ThrowIfNull(derivedType);
         return query.Derive(derivedType);
     }
 

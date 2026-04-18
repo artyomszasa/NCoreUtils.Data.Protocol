@@ -2,35 +2,50 @@ namespace NCoreUtils.Data.Protocol.Ast;
 
 public enum BinaryOperation
 {
-    // Comparison
-  /// Represents equality check operation.
-  Equal                = 0,
-  /// Represents inequality check operation.
-  NotEqual             = 1,
-  /// Represents less than comparison operation.
-  LessThan             = 2,
-  /// Represents less than or equal comparison operation.
-  LessThanOrEqual      = 3,
-  /// Represents grater than comparison operation.
-  GreaterThan          = 4,
-  /// Represents grater than or equals comparison operation.
-  GreaterThanOrEqual   = 5,
-  // Conditional
-  /// Represents a short-circuiting conditional OR operation.
-  OrElse               = 6,
-  /// Represents a conditional AND operation that evaluates the second operand only if the first operand evaluates to
-  /// true.
-  AndAlso              = 7,
-  // Arithmetic
-  /// Represents an addition operation.
-  Add                  = 8,
-  /// Represents a substraction operation.
-  Subtract            = 9,
-  /// Represents a multiplication operation.
-  Multiply             = 10,
-  /// Represents a division operation.
-  Divide               = 11,
-  /// Represents an arithmetic remainder operation.
-  Modulo               = 12
-  // TODO: Bitwise
+    // Comparison ******************************************************************************************************
+    /// <summary>
+    /// Represents equality check operation.
+    /// </summary>
+    Equal                = 0,
+    /// <summary>
+    /// Represents inequality check operation.
+    /// </summary>
+    NotEqual             = 1,
+    /// <summary>
+    /// Represents less than comparison operation.
+    /// </summary>
+    LessThan             = 2,
+    /// <summary>
+    /// Represents less than or equal comparison operation.
+    /// </summary>
+    LessThanOrEqual      = 3,
+    /// <summary>
+    /// Represents grater than comparison operation.
+    /// </summary>
+    GreaterThan          = 4,
+    /// <summary>
+    /// Represents grater than or equals comparison operation.
+    /// </summary>
+    GreaterThanOrEqual   = 5,
+    // Conditional *****************************************************************************************************
+    /// <summary>
+    /// Represents a short-circuiting conditional OR operation.
+    /// </summary>
+    OrElse               = 6,
+    /// <summary>
+    /// Represents a conditional AND operation that evaluates the second operand only if the first operand evaluates to true.
+    /// </summary>
+    AndAlso              = 7,
+    // Arithmetic ******************************************************************************************************
+    /// <summary>Represents an addition operation.</summary>
+    Add                  = 8,
+    /// <summary>Represents a substraction operation.</summary>
+    Subtract            = 9,
+    /// <summary>Represents a multiplication operation.</summary>
+    Multiply             = 10,
+    /// <summary>Represents a division operation.</summary>
+    Divide               = 11,
+    /// <summary>Represents an arithmetic remainder operation.</summary>
+    Modulo               = 12
+    // TODO: Bitwise
 }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using NCoreUtils.Data.Protocol.TypeInference;
 
 namespace NCoreUtils.Data.Protocol;

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using BinaryOperation = NCoreUtils.Data.Protocol.Ast.BinaryOperation;
 using HashTags = NCoreUtils.Data.Protocol.Internal.NodeHashTags;
 
@@ -16,9 +14,9 @@ public sealed class Binary<T> : Node<T>
     internal Binary(T type, Node<T> left, BinaryOperation operation, Node<T> right)
         : base(type)
     {
-        Left = left ?? throw new ArgumentNullException(nameof(left));
+        Left = left.ThrowIfNull();
         Operation = operation;
-        Right = right ?? throw new ArgumentNullException(nameof(right));
+        Right = right.ThrowIfNull();
     }
 
     public override TResult Accept<TArg1, TArg2, TResult>(

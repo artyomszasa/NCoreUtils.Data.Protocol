@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using BinaryOperation = NCoreUtils.Data.Protocol.Ast.BinaryOperation;
 
 namespace NCoreUtils.Data.Protocol.TypeInference.Ast;

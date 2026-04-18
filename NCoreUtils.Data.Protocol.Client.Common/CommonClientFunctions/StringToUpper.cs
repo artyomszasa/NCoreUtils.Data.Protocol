@@ -7,13 +7,13 @@ namespace NCoreUtils.Data.Protocol.CommonClientFunctions;
 
 public sealed class StringToUpper : IFunctionMatcher
 {
-    private static readonly MethodInfo _mToLower = ReflectionHelpers.GetMethod<string>("".ToUpper);
+    private static readonly MethodInfo _mToLower = ReflectionHelpers.GetMethod("".ToUpper);
 
     public FunctionMatch MatchFunction(IDataUtils utils, Expression expression)
     {
         if (expression is MethodCallExpression call && call.Method.Equals(_mToLower) && call.Object is not null)
         {
-            return new(Names.Upper, new Expression[] { call.Object });
+            return new(Names.Upper, [call.Object]);
         }
         return default;
     }

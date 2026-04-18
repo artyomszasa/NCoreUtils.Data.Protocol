@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using NCoreUtils.Data.Protocol.Internal;
@@ -110,7 +108,6 @@ public partial interface IDataUtils
 
     Type GetEnumerableOfType(Type elementType);
 
-    [return: DynamicallyAccessedMembers(RequiredMemberTypes.Default)]
     Type Ensure(Type type);
 
     #region instantiation

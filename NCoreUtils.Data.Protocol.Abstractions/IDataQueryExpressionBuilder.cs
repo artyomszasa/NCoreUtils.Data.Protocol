@@ -1,5 +1,3 @@
-using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 
 namespace NCoreUtils.Data.Protocol;
@@ -16,7 +14,7 @@ public interface IDataQueryExpressionBuilder
     /// <param name="input">Raw query to parse and process.</param>
     /// <returns>LINQ Expression representation of the input query.</returns>
     LambdaExpression BuildExpression(
-         Type rootType,
+        Type rootType,
         string input
     );
 }

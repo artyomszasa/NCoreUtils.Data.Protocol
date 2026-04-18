@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using NCoreUtils.Data.Protocol.Ast;
 using NCoreUtils.Data.Protocol.Lexing;

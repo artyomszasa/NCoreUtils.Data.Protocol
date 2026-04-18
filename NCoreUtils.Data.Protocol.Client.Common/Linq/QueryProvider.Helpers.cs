@@ -1,36 +1,16 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace NCoreUtils.Data.Protocol.Linq;
-
-internal static class Preconditions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void NotNull<T>([NotNull] T? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
-        where T : class
-    {
-#if NET6_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(argument, paramName);
-#else
-        if (argument is null)
-        {
-            throw new ArgumentNullException(paramName);
-        }
-#endif
-    }
-}
 
 public partial class QueryProvider
 {
     private static async Task<T> TaskUnbox<T>(Task<object?> source)
     {
-        Preconditions.NotNull(source);
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        Check.ThrowIfNull(source);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         var res = await source;
         if (typeof(T).IsValueType)
         {

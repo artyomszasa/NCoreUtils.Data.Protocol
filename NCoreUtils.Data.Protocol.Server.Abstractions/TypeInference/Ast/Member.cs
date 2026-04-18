@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using HashTags = NCoreUtils.Data.Protocol.Internal.NodeHashTags;
 
 namespace NCoreUtils.Data.Protocol.TypeInference.Ast;
@@ -13,12 +11,8 @@ public sealed class Member<T> : Node<T>
     internal Member(T type, Node<T> instance, string memberName)
         : base(type)
     {
-        if (string.IsNullOrWhiteSpace(memberName))
-        {
-            throw new ArgumentException($"'{nameof(memberName)}' cannot be null or whitespace.", nameof(memberName));
-        }
-        Instance = instance ?? throw new ArgumentNullException(nameof(instance));
-        MemberName = memberName;
+        Instance = instance.ThrowIfNull();
+        MemberName = memberName.ThrowIfNullOrWhiteSpace();
     }
 
     public override TResult Accept<TArg1, TArg2, TResult>(

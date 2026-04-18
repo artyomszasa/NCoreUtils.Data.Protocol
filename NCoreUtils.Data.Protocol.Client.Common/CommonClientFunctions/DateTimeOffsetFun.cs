@@ -1,4 +1,3 @@
-using System;
 using System.Linq.Expressions;
 using Names = NCoreUtils.Data.Protocol.CommonFunctionNames;
 
@@ -14,12 +13,7 @@ public sealed class DateTimeOffsetFun : IFunctionMatcher
         }
         if (expression.TryExtractConstant(out var boxed) && boxed is DateTimeOffset value)
         {
-            return new(
-                Names.DateTimeOffset,
-                new Expression[] {
-                    utils.CreateBoxedConstant(typeof(long), value.UtcTicks)
-                }
-            );
+            return new(Names.DateTimeOffset, [utils.CreateBoxedConstant(typeof(long), value.UtcTicks)]);
         }
         if (expression is NewExpression newExpression)
         {
@@ -30,12 +24,7 @@ public sealed class DateTimeOffsetFun : IFunctionMatcher
                 && boxedOffset is TimeSpan offset
                 && offset == TimeSpan.Zero)
             {
-                return new(
-                    Names.DateTimeOffset,
-                    new Expression[] {
-                        newExpression.Arguments[0]
-                    }
-                );
+                return new(Names.DateTimeOffset, [newExpression.Arguments[0]]);
             }
             // expression created from constants
             if (newExpression.Constructor is not null)
@@ -50,12 +39,7 @@ public sealed class DateTimeOffsetFun : IFunctionMatcher
                     arguments[i] = argValue;
                 }
                 var constantValue = (DateTimeOffset)newExpression.Constructor.Invoke(arguments);
-                return new(
-                    Names.DateTimeOffset,
-                    new Expression[] {
-                        utils.CreateBoxedConstant(typeof(long), constantValue.UtcTicks)
-                    }
-                );
+                return new(Names.DateTimeOffset, [utils.CreateBoxedConstant(typeof(long), constantValue.UtcTicks)]);
             }
         }
         return default;

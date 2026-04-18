@@ -1,28 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0;net6.0;netstandard2.1;net48</TargetFrameworks>
+    <TargetFrameworks>net10.0;net8.0;net6.0;netstandard2.1;net48</TargetFrameworks>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <ImplcitUsings>enable</ImplcitUsings>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\shared\CommonFunctionNames.cs" />
-  </ItemGroup>
+  <!-- NOTE: NET Standard/NET Framework polyfills -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' Or $(TargetFramework.StartsWith('net4')) ">
     <Compile Include="..\shared\CodeAnalysis\**" />
   </ItemGroup>
+  <!-- NOTE: NET Framework polyfills -->
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Compile Include="..\shared\Ranges\**" />
     <Compile Include="..\shared\CodeAnalysis.NetFramework\**" />
   </ItemGroup>
+  <!-- NOTE: version-dependent -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' Or '$(TargetFramework)' == 'net48' ">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+  </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
     <Compile Remove="*.NetFramework.cs" />
   </ItemGroup>
+  <!-- NOTE: Common -->
   <ItemGroup>
+    <Compile Include="..\shared\CommonFunctionNames.cs" />
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.CombinatorParser\NCoreUtils.Data.Protocol.CombinatorParser.csproj" />
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.TypeInference\NCoreUtils.Data.Protocol.TypeInference.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(FxNugetVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(FxNugetVersion)" />
   </ItemGroup>
 </Project>

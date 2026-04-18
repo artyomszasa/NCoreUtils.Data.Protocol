@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -9,14 +7,14 @@ namespace NCoreUtils.Data.Protocol;
 /// <summary>
 /// Represents output of the function matching.
 /// </summary>
-public readonly struct FunctionMatch
+public readonly struct FunctionMatch(string name, IReadOnlyList<Expression> arguments)
 {
-    private readonly IReadOnlyList<Expression>? _arguments;
+    private readonly IReadOnlyList<Expression>? _arguments = arguments;
 
     /// <summary>
     /// Name of the protocol function.
     /// </summary>
-    public string? Name { get; }
+    public string? Name { get; } = name.ThrowIfNullOrWhiteSpace();
 
     /// <summary>
     /// Arguments to pass to the function call.
@@ -32,14 +30,4 @@ public readonly struct FunctionMatch
     /// </summary>
     [MemberNotNullWhen(true, nameof(Name))]
     public bool IsSuccess => !string.IsNullOrWhiteSpace(Name);
-
-    public FunctionMatch(string name, IReadOnlyList<Expression> arguments)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
-        }
-        _arguments = arguments;
-        Name = name;
-    }
 }

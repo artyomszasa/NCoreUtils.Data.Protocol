@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
@@ -35,6 +34,8 @@ public abstract class BoxedConstantBuilder
 
 
 [UnconditionalSuppressMessage("Trimming", "IL2109", Justification = "Only required for base type because instances of this type are created using reflection.")]
+[RequiresDynamicCode("Should only be used in full-reflection/manually trimmed context.")]
+[RequiresUnreferencedCode("Should only be used in full-reflection/manually trimmed context.")]
 public sealed class BoxedConstantBuilder<T> : BoxedConstantBuilder
 {
     private static PropertyInfo ValueProperty { get; }

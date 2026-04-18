@@ -1,11 +1,11 @@
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public sealed class Member : Node
+public sealed class Member
+    : Node
 {
     public Node Instance { get; }
 
@@ -14,12 +14,8 @@ public sealed class Member : Node
     [DebuggerStepThrough]
     internal Member(Node instance, string memberName)
     {
-        if (string.IsNullOrWhiteSpace(memberName))
-        {
-            throw new ArgumentException($"'{nameof(memberName)}' cannot be null or whitespace.", nameof(memberName));
-        }
-        Instance = instance ?? throw new ArgumentNullException(nameof(instance));
-        MemberName = memberName;
+        Instance = instance.ThrowIfNull();
+        MemberName = memberName.ThrowIfNullOrWhiteSpace();
     }
 
     internal override void Accept(NodeExtensions.EmplaceVisitor visitor, bool complex, ref SpanBuilder builder)

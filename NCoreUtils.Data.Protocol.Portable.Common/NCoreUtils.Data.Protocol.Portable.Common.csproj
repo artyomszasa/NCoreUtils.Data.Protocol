@@ -1,16 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0;net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net10.0;net8.0;net6.0;netstandard2.1;net48</TargetFrameworks>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
     <EmitCompilerGeneratedFiles Condition=" '$(Configuration)' == 'Debug' " >true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
-    <Compile Remove="CodeAnalysis\**" />
-    <Compile Remove="CompilerServices\**" />
+  <!-- NOTE: NET Standard/NET Framework polyfills -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' Or $(TargetFramework.StartsWith('net4')) ">
+    <Compile Include="..\shared\CodeAnalysis\**" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\shared\RequiredMemberTypes.cs" />
+  <!-- NOTE: NET Framework polyfills -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Compile Include="..\shared\CodeAnalysis.NetFramework\**" />
+    <Compile Include="..\shared\Ranges\**" />
   </ItemGroup>
+  <!-- NOTE: Common -->
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Portable.Generator.Internal\NCoreUtils.Data.Protocol.Portable.Generator.Internal.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     <ProjectReference Include="..\NCoreUtils.Data.Protocol.Abstractions\NCoreUtils.Data.Protocol.Abstractions.csproj" />

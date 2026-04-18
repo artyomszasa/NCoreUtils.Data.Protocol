@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
-using System.Threading.Tasks;
 using NCoreUtils.Data.Protocol.Ast;
 using NCoreUtils.Data.Protocol.Internal;
 
@@ -15,14 +11,14 @@ public static class DirectQuery
 }
 
 internal class DirectQuery<T>(
-        IProtocolQueryProvider provider,
-        Lambda? filter = default,
-        Lambda? sortBy = default,
-        bool isDescending = default,
-        IReadOnlyList<ThenByOrdering>? thenBy = default,
-        int offset = default,
-        int? limit = default
-    ) : Query<T>(provider)
+    IProtocolQueryProvider provider,
+    Lambda? filter = default,
+    Lambda? sortBy = default,
+    bool isDescending = default,
+    IReadOnlyList<ThenByOrdering>? thenBy = default,
+    int offset = default,
+    int? limit = default)
+    : Query<T>(provider)
 {
 
     private sealed class DeriveVisitor : IDataTypeVisitor

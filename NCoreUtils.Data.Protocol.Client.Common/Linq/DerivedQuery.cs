@@ -1,17 +1,15 @@
-using System.Collections.Generic;
 using NCoreUtils.Data.Protocol.Ast;
 
 namespace NCoreUtils.Data.Protocol.Linq;
 
 internal class DerivedQuery<TBase, TDerived>(
-        IProtocolQueryProvider provider,
-        Lambda? filter = default,
-        Lambda? sortBy = default,
-        bool isDescending = false,
-        IReadOnlyList<ThenByOrdering>? thenBy = default,
-        int offset = 0,
-        int? limit = default
-    )
+    IProtocolQueryProvider provider,
+    Lambda? filter = default,
+    Lambda? sortBy = default,
+    bool isDescending = false,
+    IReadOnlyList<ThenByOrdering>? thenBy = default,
+    int offset = 0,
+    int? limit = default)
     : DirectQuery<TDerived>(provider, filter, sortBy, isDescending, thenBy, offset, limit)
 {
     public override string Target => typeof(TDerived).Name.ToLowerInvariant();

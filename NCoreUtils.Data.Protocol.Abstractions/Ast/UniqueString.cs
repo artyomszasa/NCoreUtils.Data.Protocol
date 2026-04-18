@@ -1,11 +1,11 @@
-using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
 [method: DebuggerStepThrough]
-public sealed class UniqueString(string value) : IEquatable<UniqueString>
+public sealed class UniqueString(string value)
+    : IEquatable<UniqueString>
 {
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -29,7 +29,7 @@ public sealed class UniqueString(string value) : IEquatable<UniqueString>
         return !a.Equals(b);
     }
 
-    public string Value { get; } = value ?? throw new ArgumentNullException(nameof(value));
+    public string Value { get; } = value.ThrowIfNull();
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -38,7 +38,7 @@ public sealed class UniqueString(string value) : IEquatable<UniqueString>
 
     [DebuggerStepThrough]
     public override bool Equals(object? obj)
-        => obj is UniqueString other && Equals(other);
+        => Equals(obj as UniqueString);
 
     [DebuggerStepThrough]
     public override int GetHashCode()

@@ -1,25 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0;net6.0;netstandard2.1;net48</TargetFrameworks>
+    <TargetFrameworks>net10.0;net8.0;net6.0;netstandard2.1;net48</TargetFrameworks>
     <RootNamespace>NCoreUtils.Data.Protocol</RootNamespace>
   </PropertyGroup>
+  <!-- NOTE: NET Standard/NET Framework polyfills -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' Or $(TargetFramework.StartsWith('net4')) ">
     <Compile Include="..\shared\CodeAnalysis\**" />
+    <PackageReference Include="System.Collections.Immutable" Version="6.0.1" />
   </ItemGroup>
+  <!-- NOTE: NET Framework polyfills -->
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Compile Include="..\shared\CodeAnalysis.NetFramework\**" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
   </ItemGroup>
+  <!-- NOTE: Common -->
   <ItemGroup>
-    <Compile Include="..\shared\RequiredMemberTypes.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="NCoreUtils.Extensions.Collections" Version="8.0.0" />
-    <PackageReference Include="NCoreUtils.Extensions.Memory" Version="8.0.0" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' Or $(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+    <Compile Include="..\shared\Check.cs" />
+    <PackageReference Include="NCoreUtils.Extensions.Collections" Version="10.0.0" />
+    <PackageReference Include="NCoreUtils.Extensions.Memory" Version="10.0.0" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -84,6 +82,7 @@ public interface ITypeDescriptor
 
 public interface ITypeDescriptor< T> : ITypeDescriptor
 {
-
+#if !NETFRAMEWORK
     Type ITypeDescriptor.Type => typeof(T);
+#endif
 }

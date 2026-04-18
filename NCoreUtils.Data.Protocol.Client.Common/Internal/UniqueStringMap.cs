@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 using NCoreUtils.Data.Protocol.Ast;
 
@@ -45,7 +43,7 @@ public class UniqueStringMap
         }
         var i = ix % _letters.Length;
         var j = ix / _letters.Length;
-        return _letters[i] + j;
+        return $"{_letters[i]}{j}";
     }
 
     private int _supply = 0;

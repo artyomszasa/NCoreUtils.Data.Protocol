@@ -1,5 +1,3 @@
-using System;
-
 namespace NCoreUtils.Data.Protocol.Internal;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]

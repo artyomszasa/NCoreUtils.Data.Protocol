@@ -14,7 +14,7 @@ public sealed class StringLength : IFunctionMatcher
             && mexpr.Member.DeclaringType == typeof(string)
             && mexpr.Member.Name == nameof(string.Length))
         {
-            return new(Names.Length, new[] { mexpr.Expression });
+            return new(Names.Length, [mexpr.Expression]);
         }
         return default;
     }

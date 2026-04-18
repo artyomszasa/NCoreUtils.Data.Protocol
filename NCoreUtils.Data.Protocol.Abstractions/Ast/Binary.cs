@@ -1,11 +1,11 @@
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public sealed class Binary : Node
+public sealed class Binary
+    : Node
 {
     public Node Left { get; }
 
@@ -16,9 +16,9 @@ public sealed class Binary : Node
     [DebuggerStepThrough]
     internal Binary(Node left, BinaryOperation operation, Node right)
     {
-        Left = left ?? throw new ArgumentNullException(nameof(left));
+        Left = left.ThrowIfNull();
         Operation = operation;
-        Right = right ?? throw new ArgumentNullException(nameof(right));
+        Right = right.ThrowIfNull();
     }
 
     internal override void Accept(NodeExtensions.EmplaceVisitor visitor, bool complex, ref SpanBuilder builder)

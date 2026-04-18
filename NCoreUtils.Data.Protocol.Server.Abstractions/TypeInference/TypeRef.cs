@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NCoreUtils.Data.Protocol.TypeInference;
@@ -30,10 +29,7 @@ public readonly struct TypeRef : IEquatable<TypeRef>
 
     public TypeRef(Type type)
     {
-        if (type is null)
-        {
-            throw new ArgumentNullException(nameof(type));
-        }
+        Check.ThrowIfNull(type);
         TypeName = type.AssemblyQualifiedName ?? throw new InvalidOperationException($"Assembly qualified name is not accessible for {type}.");
     }
 

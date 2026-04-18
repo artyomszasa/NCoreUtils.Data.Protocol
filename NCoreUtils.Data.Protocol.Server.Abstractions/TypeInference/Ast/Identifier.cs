@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using HashTags = NCoreUtils.Data.Protocol.Internal.NodeHashTags;
 using UniqueString = NCoreUtils.Data.Protocol.Ast.UniqueString;
 
@@ -12,7 +9,7 @@ public sealed class Identifier<T> : Node<T>
 
     internal Identifier(T type, UniqueString value)
         : base(type)
-        => Value = value ?? throw new ArgumentNullException(nameof(value));
+        => Value = value.ThrowIfNull();
 
     public override TResult Accept<TArg1, TArg2, TResult>(
         ITypedNodeVisitor<T, TArg1, TArg2, TResult> visitor,

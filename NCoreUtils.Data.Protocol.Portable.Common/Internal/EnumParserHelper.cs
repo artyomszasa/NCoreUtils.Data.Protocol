@@ -1,5 +1,3 @@
-using System;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol.Internal;

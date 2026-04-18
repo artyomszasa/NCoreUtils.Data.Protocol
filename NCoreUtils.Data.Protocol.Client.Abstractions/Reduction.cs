@@ -8,7 +8,7 @@ public abstract class Reduction
 
     public static FirstOrDefault FirstOrDefault => FirstOrDefault.Singleton;
 
-    public static Single Single => Single.Singleton;
+    public static Reductions.Single Single => Reductions.Single.Singleton;
 
     public static SingleOrDefault SingleOrDefault => SingleOrDefault.Singleton;
 

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using NCoreUtils.Data.Protocol.Ast;
@@ -33,10 +32,12 @@ internal sealed class NodeHashVisitor
     }
 
     [SuppressMessage("Performance", "CA1822")]
+    [SuppressMessage("Style", "IDE0060:Remove unused parameter")]
     public int VisitConstant(Constant constant, ref int supply, ImmutableDictionary<UniqueString, int> context)
         => HashCode.Combine(NodeHashTags.Constant, constant.RawValue?.GetHashCode() ?? 0);
 
     [SuppressMessage("Performance", "CA1822")]
+    [SuppressMessage("Style", "IDE0060:Remove unused parameter")]
     public int VisitIdentifier(Identifier identifier, ref int supply, ImmutableDictionary<UniqueString, int> context)
         => HashCode.Combine(
             NodeHashTags.Identifier,

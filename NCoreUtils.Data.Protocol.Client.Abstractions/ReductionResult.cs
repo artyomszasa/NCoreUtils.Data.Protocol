@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.CompilerServices;
 
 namespace NCoreUtils.Data.Protocol;
@@ -217,7 +216,7 @@ public readonly struct ReductionResult<T> : IEquatable<ReductionResult<T>>
     {
         Tag.Null => 0,
         Tag.Item => ((int)Tag.Item << 24) | ((_itemValue?.GetHashCode() ?? 0) & 0xFFFFFF),
-        _ => ((int)_tag << 24) | (_numValue.GetHashCode()) & 0xFFFFFF
+        _ => ((int)_tag << 24) | (_numValue.GetHashCode() & 0xFFFFFF)
     };
 
     public bool TryGetValue<TResult>(out TResult? value)

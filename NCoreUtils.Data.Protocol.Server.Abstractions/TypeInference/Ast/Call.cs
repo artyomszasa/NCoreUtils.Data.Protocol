@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using HashTags = NCoreUtils.Data.Protocol.Internal.NodeHashTags;
 
 namespace NCoreUtils.Data.Protocol.TypeInference.Ast;
@@ -13,8 +11,8 @@ public sealed class Call<T> : Node<T>
     internal Call(T type, IFunctionDescriptor descriptor, IReadOnlyList<Node<T>> arguments)
         : base(type)
     {
-        Descriptor = descriptor;
-        Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
+        Descriptor = descriptor.ThrowIfNull();
+        Arguments = arguments.ThrowIfNull();
     }
     public override Node<TTarget> Resolve<TTarget>(Func<T, TTarget> resolver)
         => Node<TTarget>.Call(

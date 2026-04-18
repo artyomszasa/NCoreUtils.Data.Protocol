@@ -1,11 +1,11 @@
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using NCoreUtils.Data.Protocol.Internal;
 
 namespace NCoreUtils.Data.Protocol.Ast;
 
-public sealed class Lambda : Node
+public sealed class Lambda
+    : Node
 {
     public Identifier Arg { get; }
 
@@ -14,8 +14,8 @@ public sealed class Lambda : Node
     [DebuggerStepThrough]
     internal Lambda(Identifier arg, Node body)
     {
-        Arg = arg ?? throw new ArgumentNullException(nameof(arg));
-        Body = body ?? throw new ArgumentNullException(nameof(body));
+        Arg = arg.ThrowIfNull();
+        Body = body.ThrowIfNull();
     }
 
     internal override void Accept(NodeExtensions.EmplaceVisitor visitor, bool complex, ref SpanBuilder builder)

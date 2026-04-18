@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace NCoreUtils.Data.Protocol.Internal;
@@ -8,9 +5,9 @@ namespace NCoreUtils.Data.Protocol.Internal;
 [BuiltInDescriptor(typeof(bool))]
 public sealed partial class BooleanDescriptor : ITypeDescriptor
 {
-    private static IReadOnlyList<string> Truthy { get; } = new [] { "true", "on", "1" };
+    private static IReadOnlyList<string> Truthy { get; } = ["true", "on", "1"];
 
-    private static IReadOnlyList<string> Falsy { get; } = new [] { "false", "off", "0" };
+    private static IReadOnlyList<string> Falsy { get; } = ["false", "off", "0"];
 
     public bool IsArithmetic => false;
 
