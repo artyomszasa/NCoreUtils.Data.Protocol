@@ -1,5 +1,3 @@
-using System;
-
 namespace NCoreUtils.Data.Protocol.Generator;
 
 [Flags]

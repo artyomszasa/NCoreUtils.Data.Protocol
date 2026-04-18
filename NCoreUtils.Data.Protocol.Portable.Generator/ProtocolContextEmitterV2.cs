@@ -2075,14 +2075,13 @@ internal class ProtocolContextEmitterV2
                 returnType: T.MethodInfo,
                 explicitInterfaceSpecifier: default,
                 identifier: Identifiers.GetMethod,
-                typeParameterList: TypeParameterList(SeparatedList(new TypeParameterSyntax[]
-                {
+                typeParameterList: TypeParameterList(SeparatedList(
+                [
                     TypeParameter("TArg1"),
                     TypeParameter("TArg2"),
                     TypeParameter("TResult")
-                })),
-                parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-                {
+                ])),
+                parameterList: ParameterList(SingletonSeparatedList(
                     Parameter(
                         attributeLists: default,
                         modifiers: default,
@@ -2090,7 +2089,7 @@ internal class ProtocolContextEmitterV2
                         identifier: Identifiers.func,
                         @default: default
                     )
-                })),
+                )),
                 constraintClauses: default,
                 body: default,
                 expressionBody: ArrowExpressionClause(SimpleMemberAccessExpression(IdentifierNames.func, IdentifierNames.Method)),
@@ -2128,7 +2127,7 @@ internal class ProtocolContextEmitterV2
 
             var @class = ClassDeclaration(name)
                 .AddAttributeLists(
-                    AttributeList(SeparatedList(new AttributeSyntax[] { GeneratedCodeAttribute }))
+                    AttributeList(SingletonSeparatedList(GeneratedCodeAttribute))
                 )
                 .AddBaseListTypes(
                     SimpleBaseType(T.Internal.IPortableDataContext)
