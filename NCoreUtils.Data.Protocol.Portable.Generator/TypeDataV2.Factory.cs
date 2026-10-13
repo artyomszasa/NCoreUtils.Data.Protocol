@@ -119,7 +119,7 @@ internal partial class TypeDataV2
             ? GetPropertiesRecursive(symbol)
             : [];
         var isLambda = symbol is INamedTypeSymbol named1Symbol && SymbolEqualityComparer.Default.Equals(named1Symbol.ConstructedFrom, compilation.func);
-        var isNullable = symbol is INamedTypeSymbol namedSymbol && SymbolEqualityComparer.Default.Equals(namedSymbol.ConstructedFrom, compilation.nullable);
+        var isNullable = symbol.IsNullableStruct;
         var isEnum = symbol.TypeKind == TypeKind.Enum;
         return new TypeDataV2(
             safeName: safeName,

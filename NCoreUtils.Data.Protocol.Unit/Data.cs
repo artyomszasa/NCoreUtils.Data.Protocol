@@ -41,3 +41,5 @@ public class DerivedEntity : BaseEntity
 {
     public int I32 { get; set; }
 }
+
+public record ItemWithNullableTimeSpan(TimeSpan? Value);

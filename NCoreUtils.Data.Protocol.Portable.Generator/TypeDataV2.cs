@@ -4,138 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace NCoreUtils.Data.Protocol.Generator;
 
-internal readonly struct EnumFieldData(string name, long value)
-    : IEquatable<EnumFieldData>
-{
-    public static bool operator==(EnumFieldData a, EnumFieldData b) => a.Equals(b);
-
-    public static bool operator!=(EnumFieldData a, EnumFieldData b) => a.Equals(b);
-
-    public string Name { get; } = name;
-
-    public long Value { get; } = value;
-
-    public bool Equals(EnumFieldData other)
-        => Name == other.Name && Value == other.Value;
-
-    public override bool Equals([NotNullWhen(true)] object? obj)
-        => obj is EnumFieldData other && Equals(other);
-
-    public override int GetHashCode()
-        => StringComparer.Ordinal.GetHashCode(Name) ^ Value.GetHashCode();
-}
-
-internal sealed class PropertyDataV2(string name, string typeFullName)
-    : IEquatable<PropertyDataV2>
-{
-    public static bool operator==(PropertyDataV2? a, PropertyDataV2? b)
-        => a is null
-            ? b is null
-            : a.Equals(b);
-
-    public static bool operator!=(PropertyDataV2? a, PropertyDataV2? b)
-        => a is null
-            ? b is not null
-            : !a.Equals(b);
-
-    private TypeSyntax? _typeName;
-
-    public string Name { get; } = name;
-
-    public string TypeFullName { get; } = typeFullName;
-
-    public TypeSyntax TypeName => _typeName ??= SyntaxFactory.ParseTypeName(TypeFullName);
-
-    public bool Equals([NotNullWhen(true)] PropertyDataV2? other)
-        => ReferenceEquals(this, other)
-            || (other is not null
-                && Name == other.Name
-                && TypeFullName == other.TypeFullName);
-
-    public override bool Equals([MaybeNullWhen(false)] object? obj)
-        => Equals(obj as PropertyDataV2);
-
-    public override int GetHashCode()
-        => StringComparer.Ordinal.GetHashCode(Name) ^ StringComparer.Ordinal.GetHashCode(TypeFullName);
-}
-
-internal interface ITypeData
-    : IEquatable<ITypeData>
-{
-    string SafeName { get; }
-
-    string FullName { get; }
-
-    bool IsValueType { get; }
-
-    bool IsParseable { get; }
-
-    bool IsFormattable { get; }
-
-    IReadOnlyList<PropertyDataV2> Properties { get; }
-
-    HashSet<SomeType> AssignableToTypes { get; }
-
-    #region array/enumerable
-
-    [MemberNotNullWhen(true, nameof(ElementType))]
-    bool IsArray { get; }
-
-    [MemberNotNullWhen(true, nameof(ElementType))]
-    bool IsEnumerable { get; }
-
-    ITypeData? ElementType { get; }
-
-    #endregion
-
-    #region lambda
-
-    [MemberNotNullWhen(true, nameof(LambdaArg), nameof(LambdaRes))]
-    bool IsLambda { get; }
-
-    ITypeData? LambdaArg { get; }
-
-    ITypeData? LambdaRes { get; }
-
-    #endregion
-
-    #region nullable
-
-    /// <summary>
-    /// Whether the described value type is nullable, i.e. is <see cref="Nullable{T}"/>.
-    /// </summary>
-    [MemberNotNullWhen(true, nameof(UnderlyingType))]
-    bool IsNullable { get; }
-
-    /// <summary>
-    /// When <see cref="IsNullable"/> is <see langword="true" /> holds description of the underlying type, i.e. <c>T</c>
-    /// type of the <see cref="Nullable{T}"/>.
-    /// </summary>
-    SomeType? UnderlyingType { get; }
-
-    #endregion
-
-    #region enum
-
-    [MemberNotNullWhen(true, nameof(EnumFields), nameof(EnumUndelyingTypeFullName))]
-    bool IsEnum { get; }
-
-    [MemberNotNullWhen(true, nameof(EnumFields), nameof(EnumUndelyingTypeFullName))]
-    bool IsEnumFlags { get; }
-
-    IReadOnlyList<EnumFieldData>? EnumFields { get; }
-
-    string? EnumUndelyingTypeFullName { get; }
-
-    #endregion
-
-    #region computed
-
-    TypeSyntax TypeName { get; }
-
-    #endregion
-}
-
 internal sealed partial class TypeDataV2(
     string safeName,
     string fullName,
@@ -182,7 +50,23 @@ internal sealed partial class TypeDataV2(
 
     #region assignable to
 
-    public HashSet<SomeType>? AssignableToTypes { get; set; }
+    private HashSet<SomeType>? _assignableToTypes;
+
+    public HashSet<SomeType>? AssignableToTypes
+    {
+        get => _assignableToTypes;
+        set
+        {
+            if (value is not null)
+            {
+                if (value.Comparer is not SomeType.TypeNameEqualityComparer)
+                {
+                    throw new InvalidOperationException("AssignableToTypes must be only compared by names.");
+                }
+            }
+            _assignableToTypes = value;
+        }
+    }
 
     HashSet<SomeType> ITypeData.AssignableToTypes => AssignableToTypes!;
 
@@ -209,9 +93,9 @@ internal sealed partial class TypeDataV2(
     [MemberNotNullWhen(true, nameof(LambdaArg), nameof(LambdaRes))]
     public bool IsLambda { get; } = isLambda;
 
-    public ITypeData? LambdaArg { get; set; }
+    public SomeType? LambdaArg { get; set; }
 
-    public ITypeData? LambdaRes { get; set; }
+    public SomeType? LambdaRes { get; set; }
 
     #endregion
 
@@ -247,13 +131,16 @@ internal sealed partial class TypeDataV2(
 
     #region computed
 
-    private TypeSyntax? _typeName;
-
-    public TypeSyntax TypeName => _typeName ??= SyntaxFactory.ParseTypeName(FullName);
+    public TypeSyntax TypeName => SyntaxFactory.ParseTypeName(FullName);
 
     #endregion
 
     #region equality
+
+    private static bool EqFast(SomeType? a, SomeType? b)
+        => a is SomeType x
+            ? b is SomeType y && SomeType.TypeNameEqualityComparer.Eq(x, y)
+            : b is null;
 
     public bool Equals([NotNullWhen(false)] TypeDataV2? other)
     {
@@ -274,13 +161,13 @@ internal sealed partial class TypeDataV2(
             return false;
         }
         if ((IsArray || IsEnumerable)
-            && !ElementType.Equals(other.ElementType!)) // NOTE: null handled in implementation
+            && !StringComparer.Ordinal.Equals(ElementType.FullName, other.ElementType?.FullName))
         {
             return false;
         }
         if (IsLambda
-            && (!LambdaArg.Equals(other.LambdaArg!)
-                || !LambdaRes.Equals(other.LambdaRes!))) // NOTE: null handled in implementation
+            && (!EqFast(LambdaArg, other.LambdaArg)
+                || !EqFast(LambdaRes, other.LambdaRes))) // NOTE: null handled in implementation
         {
             return false;
         }
@@ -320,235 +207,4 @@ internal sealed partial class TypeDataV2(
 
     #endregion
 
-}
-
-internal enum ProtocolPrimitiveType
-{
-    Boolean,
-    Guid,
-    DateTime,
-    DateTimeOffset,
-    SByte,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Byte,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Half,
-    Single,
-    Double,
-    Decimal,
-    DateOnly,
-    TimeOnly,
-    String
-}
-
-internal sealed class PrimitiveValueTypeData(
-    string fullName,
-    string safeName,
-    TypeSyntax? typeName = default)
-    : ITypeData
-    , IEquatable<PrimitiveValueTypeData>
-{
-    private static HashSet<SomeType> NoTypes { get; } = [];
-
-    public string SafeName { get; } = safeName;
-
-    public string FullName { get; } = fullName;
-
-    public bool IsValueType => true;
-
-    public bool IsParseable => true;
-
-    public bool IsFormattable => true;
-
-    public IReadOnlyList<PropertyDataV2> Properties => Array.Empty<PropertyDataV2>();
-
-    public bool IsArray => false;
-
-    public bool IsEnumerable => false;
-
-    public ITypeData? ElementType => default;
-
-    public bool IsLambda => false;
-
-    public ITypeData? LambdaArg => default;
-
-    public ITypeData? LambdaRes => default;
-
-    public bool IsNullable => false;
-
-    public SomeType? UnderlyingType => default;
-
-    public bool IsEnum => false;
-
-    public bool IsEnumFlags => false;
-
-    public IReadOnlyList<EnumFieldData>? EnumFields => default;
-
-    public string? EnumUndelyingTypeFullName => default;
-
-    public TypeSyntax TypeName { get; } = typeName ?? SyntaxFactory.ParseTypeName(fullName);
-
-    public HashSet<SomeType> AssignableToTypes => NoTypes;
-
-    #region equality
-
-    public bool Equals([NotNullWhen(true)] PrimitiveValueTypeData? other)
-        => ReferenceEquals(this, other)
-            || (other is not null
-                && StringComparer.Ordinal.Equals(FullName, other.FullName));
-
-    public bool Equals([NotNullWhen(true)] ITypeData? other)
-        => Equals(other as PrimitiveValueTypeData);
-
-    public override bool Equals([NotNullWhen(true)] object? obj)
-        => Equals(obj as PrimitiveValueTypeData);
-
-    public override int GetHashCode()
-        => StringComparer.Ordinal.GetHashCode(FullName);
-
-    #endregion
-
-    public override string ToString()
-        => FullName;
-}
-
-internal sealed class NullablePrimitiveValueTypeData(PrimitiveValueTypeData source)
-    : ITypeData
-    , IEquatable<NullablePrimitiveValueTypeData>
-{
-    private static HashSet<SomeType> NoTypes { get; } = [];
-
-    private readonly PrimitiveValueTypeData _source = source;
-
-    public string SafeName => field ??= $"NullableOf{_source.SafeName}";
-
-    public string FullName => field ??= $"{_source.FullName}?"; // TODO: check all cases
-
-    public bool IsValueType => true;
-
-    public bool IsParseable => true;
-
-    public bool IsFormattable => true;
-
-    public IReadOnlyList<PropertyDataV2> Properties => field ??=
-    [
-        new PropertyDataV2("HasValue", "bool"),
-        new PropertyDataV2("Value", _source.FullName)
-    ];
-
-    public HashSet<SomeType> AssignableToTypes => NoTypes;
-
-    public bool IsArray => false;
-
-    public bool IsEnumerable => false;
-
-    public ITypeData? ElementType => default;
-
-    public bool IsLambda => false;
-
-    public ITypeData? LambdaArg => default;
-
-    public ITypeData? LambdaRes => default;
-
-    public bool IsNullable => true;
-
-    public SomeType? UnderlyingType => new(_source);
-
-    public bool IsEnum => false;
-
-    public bool IsEnumFlags => false;
-
-    public IReadOnlyList<EnumFieldData>? EnumFields => default;
-
-    public string? EnumUndelyingTypeFullName => default;
-
-    public TypeSyntax TypeName => field ??= SyntaxFactory.NullableType(_source.TypeName);
-
-    #region equality
-
-    public bool Equals([NotNullWhen(true)] NullablePrimitiveValueTypeData? other)
-        => ReferenceEquals(this, other)
-            || (other is not null && _source.Equals(other._source));
-
-    public bool Equals([NotNullWhen(true)] ITypeData? other)
-        => Equals(other as NullablePrimitiveValueTypeData);
-
-    public override bool Equals([NotNullWhen(true)] object? obj)
-        => Equals(obj as NullablePrimitiveValueTypeData);
-
-    public override int GetHashCode()
-        => unchecked(~_source.GetHashCode());
-
-    #endregion
-
-    public override string ToString()
-        => FullName;
-}
-
-internal readonly struct SomeType
-    : IEquatable<SomeType>
-{
-    public static bool operator==(SomeType a, SomeType b)
-        => a.Equals(b);
-
-    public static bool operator!=(SomeType a, SomeType b)
-        => !a.Equals(b);
-
-    private readonly ITypeData? _data;
-
-    private readonly string? _fullName;
-
-    public string FullName => _fullName ?? _data?.FullName ?? throw new InvalidOperationException();
-
-    public TypeSyntax TypeName => _data is { TypeName: var typeName }
-        ? typeName
-        : SyntaxFactory.ParseTypeName(_fullName ?? throw new InvalidOperationException());
-
-    private SomeType(ITypeData? data, string? fullName)
-    {
-        _data = data;
-        _fullName = fullName;
-    }
-
-    public SomeType(ITypeData data) : this(data.ThrowIfNull(), default) { }
-
-    public SomeType(string fullName) : this(null, fullName.ThrowIfNull()) { }
-
-    public bool Equals(SomeType other)
-    {
-        if (_data is ITypeData data)
-        {
-            return other._data is ITypeData otherData && data.Equals(otherData);
-        }
-        if (_fullName is string fullName)
-        {
-            return other._fullName is string otherFullName && fullName == otherFullName;
-        }
-        return other._data is null && other._fullName is null;
-    }
-
-    public override bool Equals([NotNullWhen(true)] object? obj)
-        => obj is SomeType other && Equals(other);
-
-    public override int GetHashCode()
-    {
-        if (_data is ITypeData data)
-        {
-            return unchecked((int)(0x00000001u | (uint)data.GetHashCode()));
-        }
-        if (_fullName is string fullName)
-        {
-            return unchecked((int)(0xFFFFFFFFEu & (uint)fullName.GetHashCode()));
-        }
-        return default;
-    }
-
-    public override string ToString()
-        => _data is null ? $"explicit:{FullName}" : $"type:{FullName}";
 }

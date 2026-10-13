@@ -506,7 +506,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             {
                 var type = kv.Key;
                 // NOTE: collect base types
-                var assignableTos = new HashSet<SomeType>();
+                var assignableTos = new HashSet<SomeType>(SomeType.ByNameEqualityComparer);
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 void AddAssignableTo(ITypeSymbol atype) => assignableTos.Add(GetSomeType(atype));
@@ -519,7 +519,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     AddAssignableTo(baseType);
                     baseType = baseType.BaseType;
                 }
-                if (type.IsValueType)
+                if (type.IsValueType && !type.IsNullableStruct)
                 {
                     var ntype = cctx.CreateNullableTypeSymbol(type);
                     if (targetTypes.TryGetValue(ntype, out var btype))
@@ -587,8 +587,8 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                             [resType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
                         ));
                     }
-                    data.LambdaArg = argData;
-                    data.LambdaRes = resData;
+                    data.LambdaArg = new(argData);
+                    data.LambdaRes = new(resData);
                 }
             }
         }

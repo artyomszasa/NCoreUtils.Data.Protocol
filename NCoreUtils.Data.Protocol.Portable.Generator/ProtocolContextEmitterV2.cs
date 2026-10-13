@@ -10,298 +10,298 @@ namespace NCoreUtils.Data.Protocol.Generator;
 
 internal static class Identifiers
 {
-    public static SyntaxToken All { get; } = Identifier("All");
+    public static SyntaxToken All => Identifier("All");
 
-    public static SyntaxToken Any { get; } = Identifier("Any");
+    public static SyntaxToken Any => Identifier("Any");
 
-    public static SyntaxToken Accept { get; } = Identifier("Accept");
+    public static SyntaxToken Accept => Identifier("Accept");
 
-    public static SyntaxToken ArgType { get; } = Identifier("ArgType");
+    public static SyntaxToken ArgType => Identifier("ArgType");
 
-    public static SyntaxToken ArrayOfType { get; } = Identifier("ArrayOfType");
+    public static SyntaxToken ArrayOfType => Identifier("ArrayOfType");
 
-    public static SyntaxToken Body { get; } = Identifier("Body");
+    public static SyntaxToken Body => Identifier("Body");
 
-    public static SyntaxToken Box { get; } = Identifier("Box");
+    public static SyntaxToken Box => Identifier("Box");
 
-    public static SyntaxToken BoxNullable { get; } = Identifier("BoxNullable");
+    public static SyntaxToken BoxNullable => Identifier("BoxNullable");
 
-    public static SyntaxToken BoxValueField { get; } = Identifier("BoxValueField");
+    public static SyntaxToken BoxValueField => Identifier("BoxValueField");
 
-    public static SyntaxToken CreateBoxedConstant { get; } = Identifier("CreateBoxedConstant");
+    public static SyntaxToken CreateBoxedConstant => Identifier("CreateBoxedConstant");
 
-    public static SyntaxToken CreateAdd { get; } = Identifier("CreateAdd");
+    public static SyntaxToken CreateAdd => Identifier("CreateAdd");
 
-    public static SyntaxToken CreateAndAlso { get; } = Identifier("CreateAndAlso");
+    public static SyntaxToken CreateAndAlso => Identifier("CreateAndAlso");
 
-    public static SyntaxToken CreateDivide { get; } = Identifier("CreateDivide");
+    public static SyntaxToken CreateDivide => Identifier("CreateDivide");
 
-    public static SyntaxToken CreateEqual { get; } = Identifier("CreateEqual");
+    public static SyntaxToken CreateEqual => Identifier("CreateEqual");
 
-    public static SyntaxToken CreateGreaterThan { get; } = Identifier("CreateGreaterThan");
+    public static SyntaxToken CreateGreaterThan => Identifier("CreateGreaterThan");
 
-    public static SyntaxToken CreateGreaterThanOrEqual { get; } = Identifier("CreateGreaterThanOrEqual");
+    public static SyntaxToken CreateGreaterThanOrEqual => Identifier("CreateGreaterThanOrEqual");
 
-    public static SyntaxToken CreateLessThan { get; } = Identifier("CreateLessThan");
+    public static SyntaxToken CreateLessThan => Identifier("CreateLessThan");
 
-    public static SyntaxToken CreateLessThanOrEqual { get; } = Identifier("CreateLessThanOrEqual");
+    public static SyntaxToken CreateLessThanOrEqual => Identifier("CreateLessThanOrEqual");
 
-    public static SyntaxToken CreateModulo { get; } = Identifier("CreateModulo");
+    public static SyntaxToken CreateModulo => Identifier("CreateModulo");
 
-    public static SyntaxToken CreateMultiply { get; } = Identifier("CreateMultiply");
+    public static SyntaxToken CreateMultiply => Identifier("CreateMultiply");
 
-    public static SyntaxToken CreateNotEqual { get; } = Identifier("CreateNotEqual");
+    public static SyntaxToken CreateNotEqual => Identifier("CreateNotEqual");
 
-    public static SyntaxToken CreateOrElse { get; } = Identifier("CreateOrElse");
+    public static SyntaxToken CreateOrElse => Identifier("CreateOrElse");
 
-    public static SyntaxToken CreateSubtract { get; } = Identifier("CreateSubtract");
+    public static SyntaxToken CreateSubtract => Identifier("CreateSubtract");
 
-    public static SyntaxToken Contains { get; } = Identifier("Contains");
+    public static SyntaxToken Contains => Identifier("Contains");
 
-    public static SyntaxToken Convert { get; } = Identifier("Convert");
+    public static SyntaxToken Convert => Identifier("Convert");
 
-    public static SyntaxToken Constant { get; } = Identifier("Constant");
+    public static SyntaxToken Constant => Identifier("Constant");
 
-    public static SyntaxToken EnumerableAnyMethod { get; } = Identifier("EnumerableAnyMethod");
+    public static SyntaxToken EnumerableAnyMethod => Identifier("EnumerableAnyMethod");
 
-    public static SyntaxToken EnumerableAllMethod { get; } = Identifier("EnumerableAllMethod");
+    public static SyntaxToken EnumerableAllMethod => Identifier("EnumerableAllMethod");
 
-    public static SyntaxToken EnumerableContainsMethod { get; } = Identifier("EnumerableContainsMethod");
+    public static SyntaxToken EnumerableContainsMethod => Identifier("EnumerableContainsMethod");
 
-    public static SyntaxToken EnumerableOfType { get; } = Identifier("EnumerableOfType");
+    public static SyntaxToken EnumerableOfType => Identifier("EnumerableOfType");
 
-    public static SyntaxToken Equal { get; } = Identifier("Equal");
+    public static SyntaxToken Equal => Identifier("Equal");
 
-    public static new SyntaxToken Equals { get; } = Identifier("Equals");
+    public static new SyntaxToken Equals => Identifier("Equals");
 
-    public static SyntaxToken Field { get; } = Identifier("Field");
+    public static SyntaxToken Field => Identifier("Field");
 
-    public static SyntaxToken FromRawValue { get; } = Identifier("FromRawValue");
+    public static SyntaxToken FromRawValue => Identifier("FromRawValue");
 
-    public static SyntaxToken GetMethod { get; } = Identifier("GetMethod");
+    public static SyntaxToken GetMethod => Identifier("GetMethod");
 
-    public static SyntaxToken GetLambdaTypes { get; } = Identifier("GetLambdaTypes");
+    public static SyntaxToken GetLambdaTypes => Identifier("GetLambdaTypes");
 
-    public static SyntaxToken GetTypeDescriptors { get; } = Identifier("GetTypeDescriptors");
+    public static SyntaxToken GetTypeDescriptors => Identifier("GetTypeDescriptors");
 
-    public static SyntaxToken Singleton { get; } = Identifier("Singleton");
+    public static SyntaxToken Singleton => Identifier("Singleton");
 
-    public static SyntaxToken SingleFromRawValue { get; } = Identifier("SingleFromRawValue");
+    public static SyntaxToken SingleFromRawValue => Identifier("SingleFromRawValue");
 
-    public static SyntaxToken Stringify { get; } = Identifier("Stringify");
+    public static SyntaxToken Stringify => Identifier("Stringify");
 
-    public static SyntaxToken EnumerateFlags { get; } = Identifier("EnumerateFlags");
+    public static SyntaxToken EnumerateFlags => Identifier("EnumerateFlags");
 
-    public static SyntaxToken LambdaType { get; } = Identifier("LambdaType");
+    public static SyntaxToken LambdaType => Identifier("LambdaType");
 
-    public static SyntaxToken Member { get; } = Identifier("Member");
+    public static SyntaxToken Member => Identifier("Member");
 
-    public static SyntaxToken Method { get; } = Identifier("Method");
+    public static SyntaxToken Method => Identifier("Method");
 
-    public static SyntaxToken NotEqual { get; } = Identifier("NotEqual");
+    public static SyntaxToken NotEqual => Identifier("NotEqual");
 
-    public static SyntaxToken IsArithmetic { get; } = Identifier("IsArithmetic");
+    public static SyntaxToken IsArithmetic => Identifier("IsArithmetic");
 
-    public static SyntaxToken IsArray { get; } = Identifier("IsArray");
+    public static SyntaxToken IsArray => Identifier("IsArray");
 
-    public static SyntaxToken IsAssignableTo { get; } = Identifier("IsAssignableTo");
+    public static SyntaxToken IsAssignableTo => Identifier("IsAssignableTo");
 
-    public static SyntaxToken IsEnum { get; } = Identifier("IsEnum");
+    public static SyntaxToken IsEnum => Identifier("IsEnum");
 
-    public static SyntaxToken IsEnumerable { get; } = Identifier("IsEnumerable");
+    public static SyntaxToken IsEnumerable => Identifier("IsEnumerable");
 
-    public static SyntaxToken IsLambda { get; } = Identifier("IsLambda");
+    public static SyntaxToken IsLambda => Identifier("IsLambda");
 
-    public static SyntaxToken IsMaybe { get; } = Identifier("IsMaybe");
+    public static SyntaxToken IsMaybe => Identifier("IsMaybe");
 
-    public static SyntaxToken IsNullable { get; } = Identifier("IsNullable");
+    public static SyntaxToken IsNullable => Identifier("IsNullable");
 
-    public static SyntaxToken IsSame { get; } = Identifier("IsSame");
+    public static SyntaxToken IsSame => Identifier("IsSame");
 
-    public static SyntaxToken IsValue { get; } = Identifier("IsValue");
+    public static SyntaxToken IsValue => Identifier("IsValue");
 
-    public static SyntaxToken Parse { get; } = Identifier("Parse");
+    public static SyntaxToken Parse => Identifier("Parse");
 
-    public static SyntaxToken Properties { get; } = Identifier("Properties");
+    public static SyntaxToken Properties => Identifier("Properties");
 
-    public static SyntaxToken ResType { get; } = Identifier("ResType");
+    public static SyntaxToken ResType => Identifier("ResType");
 
-    public static new SyntaxToken ToString { get; } = Identifier("ToString");
+    public static new SyntaxToken ToString => Identifier("ToString");
 
-    public static SyntaxToken TryGetEnumFactory { get; } = Identifier("TryGetEnumFactory");
+    public static SyntaxToken TryGetEnumFactory => Identifier("TryGetEnumFactory");
 
-    public static SyntaxToken TryParse { get; } = Identifier("TryParse");
+    public static SyntaxToken TryParse => Identifier("TryParse");
 
-    public static SyntaxToken Type { get; } = Identifier("Type");
+    public static SyntaxToken Type => Identifier("Type");
 
-    public static SyntaxToken Value { get; } = Identifier("Value");
+    public static SyntaxToken Value => Identifier("Value");
 
-    public static SyntaxToken Visit { get; } = Identifier("Visit");
+    public static SyntaxToken Visit => Identifier("Visit");
 
-    public static SyntaxToken argType { get; } = Identifier("argType");
+    public static SyntaxToken argType => Identifier("argType");
 
-    public static SyntaxToken e { get; } = Identifier("e");
+    public static SyntaxToken e => Identifier("e");
 
-    public static SyntaxToken elementType { get; } = Identifier("elementType");
+    public static SyntaxToken elementType => Identifier("elementType");
 
-    public static SyntaxToken enumFactory { get; } = Identifier("enumFactory");
+    public static SyntaxToken enumFactory => Identifier("enumFactory");
 
-    public static SyntaxToken func { get; } = Identifier("func");
+    public static SyntaxToken func => Identifier("func");
 
-    public static SyntaxToken i { get; } = Identifier("i");
+    public static SyntaxToken i => Identifier("i");
 
-    public static SyntaxToken item { get; } = Identifier("item");
+    public static SyntaxToken item => Identifier("item");
 
-    public static SyntaxToken rawValue { get; } = Identifier("rawValue");
+    public static SyntaxToken rawValue => Identifier("rawValue");
 
-    public static SyntaxToken res { get; } = Identifier("res");
+    public static SyntaxToken res => Identifier("res");
 
-    public static SyntaxToken resType { get; } = Identifier("resType");
+    public static SyntaxToken resType => Identifier("resType");
 
-    public static SyntaxToken right { get; } = Identifier("right");
+    public static SyntaxToken right => Identifier("right");
 
-    public static SyntaxToken self { get; } = Identifier("self");
+    public static SyntaxToken self => Identifier("self");
 
-    public static SyntaxToken v { get; } = Identifier("v");
+    public static SyntaxToken v => Identifier("v");
 
-    public static SyntaxToken value { get; } = Identifier("value");
+    public static SyntaxToken value => Identifier("value");
 
-    public static SyntaxToken visitor { get; } = Identifier("visitor");
+    public static SyntaxToken visitor => Identifier("visitor");
 
-    public static SyntaxToken _descriptors { get; } = Identifier("_descriptors");
+    public static SyntaxToken _descriptors => Identifier("_descriptors");
 
-    public static SyntaxToken _lambdaTypes { get; } = Identifier("_lambdaTypes");
+    public static SyntaxToken _lambdaTypes => Identifier("_lambdaTypes");
 
-    public static SyntaxToken _properties { get; } = Identifier("_properties");
+    public static SyntaxToken _properties => Identifier("_properties");
 }
 
 internal static class IdentifierNames
 {
-    public static IdentifierNameSyntax All { get; } = IdentifierName(Identifiers.All);
+    public static IdentifierNameSyntax All => IdentifierName(Identifiers.All);
 
-    public static IdentifierNameSyntax Any { get; } = IdentifierName(Identifiers.Any);
+    public static IdentifierNameSyntax Any => IdentifierName(Identifiers.Any);
 
-    public static IdentifierNameSyntax ArrayOfType { get; } = IdentifierName(Identifiers.ArrayOfType);
+    public static IdentifierNameSyntax ArrayOfType => IdentifierName(Identifiers.ArrayOfType);
 
-    public static IdentifierNameSyntax ArgType { get; } = IdentifierName(Identifiers.ArgType);
+    public static IdentifierNameSyntax ArgType => IdentifierName(Identifiers.ArgType);
 
-    public static IdentifierNameSyntax Body { get; } = IdentifierName(Identifiers.Body);
+    public static IdentifierNameSyntax Body => IdentifierName(Identifiers.Body);
 
-    public static IdentifierNameSyntax Box { get; } = IdentifierName(Identifiers.Box);
+    public static IdentifierNameSyntax Box => IdentifierName(Identifiers.Box);
 
-    public static IdentifierNameSyntax BoxValueField { get; } = IdentifierName(Identifiers.BoxValueField);
+    public static IdentifierNameSyntax BoxValueField => IdentifierName(Identifiers.BoxValueField);
 
-    public static IdentifierNameSyntax Contains { get; } = IdentifierName(Identifiers.Contains);
+    public static IdentifierNameSyntax Contains => IdentifierName(Identifiers.Contains);
 
-    public static IdentifierNameSyntax Convert { get; } = IdentifierName(Identifiers.Convert);
+    public static IdentifierNameSyntax Convert => IdentifierName(Identifiers.Convert);
 
-    public static IdentifierNameSyntax Constant { get; } = IdentifierName(Identifiers.Constant);
+    public static IdentifierNameSyntax Constant => IdentifierName(Identifiers.Constant);
 
-    public static IdentifierNameSyntax EnumerableOfType { get; } = IdentifierName(Identifiers.EnumerableOfType);
+    public static IdentifierNameSyntax EnumerableOfType => IdentifierName(Identifiers.EnumerableOfType);
 
-    public static IdentifierNameSyntax Equal { get; } = IdentifierName(Identifiers.Equal);
+    public static IdentifierNameSyntax Equal => IdentifierName(Identifiers.Equal);
 
-    public static new IdentifierNameSyntax Equals { get; } = IdentifierName(Identifiers.Equals);
+    public static new IdentifierNameSyntax Equals => IdentifierName(Identifiers.Equals);
 
-    public static IdentifierNameSyntax Field { get; } = IdentifierName(Identifiers.Field);
+    public static IdentifierNameSyntax Field => IdentifierName(Identifiers.Field);
 
-    public static IdentifierNameSyntax SingleFromRawValue { get; } = IdentifierName(Identifiers.SingleFromRawValue);
+    public static IdentifierNameSyntax SingleFromRawValue => IdentifierName(Identifiers.SingleFromRawValue);
 
-    public static IdentifierNameSyntax Singleton { get; } = IdentifierName(Identifiers.Singleton);
+    public static IdentifierNameSyntax Singleton => IdentifierName(Identifiers.Singleton);
 
-    public static IdentifierNameSyntax EnumerateFlags { get; } = IdentifierName(Identifiers.EnumerateFlags);
+    public static IdentifierNameSyntax EnumerateFlags => IdentifierName(Identifiers.EnumerateFlags);
 
-    public static IdentifierNameSyntax LambdaType { get; } = IdentifierName(Identifiers.LambdaType);
+    public static IdentifierNameSyntax LambdaType => IdentifierName(Identifiers.LambdaType);
 
-    public static IdentifierNameSyntax Member { get; } = IdentifierName(Identifiers.Member);
+    public static IdentifierNameSyntax Member => IdentifierName(Identifiers.Member);
 
-    public static IdentifierNameSyntax Method { get; } = IdentifierName(Identifiers.Method);
+    public static IdentifierNameSyntax Method => IdentifierName(Identifiers.Method);
 
-    public static IdentifierNameSyntax NotEqual { get; } = IdentifierName(Identifiers.NotEqual);
+    public static IdentifierNameSyntax NotEqual => IdentifierName(Identifiers.NotEqual);
 
-    public static IdentifierNameSyntax IsArithmetic { get; } = IdentifierName(Identifiers.IsArithmetic);
+    public static IdentifierNameSyntax IsArithmetic => IdentifierName(Identifiers.IsArithmetic);
 
-    public static IdentifierNameSyntax IsEnum { get; } = IdentifierName(Identifiers.IsEnum);
+    public static IdentifierNameSyntax IsEnum => IdentifierName(Identifiers.IsEnum);
 
-    public static IdentifierNameSyntax IsSame { get; } = IdentifierName(Identifiers.IsSame);
+    public static IdentifierNameSyntax IsSame => IdentifierName(Identifiers.IsSame);
 
-    public static IdentifierNameSyntax IsValue { get; } = IdentifierName(Identifiers.IsValue);
+    public static IdentifierNameSyntax IsValue => IdentifierName(Identifiers.IsValue);
 
-    public static IdentifierNameSyntax Parse { get; } = IdentifierName(Identifiers.Parse);
+    public static IdentifierNameSyntax Parse => IdentifierName(Identifiers.Parse);
 
-    public static IdentifierNameSyntax Properties { get; } = IdentifierName(Identifiers.Properties);
+    public static IdentifierNameSyntax Properties => IdentifierName(Identifiers.Properties);
 
-    public static IdentifierNameSyntax ResType { get; } = IdentifierName(Identifiers.ResType);
+    public static IdentifierNameSyntax ResType => IdentifierName(Identifiers.ResType);
 
-    public static new IdentifierNameSyntax ToString { get; } = IdentifierName(Identifiers.ToString);
+    public static new IdentifierNameSyntax ToString => IdentifierName(Identifiers.ToString);
 
-    public static IdentifierNameSyntax TryParse { get; } = IdentifierName(Identifiers.TryParse);
+    public static IdentifierNameSyntax TryParse => IdentifierName(Identifiers.TryParse);
 
-    public static IdentifierNameSyntax Type { get; } = IdentifierName(Identifiers.Type);
+    public static IdentifierNameSyntax Type => IdentifierName(Identifiers.Type);
 
-    public static IdentifierNameSyntax Value { get; } = IdentifierName(Identifiers.Value);
+    public static IdentifierNameSyntax Value => IdentifierName(Identifiers.Value);
 
-    public static IdentifierNameSyntax Visit { get; } = IdentifierName(Identifiers.Visit);
+    public static IdentifierNameSyntax Visit => IdentifierName(Identifiers.Visit);
 
-    public static IdentifierNameSyntax @var { get; } = IdentifierName("var");
+    public static IdentifierNameSyntax @var => IdentifierName("var");
 
-    public static IdentifierNameSyntax argType { get; } = IdentifierName(Identifiers.argType);
+    public static IdentifierNameSyntax argType => IdentifierName(Identifiers.argType);
 
-    public static IdentifierNameSyntax e { get; } = IdentifierName(Identifiers.e);
+    public static IdentifierNameSyntax e => IdentifierName(Identifiers.e);
 
-    public static IdentifierNameSyntax elementType { get; } = IdentifierName(Identifiers.elementType);
+    public static IdentifierNameSyntax elementType => IdentifierName(Identifiers.elementType);
 
-    public static IdentifierNameSyntax enumFactory { get; } = IdentifierName(Identifiers.enumFactory);
+    public static IdentifierNameSyntax enumFactory => IdentifierName(Identifiers.enumFactory);
 
-    public static IdentifierNameSyntax func { get; } = IdentifierName(Identifiers.func);
+    public static IdentifierNameSyntax func => IdentifierName(Identifiers.func);
 
-    public static IdentifierNameSyntax i { get; } = IdentifierName(Identifiers.i);
+    public static IdentifierNameSyntax i => IdentifierName(Identifiers.i);
 
-    public static IdentifierNameSyntax item { get; } = IdentifierName(Identifiers.item);
+    public static IdentifierNameSyntax item => IdentifierName(Identifiers.item);
 
-    public static IdentifierNameSyntax rawValue { get; } = IdentifierName(Identifiers.rawValue);
+    public static IdentifierNameSyntax rawValue => IdentifierName(Identifiers.rawValue);
 
-    public static IdentifierNameSyntax res { get; } = IdentifierName(Identifiers.res);
+    public static IdentifierNameSyntax res => IdentifierName(Identifiers.res);
 
-    public static IdentifierNameSyntax resType { get; } = IdentifierName(Identifiers.resType);
+    public static IdentifierNameSyntax resType => IdentifierName(Identifiers.resType);
 
-    public static IdentifierNameSyntax right { get; } = IdentifierName(Identifiers.right);
+    public static IdentifierNameSyntax right => IdentifierName(Identifiers.right);
 
-    public static IdentifierNameSyntax self { get; } = IdentifierName(Identifiers.self);
+    public static IdentifierNameSyntax self => IdentifierName(Identifiers.self);
 
-    public static IdentifierNameSyntax v { get; } = IdentifierName(Identifiers.v);
+    public static IdentifierNameSyntax v => IdentifierName(Identifiers.v);
 
-    public static IdentifierNameSyntax value { get; } = IdentifierName(Identifiers.value);
+    public static IdentifierNameSyntax value => IdentifierName(Identifiers.value);
 
-    public static IdentifierNameSyntax visitor { get; } = IdentifierName(Identifiers.visitor);
+    public static IdentifierNameSyntax visitor => IdentifierName(Identifiers.visitor);
 
-    public static IdentifierNameSyntax _descriptors { get; } = IdentifierName(Identifiers._descriptors);
+    public static IdentifierNameSyntax _descriptors => IdentifierName(Identifiers._descriptors);
 
-    public static IdentifierNameSyntax _lambdaTypes { get; } = IdentifierName(Identifiers._lambdaTypes);
+    public static IdentifierNameSyntax _lambdaTypes => IdentifierName(Identifiers._lambdaTypes);
 
-    public static IdentifierNameSyntax _properties { get; } = IdentifierName(Identifiers._properties);
+    public static IdentifierNameSyntax _properties => IdentifierName(Identifiers._properties);
 }
 
 internal static class Tokens
 {
-    public static SyntaxToken Semicolon { get; } = Token(SyntaxKind.SemicolonToken);
+    public static SyntaxToken Semicolon => Token(SyntaxKind.SemicolonToken);
 
-    public static SyntaxToken Out { get; } = Token(SyntaxKind.OutKeyword);
+    public static SyntaxToken Out => Token(SyntaxKind.OutKeyword);
 
-    public static SyntaxToken Public { get; } = Token(SyntaxKind.PublicKeyword);
+    public static SyntaxToken Public => Token(SyntaxKind.PublicKeyword);
 
-    public static SyntaxToken Private { get; } = Token(SyntaxKind.PrivateKeyword);
+    public static SyntaxToken Private => Token(SyntaxKind.PrivateKeyword);
 
-    public static SyntaxToken Static { get; } = Token(SyntaxKind.StaticKeyword);
+    public static SyntaxToken Static => Token(SyntaxKind.StaticKeyword);
 
-    public static SyntaxToken ReadOnly { get; } = Token(SyntaxKind.ReadOnlyKeyword);
+    public static SyntaxToken ReadOnly => Token(SyntaxKind.ReadOnlyKeyword);
 }
 
 internal class ProtocolContextEmitterV2
 {
     private static readonly string SelfVersion = typeof(ProtocolContextEmitterV2).Assembly.GetName()?.Version.ToString() ?? string.Empty;
 
-    private static AttributeSyntax GeneratedCodeAttribute => field ??= Attribute(
+    private static AttributeSyntax GeneratedCodeAttribute => Attribute(
         ParseName("System.CodeDom.Compiler.GeneratedCodeAttribute"),
         AttributeArgumentList(SeparatedList(new AttributeArgumentSyntax[]
         {
@@ -310,17 +310,17 @@ internal class ProtocolContextEmitterV2
         }))
     );
 
-    private static MemberAccessExpressionSyntax NumberStylesInteger => field ??= SimpleMemberAccessExpression(
+    private static MemberAccessExpressionSyntax NumberStylesInteger => SimpleMemberAccessExpression(
         type: ParseTypeName("global::System.Globalization.NumberStyles"),
         name: IdentifierName("Integer")
     );
 
-    private static MemberAccessExpressionSyntax InvariantCulture => field ??= SimpleMemberAccessExpression(
+    private static MemberAccessExpressionSyntax InvariantCulture => SimpleMemberAccessExpression(
         type: ParseTypeName("global::System.Globalization.CultureInfo"),
         name: IdentifierName("InvariantCulture")
     );
 
-    private static AttributeListSyntax DynamicallyAccesedMembersAll => field ??= AttributeList(SingletonSeparatedList(
+    private static AttributeListSyntax DynamicallyAccesedMembersAll => AttributeList(SingletonSeparatedList(
         Attribute(T.CodeAnalysis.DynamicallyAccessedMembersAttribute, AttributeArgumentList(
             openParenToken: Token(SyntaxKind.OpenParenToken),
             arguments: SingletonSeparatedList(
@@ -330,7 +330,7 @@ internal class ProtocolContextEmitterV2
         ))
     ));
 
-    private static AttributeListSyntax SuppressArrayTypeWarning => field ??= AttributeList(SingletonSeparatedList(
+    private static AttributeListSyntax SuppressArrayTypeWarning => AttributeList(SingletonSeparatedList(
         Attribute(T.CodeAnalysis.UnconditionalSuppressMessageAttribute, AttributeArgumentList(
             openParenToken: Token(SyntaxKind.OpenParenToken),
             arguments: SeparatedList(
@@ -342,7 +342,7 @@ internal class ProtocolContextEmitterV2
         ))
     ));
 
-    private static ThrowExpressionSyntax ThrowNotSupportedExpression => field ??= ThrowExpression(
+    private static ThrowExpressionSyntax ThrowNotSupportedExpression => ThrowExpression(
         ObjectCreationExpression(
             type: T.NotSupportedException,
             argumentList: Args(),
@@ -350,7 +350,7 @@ internal class ProtocolContextEmitterV2
         )
     );
 
-    private static LiteralExpressionSyntax NullLiteralExpression => field ??= LiteralExpression(SyntaxKind.NullLiteralExpression);
+    private static LiteralExpressionSyntax NullLiteralExpression => LiteralExpression(SyntaxKind.NullLiteralExpression);
 
     private static InterpolatedStringTextSyntax InterpolatedStringText(string raw)
         => SyntaxFactory.InterpolatedStringText(Token(
@@ -785,7 +785,7 @@ internal class ProtocolContextEmitterV2
         IdentifierNameSyntax methodId)
     {
         var throwExpression = EmitThrowCannotCreateException(data, methodName, SimpleMemberAccessExpression(
-            IdentifierNames.rawValue,
+            IdentifierNames.right,
             IdentifierNames.Type
         ));
 
@@ -1103,7 +1103,7 @@ internal class ProtocolContextEmitterV2
         );
     }
 
-    private static SyntaxList<AttributeListSyntax> AttrMaybeNullWhenFalse { get; } = List(new AttributeListSyntax[]
+    private static SyntaxList<AttributeListSyntax> AttrMaybeNullWhenFalse => List(new AttributeListSyntax[]
     {
         AttributeList(SeparatedList(new AttributeSyntax[]
         {
@@ -1231,11 +1231,15 @@ internal class ProtocolContextEmitterV2
         }
         else if (data.IsParseable && data.IsFormattable)
         {
-            body = SimpleInvocationExpression(
-                IdentifierNames.value,
-                IdentifierNames.ToString,
-                Argument(DefaultExpression(T.String)),
-                Argument(InvariantCulture)
+            body = ConditionalAccessExpression(
+                expression: ParenthesizedExpression(CastExpression(NullableType(T.IFormattable), IdentifierNames.value)),
+                whenNotNull: InvocationExpression(
+                    expression: MemberBindingExpression(IdentifierNames.ToString),
+                    Args(
+                        Argument(DefaultExpression(T.String)),
+                        Argument(InvariantCulture)
+                    )
+                )
             );
         }
         else
@@ -1451,7 +1455,7 @@ internal class ProtocolContextEmitterV2
     private static MethodDeclarationSyntax EmitCreateSubtract(ITypeData data)
         => EmitCreateExpressionNotSupportedMethod(Identifiers.CreateSubtract);
 
-    private static AccessorDeclarationSyntax EmptyGetAccessor => field ??= AccessorDeclaration(
+    private static AccessorDeclarationSyntax EmptyGetAccessor => AccessorDeclaration(
         kind: SyntaxKind.GetAccessorDeclaration,
         attributeLists: default,
         modifiers: default,
@@ -1460,7 +1464,7 @@ internal class ProtocolContextEmitterV2
         semicolonToken: Tokens.Semicolon
     );
 
-    private static TupleTypeSyntax LambdaDataType => field ??= TupleType(SeparatedList(
+    private static TupleTypeSyntax LambdaDataType => TupleType(SeparatedList(
     [
         TupleElement(type: T.Type, identifier: Identifiers.ArgType),
         TupleElement(type: T.Type, identifier: Identifiers.ResType),
@@ -1738,10 +1742,10 @@ internal class ProtocolContextEmitterV2
             constraintClauses: default,
             body: Block(
                 ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.argType, data.IsLambda
-                    ? TypeOfExpression(data.LambdaArg.TypeName)
+                    ? TypeOfExpression(data.LambdaArg.Value.TypeName)
                     : DefaultExpression(T.Type))),
                 ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.resType, data.IsLambda
-                    ? TypeOfExpression(data.LambdaRes.TypeName)
+                    ? TypeOfExpression(data.LambdaRes.Value.TypeName)
                     : DefaultExpression(T.Type))),
                 ReturnStatement(BooleanLiteralExpression(data.IsLambda))
             ),

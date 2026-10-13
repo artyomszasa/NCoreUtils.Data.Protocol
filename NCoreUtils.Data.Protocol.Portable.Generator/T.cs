@@ -9,83 +9,85 @@ internal static class T
 {
     public static class Internal
     {
-        public static TypeSyntax IDataTypeVisitor { get; } = ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.IDataTypeVisitor");
+        public static TypeSyntax IDataTypeVisitor => ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.IDataTypeVisitor");
 
-        public static TypeSyntax IEnumFactory { get; } = ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.IEnumFactory");
+        public static TypeSyntax IEnumFactory => ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.IEnumFactory");
 
-        public static TypeSyntax ITypeDescriptor { get; } = ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor");
+        public static TypeSyntax ITypeDescriptor => ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.ITypeDescriptor");
 
-        public static TypeSyntax EnumParserHelper { get; } = ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.EnumParserHelper");
+        public static TypeSyntax EnumParserHelper => ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.EnumParserHelper");
 
-        public static NameSyntax DescribedTypeAttribute { get; } = ParseName("global::NCoreUtils.Data.Protocol.Internal.DescribedTypeAttribute");
+        public static NameSyntax DescribedTypeAttribute => ParseName("global::NCoreUtils.Data.Protocol.Internal.DescribedTypeAttribute");
 
-        public static NameSyntax IPortableDataContext { get; } = ParseName("global::NCoreUtils.Data.Protocol.IPortableDataContext");
+        public static NameSyntax IPortableDataContext => ParseName("global::NCoreUtils.Data.Protocol.IPortableDataContext");
     }
 
     public static class CodeAnalysis
     {
-        public static NameSyntax DynamicallyAccessedMembersAttribute { get; } = ParseName("global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
+        public static NameSyntax DynamicallyAccessedMembersAttribute => ParseName("global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
 
-        public static NameSyntax DynamicallyAccessedMemberTypes { get; } = ParseName("global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes");
+        public static NameSyntax DynamicallyAccessedMemberTypes => ParseName("global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes");
 
-        public static NameSyntax UnconditionalSuppressMessageAttribute { get; } = ParseName("global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute");
+        public static NameSyntax UnconditionalSuppressMessageAttribute => ParseName("global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute");
 
-        public static NameSyntax MaybeNullWhen { get; } = ParseName("global::System.Diagnostics.CodeAnalysis.MaybeNullWhen");
+        public static NameSyntax MaybeNullWhen => ParseName("global::System.Diagnostics.CodeAnalysis.MaybeNullWhen");
     }
 
-    public static TypeSyntax Expression { get; } = ParseTypeName("global::System.Linq.Expressions.Expression");
+    public static TypeSyntax Expression => ParseTypeName("global::System.Linq.Expressions.Expression");
 
-    public static PredefinedTypeSyntax Void { get; } = PredefinedType(Token(SyntaxKind.VoidKeyword));
+    public static PredefinedTypeSyntax Void => PredefinedType(Token(SyntaxKind.VoidKeyword));
 
-    public static PredefinedTypeSyntax Boolean { get; } = PredefinedType(Token(SyntaxKind.BoolKeyword));
+    public static PredefinedTypeSyntax Boolean => PredefinedType(Token(SyntaxKind.BoolKeyword));
 
-    public static PredefinedTypeSyntax Object { get; } = PredefinedType(Token(SyntaxKind.ObjectKeyword));
+    public static PredefinedTypeSyntax Object => PredefinedType(Token(SyntaxKind.ObjectKeyword));
 
-    public static PredefinedTypeSyntax String { get; } = PredefinedType(Token(SyntaxKind.StringKeyword));
+    public static PredefinedTypeSyntax String => PredefinedType(Token(SyntaxKind.StringKeyword));
 
-    public static TypeSyntax Type { get; } = ParseTypeName("global::System.Type");
+    public static TypeSyntax Type => ParseTypeName("global::System.Type");
 
-    public static TypeSyntax Enumerable { get; } = ParseTypeName("global::System.Linq.Enumerable");
+    public static TypeSyntax Enumerable => ParseTypeName("global::System.Linq.Enumerable");
 
-    public static TypeSyntax FieldInfo { get; } = ParseTypeName("global::System.Reflection.FieldInfo");
+    public static TypeSyntax FieldInfo => ParseTypeName("global::System.Reflection.FieldInfo");
 
-    public static TypeSyntax IReadOnlyListOfPropertyInfo { get; } = ParseTypeName("global::System.Collections.Generic.IReadOnlyList<PropertyInfo>");
+    public static TypeSyntax IReadOnlyListOfPropertyInfo => ParseTypeName("global::System.Collections.Generic.IReadOnlyList<PropertyInfo>");
 
-    public static TypeSyntax IReadOnlySpanOfChar { get; } = ParseTypeName("global::System.ReadOnlySpan<char>");
+    public static TypeSyntax IReadOnlySpanOfChar => ParseTypeName("global::System.ReadOnlySpan<char>");
 
-    public static TypeSyntax InvalidOperationException { get; } = ParseTypeName("global::System.InvalidOperationException");
+    public static TypeSyntax IFormattable => ParseTypeName("global::System.IFormattable");
 
-    public static TypeSyntax NotSupportedException { get; } = ParseTypeName("global::System.NotSupportedException");
+    public static TypeSyntax InvalidOperationException => ParseTypeName("global::System.InvalidOperationException");
 
-    public static TypeSyntax MemberExpression { get; } = ParseTypeName("global::System.Linq.Expressions.MemberExpression");
+    public static TypeSyntax NotSupportedException => ParseTypeName("global::System.NotSupportedException");
 
-    public static TypeSyntax MethodInfo { get; } = ParseTypeName("global::System.Reflection.MethodInfo");
+    public static TypeSyntax MemberExpression => ParseTypeName("global::System.Linq.Expressions.MemberExpression");
 
-    public static TypeSyntax PropertyInfo { get; } = ParseTypeName("global::System.Reflection.PropertyInfo");
+    public static TypeSyntax MethodInfo => ParseTypeName("global::System.Reflection.MethodInfo");
 
-    public static ArrayTypeSyntax ArrayOfPropertyInfo { get; } = ArrayType(PropertyInfo, SingletonList(ArrayRankSpecifier()));
+    public static TypeSyntax PropertyInfo => ParseTypeName("global::System.Reflection.PropertyInfo");
+
+    public static ArrayTypeSyntax ArrayOfPropertyInfo => ArrayType(PropertyInfo, SingletonList(ArrayRankSpecifier()));
 
     #region generics
 
     private static class Id
     {
-        public static IdentifierNameSyntax @global { get; } = IdentifierName("global");
+        public static IdentifierNameSyntax @global => IdentifierName("global");
 
-        public static IdentifierNameSyntax System { get; } = IdentifierName("System");
+        public static IdentifierNameSyntax System => IdentifierName("System");
 
-        public static IdentifierNameSyntax Collections { get; } = IdentifierName("Collections");
+        public static IdentifierNameSyntax Collections => IdentifierName("Collections");
 
-        public static IdentifierNameSyntax Generic { get; } = IdentifierName("Generic");
+        public static IdentifierNameSyntax Generic => IdentifierName("Generic");
 
-        public static IdentifierNameSyntax Linq { get; } = IdentifierName("Linq");
+        public static IdentifierNameSyntax Linq => IdentifierName("Linq");
 
-        public static IdentifierNameSyntax Expressions { get; } = IdentifierName("Expressions");
+        public static IdentifierNameSyntax Expressions => IdentifierName("Expressions");
 
-        public static SyntaxToken Expression { get; } = Identifier("Expression");
+        public static SyntaxToken Expression => Identifier("Expression");
 
-        public static SyntaxToken Func { get; } = Identifier("Func");
+        public static SyntaxToken Func => Identifier("Func");
 
-        public static SyntaxToken IEnumerable { get; } = Identifier("IEnumerable");
+        public static SyntaxToken IEnumerable => Identifier("IEnumerable");
     }
 
     public static TypeSyntax FuncOf(TypeSyntax source, TypeSyntax target)

@@ -29,4 +29,5 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolDescriptor(typeof(ExplicitComplexDataDescriptor))]
 [ProtocolSafeName(typeof(Alt.DerivedEntity), "AltDerivedEntity")]
 [ProtocolEntity(typeof(AOrB))]
+[ProtocolEntity(typeof(ItemWithNullableTimeSpan))]
 public partial class GeneratedContext { }
