@@ -36,13 +36,11 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
 
         // public static implicit operator TargetOrError(ProtocolContextTargetV2 target) => new(target);
 
-        public TimeSpan CollectionDuration { get; }
-
         public ProtocolContextTargetV2? Target { get; }
 
         public DiagnosticData? Error { get; }
 
-        private TargetOrError(ProtocolContextTargetV2? target, DiagnosticData? error, TimeSpan collectionDuration)
+        private TargetOrError(ProtocolContextTargetV2? target, DiagnosticData? error)
         {
             if (target is null && error is null)
             {
@@ -50,12 +48,11 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             }
             Target = target;
             Error = error;
-            CollectionDuration = collectionDuration;
         }
 
-        public TargetOrError(ProtocolContextTargetV2 target, TimeSpan collectionDuration) : this(target, default, collectionDuration) { }
+        public TargetOrError(ProtocolContextTargetV2 target) : this(target, default) { }
 
-        public TargetOrError(DiagnosticData error) : this(default, error, default) { }
+        public TargetOrError(DiagnosticData error) : this(default, error) { }
 
         public bool Equals(TargetOrError other)
         {
@@ -444,6 +441,30 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
 
         foreach (var attributeData in symbol.GetAttributes())
         {
+            try
+            {
+                ProcessAttribute(attributeData);
+            }
+            // NOTE: errors raised while processing attribute are reported at the attribute.
+            catch (GenerationException exn) when (exn.DiagnosticData.Location is null)
+            {
+                throw new GenerationException(exn.DiagnosticData.WithLocation(GetAttributeLocation(attributeData)));
+            }
+            catch (InvalidOperationException exn) when (exn is not GenerationException)
+            {
+                throw new GenerationException(new DiagnosticData(
+                    DiagnosticDescriptors.InvalidAttribute,
+                    GetAttributeLocation(attributeData),
+                    [attributeData.AttributeClass?.Name, exn.Message]
+                ));
+            }
+        }
+
+        Location? GetAttributeLocation(AttributeData attributeData)
+            => attributeData.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation();
+
+        void ProcessAttribute(AttributeData attributeData)
+        {
             if (cctx.IsEntity(attributeData, out var entityType))
             {
                 rootEntityTypes.Add(entityType);
@@ -456,15 +477,22 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             {
                 if (descriptors.TryGetValue(describedType, out var prev))
                 {
-                    // FIXME: CompilationExeption
-                    throw new InvalidOperationException($"{describedType.Name} already has explicit descriptor {prev.Name}.");
+                    throw new GenerationException(new DiagnosticData(
+                        DiagnosticDescriptors.DuplicateExplicitDescriptor,
+                        GetAttributeLocation(attributeData),
+                        [
+                            describedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                            prev.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                            descriptorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                        ]
+                    ));
                 }
                 descriptors.Add(describedType, descriptorType);
             }
             else if (cctx.IsOpaque(attributeData, out var opaqueType))
             {
                 opaqueTypes.Add(opaqueType);
-                opaqueLocations[opaqueType] = attributeData.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation();
+                opaqueLocations[opaqueType] = GetAttributeLocation(attributeData);
             }
             else if (cctx.IsOptions(attributeData, out var explicitMode))
             {
@@ -472,6 +500,14 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             }
             else if (cctx.IsSafeName(attributeData, out var targetType, out var safeName))
             {
+                if (safeNames.TryGetValue(targetType, out var prevSafeName))
+                {
+                    throw new GenerationException(new DiagnosticData(
+                        DiagnosticDescriptors.DuplicateSafeName,
+                        GetAttributeLocation(attributeData),
+                        [targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), prevSafeName, safeName]
+                    ));
+                }
                 safeNames.Add(targetType, safeName);
             }
         }
@@ -712,23 +748,18 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             {
                 return new DiagnosticData(DiagnosticDescriptors.InvalidTargetSyntax, ctx.TargetNode.GetLocation(), []);
             }
-            var stopwatch = Stopwatch.StartNew();
-            var res = ExtractTarget(ctx.SemanticModel, cds, namedTypeSymbol, cancellationToken);
-            stopwatch.Stop();
-            return new(res, stopwatch.Elapsed);
+            return new(ExtractTarget(ctx.SemanticModel, cds, namedTypeSymbol, cancellationToken));
         }
         catch (GenerationException exn)
         {
-            return exn.DiagnosticData;
+            // NOTE: errors without own location (e.g. unresolved types) are reported at the context class.
+            return exn.DiagnosticData.Location is null
+                ? exn.DiagnosticData.WithLocation(location)
+                : exn.DiagnosticData;
         }
-        catch (Exception exn)
+        catch (Exception exn) when (exn is not OperationCanceledException)
         {
-            return new DiagnosticData(DiagnosticDescriptors.GenericError, location,
-            [
-                exn.GetType().Name,
-                exn.Message,
-                exn.StackTrace.Replace('\n', ' ').Replace('\r', ' ')
-            ]);
+            return DiagnosticData.UnexpectedError(exn, location);
         }
     }
 
@@ -751,7 +782,9 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
 
         var targets = targets0.Where(t => t.Target is not null);
 
-        context.RegisterImplementationSourceOutput(errors, (ctx, err) =>
+        // NOTE: RegisterSourceOutput (unlike RegisterImplementationSourceOutput) also runs in IDE --> errors are shown
+        // while editing.
+        context.RegisterSourceOutput(errors, (ctx, err) =>
         {
            ctx.ReportDiagnostic(Diagnostic.Create(err.Descriptor, err.Location, err.MessageArgs));
         });
@@ -759,21 +792,17 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         context.RegisterSourceOutput(targets, (ctx, wrp) =>
         {
             var target = wrp.Target!;
-            ctx.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.DoneCollectingTypes, default, [wrp.CollectionDuration.TotalMilliseconds, target.Name]));
             try
             {
-                var stopwatch = Stopwatch.StartNew();
                 var unit = ProtocolContextEmitterV2.EmitContext(
                     target.Namespace,
                     target.Name,
                     target.Types,
-                    target.LambdaTypes,
-                    ctx.ReportDiagnostic
+                    target.LambdaTypes
                 );
                 // NOTE: hint name must be unique within generator --> contexts with the same name may exist in
                 // different namespaces.
                 ctx.AddSource($"{target.Namespace}.{target.Name}.g.cs", unit.GetText(Utf8));
-                stopwatch.Stop();
             }
             catch (GenerationException exn)
             {
@@ -784,13 +813,11 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     messageArgs: err.MessageArgs
                 ));
             }
-            catch (Exception exn)
+            catch (Exception exn) when (exn is not OperationCanceledException)
             {
-                ctx.ReportDiagnostic(Diagnostic.Create(
-                    descriptor: DiagnosticDescriptors.GenericError,
-                    location: default,
-                    messageArgs: [exn.GetType().Name, exn.Message, exn.StackTrace.Replace('\n', ' ').Replace('\r', ' ')]
-                ));
+                // NOTE: no source is added --> partial output is never produced.
+                var err = DiagnosticData.UnexpectedError(exn, default);
+                ctx.ReportDiagnostic(Diagnostic.Create(err.Descriptor, err.Location, err.MessageArgs));
             }
         });
     }

@@ -2105,176 +2105,159 @@ internal class ProtocolContextEmitterV2
         string @namespace,
         string name,
         IReadOnlyCollection<ITypeData> types,
-        IReadOnlyCollection<(SomeType Arg, SomeType Res)> lambdaTypes,
-        Action<Diagnostic> reportDiagnostics)
+        IReadOnlyCollection<(SomeType Arg, SomeType Res)> lambdaTypes)
     {
-        try
-        {
-            List<MemberDeclarationSyntax> members = new(types.Count + 12);
+        List<MemberDeclarationSyntax> members = new(types.Count + 12);
 
-            // class*:type descriptors
-            members.AddRange(types.Where(IsGenerated).Select(EmitDescriptorImpl));
-            // field:_descriptors
-            members.Add(FieldDeclaration(
-                attributeLists: default,
-                modifiers: TokenList(Tokens.Private, Tokens.Static, Tokens.ReadOnly),
-                declaration: VariableDeclaration(
-                    type: ArrayType(T.Internal.ITypeDescriptor, SingletonList(ArrayRankSpecifier())),
-                    variables: SeparatedList(new VariableDeclaratorSyntax[]
-                    {
-                        VariableDeclarator(
-                            identifier: Identifiers._descriptors,
-                            argumentList: default,
-                            initializer: EqualsValueClause(ArrayCreationExpression(
-                                type: ArrayType(T.Internal.ITypeDescriptor, SingletonList(ArrayRankSpecifier())),
-                                InitializerExpression(SyntaxKind.ArrayInitializerExpression,
-                                    expressions: SeparatedList(types.Where(IsNotBuiltIn).Select(data =>
-                                    {
-                                        var typeName = data is ExplicitTypeData explicitData
-                                            ? explicitData.DescriptorTypeName
-                                            : ParseTypeName($"{data.SafeName}Descriptor");
-                                        return (ExpressionSyntax)ObjectCreationExpression(
-                                            type: typeName,
-                                            argumentList: Args(),
-                                            initializer: default
-                                        );
-                                    }).ToArray()))
-                            ))
-                        )
-                    })
-                ),
-                semicolonToken: Tokens.Semicolon
-            ));
-            // field:_lambdaTypes
-            members.Add(EmitLambdaTypesInitializer(lambdaTypes));
-            members.Add(FieldDeclaration(
-                attributeLists: default,
-                modifiers: TokenList(Tokens.Private, Tokens.Static, Tokens.ReadOnly),
-                declaration: VariableDeclaration(
-                    type: ArrayType(LambdaDataType, SingletonList(ArrayRankSpecifier())),
-                    variables: SingletonSeparatedList(VariableDeclarator(
-                        identifier: Identifiers._lambdaTypes,
+        // class*:type descriptors
+        members.AddRange(types.Where(IsGenerated).Select(EmitDescriptorImpl));
+        // field:_descriptors
+        members.Add(FieldDeclaration(
+            attributeLists: default,
+            modifiers: TokenList(Tokens.Private, Tokens.Static, Tokens.ReadOnly),
+            declaration: VariableDeclaration(
+                type: ArrayType(T.Internal.ITypeDescriptor, SingletonList(ArrayRankSpecifier())),
+                variables: SeparatedList(new VariableDeclaratorSyntax[]
+                {
+                    VariableDeclarator(
+                        identifier: Identifiers._descriptors,
                         argumentList: default,
-                        initializer: EqualsValueClause(SimpleInvocationExpression(IdentifierName("InitializeLambdaTypes")))
-                    ))
-                ),
-                semicolonToken: Tokens.Semicolon
-            ));
-            // prop:Singleton
-            members.Add(PropertyDeclaration(
-                attributeLists: default,
-                modifiers: TokenList(Tokens.Public, Tokens.Static),
-                type: T.Internal.IPortableDataContext,
-                explicitInterfaceSpecifier: default,
-                identifier: Identifiers.Singleton,
-                accessorList: AccessorList(SingletonList(EmptyGetAccessor)),
-                expressionBody: default,
-                initializer: EqualsValueClause(ObjectCreationExpression(IdentifierName(name), Args(), initializer: default)),
-                semicolonToken: Tokens.Semicolon
-            ));
-            // method:GetMethod
-            members.Add(MethodDeclaration(
-                attributeLists: default,
-                modifiers:  TokenList(Tokens.Private, Tokens.Static),
-                returnType: T.MethodInfo,
-                explicitInterfaceSpecifier: default,
-                identifier: Identifiers.GetMethod,
-                typeParameterList: TypeParameterList(SeparatedList(
-                [
-                    TypeParameter("TArg1"),
-                    TypeParameter("TArg2"),
-                    TypeParameter("TResult")
-                ])),
-                parameterList: ParameterList(SingletonSeparatedList(
-                    Parameter(
-                        attributeLists: default,
-                        modifiers: default,
-                        type: T.Func2Of(IdentifierName("TArg1"), IdentifierName("TArg2"), IdentifierName("TResult")),
-                        identifier: Identifiers.func,
-                        @default: default
+                        initializer: EqualsValueClause(ArrayCreationExpression(
+                            type: ArrayType(T.Internal.ITypeDescriptor, SingletonList(ArrayRankSpecifier())),
+                            InitializerExpression(SyntaxKind.ArrayInitializerExpression,
+                                expressions: SeparatedList(types.Where(IsNotBuiltIn).Select(data =>
+                                {
+                                    var typeName = data is ExplicitTypeData explicitData
+                                        ? explicitData.DescriptorTypeName
+                                        : ParseTypeName($"{data.SafeName}Descriptor");
+                                    return (ExpressionSyntax)ObjectCreationExpression(
+                                        type: typeName,
+                                        argumentList: Args(),
+                                        initializer: default
+                                    );
+                                }).ToArray()))
+                        ))
                     )
-                )),
-                constraintClauses: default,
-                body: default,
-                expressionBody: ArrowExpressionClause(SimpleMemberAccessExpression(IdentifierNames.func, IdentifierNames.Method)),
-                semicolonToken: Tokens.Semicolon
-            ));
-            // method:GetTypeDescriptors
-            members.Add(MethodDeclaration(
-                attributeLists: default,
-                modifiers:  TokenList(Tokens.Public),
-                returnType: T.IEnumerableOf(T.Internal.ITypeDescriptor),
-                explicitInterfaceSpecifier: default,
-                identifier: Identifiers.GetTypeDescriptors,
-                typeParameterList: default,
-                parameterList: ParameterList(SeparatedList(Array.Empty<ParameterSyntax>())),
-                constraintClauses: default,
-                body: default,
-                expressionBody: ArrowExpressionClause(IdentifierNames._descriptors),
-                semicolonToken: Tokens.Semicolon
-            ));
-            // method:GetLambdaTypes
-            members.Add(MethodDeclaration(
-                attributeLists: default,
-                modifiers:  TokenList(Tokens.Public),
-                returnType: T.IEnumerableOf(LambdaDataType),
-                explicitInterfaceSpecifier: default,
-                identifier: Identifiers.GetLambdaTypes,
-                typeParameterList: default,
-                parameterList: ParameterList(SeparatedList(Array.Empty<ParameterSyntax>())),
-                constraintClauses: default,
-                body: default,
-                expressionBody: ArrowExpressionClause(IdentifierNames._lambdaTypes),
-                semicolonToken: Tokens.Semicolon
-            ));
+                })
+            ),
+            semicolonToken: Tokens.Semicolon
+        ));
+        // field:_lambdaTypes
+        members.Add(EmitLambdaTypesInitializer(lambdaTypes));
+        members.Add(FieldDeclaration(
+            attributeLists: default,
+            modifiers: TokenList(Tokens.Private, Tokens.Static, Tokens.ReadOnly),
+            declaration: VariableDeclaration(
+                type: ArrayType(LambdaDataType, SingletonList(ArrayRankSpecifier())),
+                variables: SingletonSeparatedList(VariableDeclarator(
+                    identifier: Identifiers._lambdaTypes,
+                    argumentList: default,
+                    initializer: EqualsValueClause(SimpleInvocationExpression(IdentifierName("InitializeLambdaTypes")))
+                ))
+            ),
+            semicolonToken: Tokens.Semicolon
+        ));
+        // prop:Singleton
+        members.Add(PropertyDeclaration(
+            attributeLists: default,
+            modifiers: TokenList(Tokens.Public, Tokens.Static),
+            type: T.Internal.IPortableDataContext,
+            explicitInterfaceSpecifier: default,
+            identifier: Identifiers.Singleton,
+            accessorList: AccessorList(SingletonList(EmptyGetAccessor)),
+            expressionBody: default,
+            initializer: EqualsValueClause(ObjectCreationExpression(IdentifierName(name), Args(), initializer: default)),
+            semicolonToken: Tokens.Semicolon
+        ));
+        // method:GetMethod
+        members.Add(MethodDeclaration(
+            attributeLists: default,
+            modifiers:  TokenList(Tokens.Private, Tokens.Static),
+            returnType: T.MethodInfo,
+            explicitInterfaceSpecifier: default,
+            identifier: Identifiers.GetMethod,
+            typeParameterList: TypeParameterList(SeparatedList(
+            [
+                TypeParameter("TArg1"),
+                TypeParameter("TArg2"),
+                TypeParameter("TResult")
+            ])),
+            parameterList: ParameterList(SingletonSeparatedList(
+                Parameter(
+                    attributeLists: default,
+                    modifiers: default,
+                    type: T.Func2Of(IdentifierName("TArg1"), IdentifierName("TArg2"), IdentifierName("TResult")),
+                    identifier: Identifiers.func,
+                    @default: default
+                )
+            )),
+            constraintClauses: default,
+            body: default,
+            expressionBody: ArrowExpressionClause(SimpleMemberAccessExpression(IdentifierNames.func, IdentifierNames.Method)),
+            semicolonToken: Tokens.Semicolon
+        ));
+        // method:GetTypeDescriptors
+        members.Add(MethodDeclaration(
+            attributeLists: default,
+            modifiers:  TokenList(Tokens.Public),
+            returnType: T.IEnumerableOf(T.Internal.ITypeDescriptor),
+            explicitInterfaceSpecifier: default,
+            identifier: Identifiers.GetTypeDescriptors,
+            typeParameterList: default,
+            parameterList: ParameterList(SeparatedList(Array.Empty<ParameterSyntax>())),
+            constraintClauses: default,
+            body: default,
+            expressionBody: ArrowExpressionClause(IdentifierNames._descriptors),
+            semicolonToken: Tokens.Semicolon
+        ));
+        // method:GetLambdaTypes
+        members.Add(MethodDeclaration(
+            attributeLists: default,
+            modifiers:  TokenList(Tokens.Public),
+            returnType: T.IEnumerableOf(LambdaDataType),
+            explicitInterfaceSpecifier: default,
+            identifier: Identifiers.GetLambdaTypes,
+            typeParameterList: default,
+            parameterList: ParameterList(SeparatedList(Array.Empty<ParameterSyntax>())),
+            constraintClauses: default,
+            body: default,
+            expressionBody: ArrowExpressionClause(IdentifierNames._lambdaTypes),
+            semicolonToken: Tokens.Semicolon
+        ));
 
 
-            var @class = ClassDeclaration(name)
-                .AddAttributeLists(
-                    AttributeList(SingletonSeparatedList(GeneratedCodeAttribute))
-                )
-                .AddBaseListTypes(
-                    SimpleBaseType(T.Internal.IPortableDataContext)
-                )
-                .AddModifiers(
-                    Token(SyntaxKind.PartialKeyword)
-                )
-                .AddMembers([.. members]);
+        var @class = ClassDeclaration(name)
+            .AddAttributeLists(
+                AttributeList(SingletonSeparatedList(GeneratedCodeAttribute))
+            )
+            .AddBaseListTypes(
+                SimpleBaseType(T.Internal.IPortableDataContext)
+            )
+            .AddModifiers(
+                Token(SyntaxKind.PartialKeyword)
+            )
+            .AddMembers([.. members]);
 
-            SyntaxTriviaList syntaxTriviaList = TriviaList(
-                Comment("// <auto-generated/>"),
-                Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), true))
-            );
+        SyntaxTriviaList syntaxTriviaList = TriviaList(
+            Comment("// <auto-generated/>"),
+            Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), true))
+        );
 
-            return CompilationUnit()
-                .AddUsings(
-                    UsingDirective(
-                        usingKeyword: Token(SyntaxKind.UsingKeyword),
-                        staticKeyword: default,
-                        alias: NameEquals(IdentifierName("PropertyInfo")),
-                        name: ParseName("global::System.Reflection.PropertyInfo"),
-                        semicolonToken: Tokens.Semicolon
-                    )
+        return CompilationUnit()
+            .AddUsings(
+                UsingDirective(
+                    usingKeyword: Token(SyntaxKind.UsingKeyword),
+                    staticKeyword: default,
+                    alias: NameEquals(IdentifierName("PropertyInfo")),
+                    name: ParseName("global::System.Reflection.PropertyInfo"),
+                    semicolonToken: Tokens.Semicolon
                 )
-                .AddMembers(
-                    NamespaceDeclaration(IdentifierName(@namespace))
-                        .WithLeadingTrivia(syntaxTriviaList)
-                        .AddMembers(@class)
-                )
-                .NormalizeWhitespace();
-        }
-        catch (Exception exn)
-        {
-            reportDiagnostics(Diagnostic.Create(
-                DiagnosticDescriptors.GenericError,
-                Location.None,
-                [
-                    exn.GetType().Name,
-                    exn.Message,
-                    exn.StackTrace.Replace('\n', ' ').Replace('\r', ' ')
-                ]
-            ));
-            return CompilationUnit();
-        }
+            )
+            .AddMembers(
+                NamespaceDeclaration(IdentifierName(@namespace))
+                    .WithLeadingTrivia(syntaxTriviaList)
+                    .AddMembers(@class)
+            )
+            .NormalizeWhitespace();
     }
 }

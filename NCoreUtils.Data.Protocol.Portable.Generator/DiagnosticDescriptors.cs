@@ -6,19 +6,10 @@ internal static class DiagnosticDescriptors
 {
     public static DiagnosticDescriptor GenericError = new(
         "NCU0000",
-        "Generic Error",
-        "{0}: {1} {2}",
+        "Unexpected generator error",
+        "Unexpected error while generating protocol context: {0}: {1} (at {2})",
         "ProtocolContextGenerator",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
-    );
-
-    public static DiagnosticDescriptor ProcessingTarget = new(
-        "NCU0100",
-        "Processing target",
-        "Processing target: {0}",
-        "ProtocolContextGenerator",
-        DiagnosticSeverity.Info,
         isEnabledByDefault: true
     );
 
@@ -46,24 +37,6 @@ internal static class DiagnosticDescriptors
         messageFormat: "Invalid target node",
         category: "ProtocolContextGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
-    );
-
-    public static DiagnosticDescriptor DoneCollectingTypes = new(
-        "NCU0201",
-        "Done collecting types",
-        "Done collecting types [{0}ms]: {1}",
-        "ProtocolContextGenerator",
-        DiagnosticSeverity.Info,
-        isEnabledByDefault: true
-    );
-
-    public static DiagnosticDescriptor DoneEmittingContext = new(
-        "NCU0202",
-        "Done emitting context",
-        "Done emitting context [{0}ms]: {1}",
-        "ProtocolContextGenerator",
-        DiagnosticSeverity.Info,
         isEnabledByDefault: true
     );
 
@@ -113,7 +86,7 @@ internal static class DiagnosticDescriptors
     );
 
     public static DiagnosticDescriptor TypeNotFoundLambdaArgument = new(
-        id: "NCU0406",
+        id: "NCU0408",
         title: "Element type not found",
         messageFormat: "Type {0} is required (lambda argument) but has not been processed, for example is explicitly described",
         category: "ProtocolContextGenerator",
@@ -122,9 +95,36 @@ internal static class DiagnosticDescriptors
     );
 
     public static DiagnosticDescriptor TypeNotFoundLambdaResult = new(
-        id: "NCU0406",
+        id: "NCU0409",
         title: "Element type not found",
-        messageFormat: "Type {0} is required (lambda argument) but has not been processed, for example is explicitly described",
+        messageFormat: "Type {0} is required (lambda result) but has not been processed, for example is explicitly described",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
+
+    public static DiagnosticDescriptor DuplicateExplicitDescriptor = new(
+        id: "NCU0410",
+        title: "Type is explicitly described more than once",
+        messageFormat: "Type {0} is already explicitly described by {1}, {2} cannot describe it as well",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
+
+    public static DiagnosticDescriptor DuplicateSafeName = new(
+        id: "NCU0411",
+        title: "Safe name is specified more than once",
+        messageFormat: "Safe name of type {0} is already specified as \"{1}\", \"{2}\" cannot be used as well",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
+
+    public static DiagnosticDescriptor InvalidAttribute = new(
+        id: "NCU0412",
+        title: "Invalid attribute",
+        messageFormat: "Invalid {0}: {1}",
         category: "ProtocolContextGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true
