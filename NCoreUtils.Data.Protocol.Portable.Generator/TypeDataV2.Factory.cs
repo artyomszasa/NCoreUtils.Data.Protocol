@@ -104,11 +104,22 @@ internal partial class TypeDataV2
         return [.. properties.Values];
     }
 
+    /// <summary>
+    /// Enum values are stored as raw 64-bit pattern: values are only compared within the same enum (hence the same
+    /// underlying type) so reinterpreting unsigned values (e.g. <c>ulong</c> above <c>long.MaxValue</c>) is safe.
+    /// </summary>
+    private static long GetRawEnumValue(object value) => value switch
+    {
+        byte or ushort or uint or ulong => unchecked((long)Convert.ToUInt64(value)),
+        _ => Convert.ToInt64(value)
+    };
+
     private static EnumFieldData[] GetEnumFields(ITypeSymbol symbol)
         => symbol.GetMembers()
             .OfType<IFieldSymbol>()
-            .Where(f => f.IsStatic)
-            .Select(f => new EnumFieldData(f.Name, (long)Convert.ChangeType(f.ConstantValue, typeof(long))))
+            // NOTE: constant value may be missing in erroneous code
+            .Where(f => f.IsStatic && f.HasConstantValue && f.ConstantValue is not null)
+            .Select(f => new EnumFieldData(f.Name, GetRawEnumValue(f.ConstantValue!)))
             .ToArray();
 
     public static TypeDataV2 Create(

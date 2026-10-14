@@ -120,4 +120,46 @@ public class GeneratorTests
         Assert.Contains(SameNamed.GeneratedContext.Singleton.GetTypeDescriptors(), d => d.Type == typeof(SubItem));
         Assert.DoesNotContain(SameNamed.GeneratedContext.Singleton.GetTypeDescriptors(), d => d.Type == typeof(Item));
     }
+
+    private static IEnumFactory GetEnumFactory<T>()
+    {
+        Assert.True(GetDescriptor<T>().TryGetEnumFactory(out var enumFactory));
+        return enumFactory;
+    }
+
+    [Theory]
+    [InlineData("class", KeywordUlongEnum.@class)]
+    [InlineData("default", KeywordUlongEnum.@default)]
+    [InlineData("Max", KeywordUlongEnum.Max)]
+    public void KeywordAndUlongEnumIsParsed(string raw, KeywordUlongEnum expected)
+        => Assert.Equal(expected, GetEnumFactory<KeywordUlongEnum>().FromRawValue(raw));
+
+    [Theory]
+    [InlineData(KeywordUlongEnum.@class, "class")]
+    [InlineData(KeywordUlongEnum.@default, "default")]
+    [InlineData(KeywordUlongEnum.Max, "Max")]
+    public void KeywordAndUlongEnumIsStringified(KeywordUlongEnum value, string expected)
+        => Assert.Equal(expected, GetDescriptor<KeywordUlongEnum>().Stringify(value));
+
+    [Theory]
+    [InlineData("in", KeywordFlags.@in)]
+    [InlineData("out", KeywordFlags.@out)]
+    public void KeywordFlagsAreParsed(string raw, KeywordFlags expected)
+        => Assert.Equal(expected, GetEnumFactory<KeywordFlags>().FromRawValue(raw));
+
+    [Theory]
+    [InlineData("o => o.value = \"class\"", KeywordUlongEnum.@class, true)]
+    [InlineData("o => o.value = \"class\"", KeywordUlongEnum.Max, false)]
+    [InlineData("o => o.value = \"Max\"", KeywordUlongEnum.Max, true)]
+    public void KeywordAndUlongEnumFilter(string raw, KeywordUlongEnum input, bool expected)
+    {
+        using var serviceProvider = new ServiceCollection()
+            .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
+            .AddDataQueryServerServices(GeneratedContext.Singleton)
+            .BuildServiceProvider(true);
+        using var scope = serviceProvider.CreateScope();
+        var builder = scope.ServiceProvider.GetRequiredService<IDataQueryExpressionBuilder>();
+        var expression = (Expression<Func<ItemWithKeywordEnums, bool>>)builder.BuildExpression(typeof(ItemWithKeywordEnums), raw);
+        Assert.Equal(expected, expression.Compile()(new(input, KeywordFlags.None)));
+    }
 }

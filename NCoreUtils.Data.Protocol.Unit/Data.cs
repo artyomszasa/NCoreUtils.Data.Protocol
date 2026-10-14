@@ -146,3 +146,23 @@ public sealed class FormattableWithoutInterface(string value) : IParsable<Format
     public string ToString(FormattableWithoutInterface other, IFormatProvider? formatProvider)
         => other.Value;
 }
+
+// Keyword member names (emitted member access must be escaped) and ulong values above long.MaxValue (used to overflow
+// in the generator), including alias of such value.
+public enum KeywordUlongEnum : ulong
+{
+    @class = 1,
+    @default = 2,
+    Max = ulong.MaxValue,
+    MaxAlias = ulong.MaxValue
+}
+
+[Flags]
+public enum KeywordFlags
+{
+    None = 0,
+    @in = 1,
+    @out = 2
+}
+
+public record ItemWithKeywordEnums(KeywordUlongEnum Value, KeywordFlags Flags);

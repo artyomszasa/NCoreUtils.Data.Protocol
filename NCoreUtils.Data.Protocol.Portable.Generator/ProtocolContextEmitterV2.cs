@@ -472,6 +472,15 @@ internal class ProtocolContextEmitterV2
         ExpressionSyntax initializer)
         => SingleVar(default, name, initializer);
 
+    /// <summary>
+    /// Enum member used as identifier: keywords must be escaped (e.g. <c>@class</c>). Protocol (string) names remain
+    /// unescaped.
+    /// </summary>
+    private static IdentifierNameSyntax EnumMemberName(EnumFieldData field)
+        => SyntaxFacts.GetKeywordKind(field.Name) != SyntaxKind.None
+            ? IdentifierName(VerbatimIdentifier(default, field.Name, field.Name, default))
+            : IdentifierName(field.Name);
+
     private static ClassDeclarationSyntax EmitEnumFactory(ITypeData data)
     {
         if (data.IsEnum)
@@ -552,7 +561,7 @@ internal class ProtocolContextEmitterV2
                         ),
                         statement: BracedBlock(ReturnStatement(
                             returnKeyword: Token(SyntaxKind.ReturnKeyword),
-                            expression: SimpleMemberAccessExpression(data.TypeName, IdentifierName(field.Name)),
+                            expression: SimpleMemberAccessExpression(data.TypeName, EnumMemberName(field)),
                             semicolonToken: Token(SyntaxKind.SemicolonToken)
                         )),
                         @else: ElseClause(EmitFlagNameCheck(elseStatement, index - 1, data, fields))
@@ -1324,7 +1333,7 @@ internal class ProtocolContextEmitterV2
 
         static SwitchExpressionArmSyntax EmitEnumArm(ITypeData data, EnumFieldData field)
             => SwitchExpressionArm(
-                pattern: ConstantPattern(SimpleMemberAccessExpression(data.TypeName, IdentifierName(field.Name))),
+                pattern: ConstantPattern(SimpleMemberAccessExpression(data.TypeName, EnumMemberName(field))),
                 expression: StringLiteralExpression(field.Name)
             );
     }
