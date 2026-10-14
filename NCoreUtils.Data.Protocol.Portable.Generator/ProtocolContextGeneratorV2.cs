@@ -408,7 +408,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                 && opaqueTypes.Contains(elementType);
 
         bool IsArrayOfOpaqueType(ITypeSymbol symbol)
-            => compilation.TryGetEnumerableElementType(symbol, out var elementType, out _)
+            => compilation.TryGetArrayElementType(symbol, out var elementType)
                 && opaqueTypes.Contains(elementType);
     }
 

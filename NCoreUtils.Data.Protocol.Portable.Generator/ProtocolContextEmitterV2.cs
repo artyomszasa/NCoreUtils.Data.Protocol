@@ -481,6 +481,23 @@ internal class ProtocolContextEmitterV2
             ? IdentifierName(VerbatimIdentifier(default, field.Name, field.Name, default))
             : IdentifierName(field.Name);
 
+    /// <summary>
+    /// The type itself followed by its assignable-to types, each type only once (assignable-to types usually contain
+    /// the type itself).
+    /// </summary>
+    private static IEnumerable<TypeSyntax> GetAssignableToTypeNames(ITypeData data)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal) { data.FullName };
+        yield return data.TypeName;
+        foreach (var type in data.AssignableToTypes)
+        {
+            if (seen.Add(type.FullName))
+            {
+                yield return type.TypeName;
+            }
+        }
+    }
+
     private static ClassDeclarationSyntax EmitEnumFactory(ITypeData data)
     {
         if (data.IsEnum)
@@ -1716,16 +1733,11 @@ internal class ProtocolContextEmitterV2
             constraintClauses: default,
             body: default,
             expressionBody: ArrowExpressionClause(
-                data.AssignableToTypes
-                    .Select(ty => BinaryExpression(
+                GetAssignableToTypeNames(data)
+                    .Select(typeName => BinaryExpression(
                         kind: SyntaxKind.EqualsExpression,
                         left: IdentifierName("baseType"),
-                        right: TypeOfExpression(ty.TypeName)
-                    ))
-                    .Prepend(BinaryExpression(
-                        kind: SyntaxKind.EqualsExpression,
-                        left: IdentifierName("baseType"),
-                        right: TypeOfExpression(data.TypeName)
+                        right: TypeOfExpression(typeName)
                     ))
                     .Aggregate((a, b) => BinaryExpression(
                         kind: SyntaxKind.LogicalOrExpression,
