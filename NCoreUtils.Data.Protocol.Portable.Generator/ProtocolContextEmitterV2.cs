@@ -304,7 +304,7 @@ internal class ProtocolContextEmitterV2
     private static readonly string SelfVersion = typeof(ProtocolContextEmitterV2).Assembly.GetName()?.Version.ToString() ?? string.Empty;
 
     private static AttributeSyntax GeneratedCodeAttribute => Attribute(
-        ParseName("System.CodeDom.Compiler.GeneratedCodeAttribute"),
+        ParseName("global::System.CodeDom.Compiler.GeneratedCodeAttribute"),
         AttributeArgumentList(SeparatedList(new AttributeArgumentSyntax[]
         {
             AttributeArgument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal("NCoreUtils.Data.Protocol.Portable.Geerator"))),
@@ -2058,11 +2058,13 @@ internal class ProtocolContextEmitterV2
     private static bool IsNotBuiltIn(ITypeData data)
         => !(data is PrimitiveValueTypeData or NullablePrimitiveValueTypeData);
 
+    private static bool IsGenerated(ITypeData data)
+        => data is TypeDataV2;
+
     public static CompilationUnitSyntax EmitContext(
         string @namespace,
         string name,
         IReadOnlyCollection<ITypeData> types,
-        IReadOnlyDictionary<string, SomeType> explicitDescriptors,
         IReadOnlyCollection<(SomeType Arg, SomeType Res)> lambdaTypes,
         Action<Diagnostic> reportDiagnostics)
     {
@@ -2071,7 +2073,7 @@ internal class ProtocolContextEmitterV2
             List<MemberDeclarationSyntax> members = new(types.Count + 12);
 
             // class*:type descriptors
-            members.AddRange(types.Where(IsNotBuiltIn).Select(EmitDescriptorImpl));
+            members.AddRange(types.Where(IsGenerated).Select(EmitDescriptorImpl));
             // field:_descriptors
             members.Add(FieldDeclaration(
                 attributeLists: default,
@@ -2088,8 +2090,8 @@ internal class ProtocolContextEmitterV2
                                 InitializerExpression(SyntaxKind.ArrayInitializerExpression,
                                     expressions: SeparatedList(types.Where(IsNotBuiltIn).Select(data =>
                                     {
-                                        var typeName = explicitDescriptors.TryGetValue(data.FullName, out var ty)
-                                            ? ty.TypeName
+                                        var typeName = data is ExplicitTypeData explicitData
+                                            ? explicitData.DescriptorTypeName
                                             : ParseTypeName($"{data.SafeName}Descriptor");
                                         return (ExpressionSyntax)ObjectCreationExpression(
                                             type: typeName,
@@ -2210,7 +2212,7 @@ internal class ProtocolContextEmitterV2
                         usingKeyword: Token(SyntaxKind.UsingKeyword),
                         staticKeyword: default,
                         alias: NameEquals(IdentifierName("PropertyInfo")),
-                        name: ParseName("System.Reflection.PropertyInfo"),
+                        name: ParseName("global::System.Reflection.PropertyInfo"),
                         semicolonToken: Tokens.Semicolon
                     )
                 )

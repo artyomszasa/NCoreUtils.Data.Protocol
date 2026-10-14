@@ -6,17 +6,22 @@ internal sealed class ProtocolContextTargetV2(
     string @namespace,
     string name,
     HashSet<ITypeData> types,
-    Dictionary<string, SomeType> explicitDescriptors,
     HashSet<(SomeType Arg, SomeType Res)> lambdaTypes)
     : IEquatable<ProtocolContextTargetV2>
 {
+    public static bool operator ==(ProtocolContextTargetV2? a, ProtocolContextTargetV2? b)
+        => a is null
+            ? b is null
+            : a.Equals(b);
+
+    public static bool operator !=(ProtocolContextTargetV2? a, ProtocolContextTargetV2? b)
+        => !(a == b);
+
     public string Namespace { get; } = @namespace;
 
     public string Name { get; } = name;
 
     public HashSet<ITypeData> Types { get; } = types;
-
-    public IReadOnlyDictionary<string, SomeType> ExplicitDescriptors { get; } = explicitDescriptors;
 
     public HashSet<(SomeType Arg, SomeType Res)> LambdaTypes { get; } = lambdaTypes;
 
@@ -26,24 +31,16 @@ internal sealed class ProtocolContextTargetV2(
         {
             return false;
         }
-        if (Name != other.Name || Namespace != other.Namespace || !Types.SetEquals(other.Types) || !LambdaTypes.SetEquals(other.LambdaTypes))
-        {
-            return false;
-        }
-        // dict equality
-        if (ExplicitDescriptors.Count != other.ExplicitDescriptors.Count)
-        {
-            return false;
-        }
-        foreach (var kv in ExplicitDescriptors)
-        {
-            var key = kv.Key;
-            var thisValue = kv.Value;
-            if (!other.ExplicitDescriptors.TryGetValue(key, out var otherValue) || thisValue != otherValue)
-            {
-                return false;
-            }
-        }
-        return true;
+        return Name == other.Name
+            && Namespace == other.Namespace
+            && Types.SetEquals(other.Types)
+            && LambdaTypes.SetEquals(other.LambdaTypes);
     }
+
+    public override bool Equals([NotNullWhen(true)] object? obj)
+        => Equals(obj as ProtocolContextTargetV2);
+
+    public override int GetHashCode()
+        => (StringComparer.OrdinalIgnoreCase.GetHashCode(Name) + 28)
+            ^ StringComparer.OrdinalIgnoreCase.GetHashCode(Namespace);
 }

@@ -34,4 +34,5 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolEntity(typeof(ItemWithListOfOpaqueType))]
 [ProtocolOpaque(typeof(OpaqueType))]
 [ProtocolEntity(typeof(ItemE))]
+[ProtocolEntity(typeof(ItemWithComplexData))]
 public partial class GeneratedContext { }

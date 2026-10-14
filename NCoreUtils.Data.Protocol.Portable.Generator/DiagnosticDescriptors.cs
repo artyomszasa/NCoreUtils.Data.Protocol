@@ -76,6 +76,15 @@ internal static class DiagnosticDescriptors
         isEnabledByDefault: true
     );
 
+    public static DiagnosticDescriptor OpaqueAndExplicitlyDescribed = new(
+        id: "NCU0407",
+        title: "Type is both opaque and explicitly described",
+        messageFormat: "Type {0} is marked as opaque but is also explicitly described by {1}, remove either ProtocolOpaque or ProtocolDescriptor attribute",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
+
     public static DiagnosticDescriptor TypeNotFound = new(
         id: "NCU0404",
         title: "Element type not found",

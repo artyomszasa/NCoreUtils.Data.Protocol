@@ -149,18 +149,20 @@ internal sealed partial class TypeDataV2(
     {
         if (ReferenceEquals(this, other)) { return true; }
         if (other is null) { return false; }
-        if (FullName != other.FullName
-            || IsValueType != other.IsValueType
-            || IsParseable != other.IsParseable
-            || IsFormattable != other.IsFormattable
-            || IsOpaque != other.IsOpaque
-            || !Properties.SequenceEqual(other.Properties)
-            || IsArray != other.IsArray
-            || IsEnumerable != other.IsEnumerable
-            || IsLambda != other.IsLambda
-            || IsNullable != other.IsNullable
-            || IsEnum != other.IsEnum
-            || IsEnumFlags != other.IsEnumFlags)
+        if (!G.Eq(FullName, other.FullName)
+            || !G.Eq(IsValueType, other.IsValueType)
+            || !G.Eq(IsParseable, other.IsParseable)
+            || !G.Eq(IsFormattable, other.IsFormattable)
+            || !G.Eq(IsOpaque, other.IsOpaque)
+            || !G.Eq(Properties, other.Properties)
+            || !G.Eq(IsArray, other.IsArray)
+            || !G.Eq(IsEnumerable, other.IsEnumerable)
+            || !G.Eq(IsLambda, other.IsLambda)
+            || !G.Eq(IsNullable, other.IsNullable)
+            || !G.Eq(IsEnum, other.IsEnum)
+            || !G.Eq(IsEnumFlags, other.IsEnumFlags)
+            || !G.Eq(SafeName, other.SafeName)
+            || !G.Eq(EnumFields, other.EnumFields))
         {
             return false;
         }

@@ -65,6 +65,16 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             }
             return false;
         }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+            => obj is TargetOrError other && Equals(other);
+
+        public override int GetHashCode()
+            => Target is ProtocolContextTargetV2 target
+                ? target.GetHashCode() & (~1)
+                : Error is DiagnosticData error
+                    ? error.GetHashCode() | 1
+                    : 0;
     }
 
     internal readonly struct LambdaTypeSymbols(ITypeSymbol argType, ITypeSymbol resType)
@@ -126,7 +136,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
     {
         { SpecialType.System_Boolean, new PrimitiveValueTypeData("bool", "Boolean", PredefinedType(SyntaxKind.BoolKeyword)) },
         // { SpecialType., new PrimitiveValueTypeData("global::System.Guid", "Guid") },
-        { SpecialType.System_DateTime, new PrimitiveValueTypeData("System.DateTime", "DateTime") },
+        { SpecialType.System_DateTime, new PrimitiveValueTypeData("global::System.DateTime", "DateTime") },
         // { SpecialType, new PrimitiveValueTypeData("global::System.DateTimeOffset", "DateTimeOffset") },
         { SpecialType.System_SByte, new PrimitiveValueTypeData("sbyte", "SByte", PredefinedType(SyntaxKind.SByteKeyword)) },
         { SpecialType.System_Int16, new PrimitiveValueTypeData("short", "Int16", PredefinedType(SyntaxKind.ShortKeyword)) },
@@ -147,7 +157,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         if (compilation.GetTypeByMetadataName(qualifiedName) is ITypeSymbol symbol)
         {
             // FIXME: cache
-            var data = new PrimitiveValueTypeData(qualifiedName, name);
+            var data = new PrimitiveValueTypeData($"global::{qualifiedName}", name);
             types.Add(symbol, data);
             types.Add(compilation.GetSpecialType(SpecialType.System_Nullable_T).Construct(symbol), new NullablePrimitiveValueTypeData(data));
         }
@@ -268,17 +278,17 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         IDictionary<ITypeSymbol, ITypeData> targetTypes,
         HashSet<ITypeSymbol> opaqueTypes,
         HashSet<ITypeSymbol> builtin,
-        Func<ITypeSymbol, bool> isExplicitlyDescribed,
         Func<ITypeSymbol, string?> safeNameFactory,
         CancellationToken cancellationToken)
     {
         while (pending.TryDequeue(out var symbol, out var root, out var fromProperty))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (targetTypes.ContainsKey(symbol) || builtin.Contains(symbol) || isExplicitlyDescribed(symbol))
+            if (targetTypes.ContainsKey(symbol) || builtin.Contains(symbol))
             {
-                // NOTE: we still need to generate predicate/enumerable/array descriptors for property types..
-                if (fromProperty)
+                // NOTE: we still need to generate predicate/enumerable/array descriptors for property types and
+                // roots (e.g. explicitly described types)..
+                if (fromProperty || root)
                 {
                     if (mode.HasFlag(GenMode.Array) && !compilation.IsArray(symbol))
                     {
@@ -291,6 +301,10 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     if (mode.HasFlag(GenMode.Predicates))
                     {
                         pending.Enqueue(compilation.CreateFuncTypeSymbol(symbol, compilation.@bool));
+                    }
+                    if (root && mode.HasFlag(GenMode.Nullable) && symbol.IsValueType && !symbol.IsNullableStruct)
+                    {
+                        pending.Enqueue(compilation.CreateNullableTypeSymbol(symbol), root: true);
                     }
                 }
                 continue;
@@ -416,6 +430,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         var lambdaTypes = new HashSet<LambdaTypeSymbols>();
         var descriptors = new Dictionary<ITypeSymbol, ITypeSymbol>(SymbolEqualityComparer.Default);
         var opaqueTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        var opaqueLocations = new Dictionary<ITypeSymbol, Location?>(SymbolEqualityComparer.Default);
         var genMode = GenMode.Predicates | GenMode.Enumerable;
         var safeNames = new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.Default);
 
@@ -441,6 +456,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             else if (cctx.IsOpaque(attributeData, out var opaqueType))
             {
                 opaqueTypes.Add(opaqueType);
+                opaqueLocations[opaqueType] = attributeData.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation();
             }
             else if (cctx.IsOptions(attributeData, out var explicitMode))
             {
@@ -462,6 +478,31 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         var pending = new Queue<(ITypeSymbol Symbol, bool Root, bool FromProperty)>(rootEntityTypes.Select(ty => (ty, true, false)));
         string? safeNameFactory(ITypeSymbol ty) => safeNames.TryGetValue(ty, out var name) ? name : default;
 
+        // explicitly described types are known types with user supplied descriptors: no descriptor is generated for
+        // them but they can be referenced by other types (properties, elements, lambdas).
+        foreach (var kv in descriptors)
+        {
+            var (describedType, descriptorType) = (kv.Key, kv.Value);
+            if (opaqueTypes.Contains(describedType))
+            {
+                throw new GenerationException(new DiagnosticData(
+                    DiagnosticDescriptors.OpaqueAndExplicitlyDescribed,
+                    opaqueLocations.TryGetValue(describedType, out var opaqueLocation) ? opaqueLocation : default,
+                    [
+                        describedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                        descriptorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                    ]
+                ));
+            }
+            targetTypes[describedType] = new ExplicitTypeData(
+                fullName: describedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                safeName: TypeDataV2.GetSafeName(describedType, safeNameFactory),
+                isValueType: describedType.IsValueType,
+                descriptorFullName: descriptorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            );
+            pending.Enqueue(describedType, root: true);
+        }
+
         // PASS 1: collect types starting from root
         cancellationToken.ThrowIfCancellationRequested();
         AddTargetTypes(
@@ -471,7 +512,6 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             targetTypes: targetTypes,
             opaqueTypes: opaqueTypes,
             builtin: builtInTypes,
-            isExplicitlyDescribed: descriptors.ContainsKey,
             safeNameFactory: safeNameFactory,
             cancellationToken: cancellationToken
         );
@@ -499,7 +539,6 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             targetTypes: targetTypes,
             opaqueTypes: opaqueTypes,
             builtin: builtInTypes,
-            isExplicitlyDescribed: descriptors.ContainsKey,
             safeNameFactory: safeNameFactory,
             cancellationToken: cancellationToken
         );
@@ -558,8 +597,8 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                             [elementSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
                         ));
                     }
-                    AddAssignableTo(cctx.CreateIEnumerableTypeSymbol(type));
-                    AddAssignableTo(cctx.CreateIReadOnlyListTypeSymbol(type));
+                    AddAssignableTo(cctx.CreateIEnumerableTypeSymbol(elementSymbol));
+                    AddAssignableTo(cctx.CreateIReadOnlyListTypeSymbol(elementSymbol));
                     data.ElementType = elementData;
                 }
                 else if (cctx.TryGetEnumerableElementType(type, out elementSymbol, out var isIEnumerable))
@@ -577,7 +616,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     }
                     if (!isIEnumerable)
                     {
-                        AddAssignableTo(cctx.CreateIEnumerableTypeSymbol(type));
+                        AddAssignableTo(cctx.CreateIEnumerableTypeSymbol(elementSymbol));
                     }
                     data.ElementType = elementData;
                 }
@@ -639,9 +678,6 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             @namespace: @namespace,
             name: name,
             types: new HashSet<ITypeData>(targetTypes.Values, TypeDataEqualityComparer.Singleton),
-            explicitDescriptors: descriptors.ToDictionary(
-                kv => kv.Key.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                kv => new SomeType(kv.Value.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))),
             lambdaTypes: [.. lambdaTypes.Select(tup => (
                 GetSomeType(tup.ArgType),
                 GetSomeType(tup.ResType)
@@ -723,7 +759,6 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     target.Namespace,
                     target.Name,
                     target.Types,
-                    target.ExplicitDescriptors,
                     target.LambdaTypes,
                     ctx.ReportDiagnostic
                 );
