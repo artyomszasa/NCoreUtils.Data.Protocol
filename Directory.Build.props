@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>10.0.0-rc03</Version>
+    <Version>10.0.0-rc04</Version>
     <IsTrimmable Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">true</IsTrimmable>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>
     <LangVersion>14.0</LangVersion>

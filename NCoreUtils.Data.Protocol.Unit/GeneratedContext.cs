@@ -30,4 +30,8 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolSafeName(typeof(Alt.DerivedEntity), "AltDerivedEntity")]
 [ProtocolEntity(typeof(AOrB))]
 [ProtocolEntity(typeof(ItemWithNullableTimeSpan))]
+[ProtocolEntity(typeof(ItemWithEnumWithOverlappingValue))]
+[ProtocolEntity(typeof(ItemWithListOfOpaqueType))]
+[ProtocolOpaque(typeof(OpaqueType))]
+[ProtocolEntity(typeof(ItemE))]
 public partial class GeneratedContext { }

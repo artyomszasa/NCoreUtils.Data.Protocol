@@ -16,6 +16,8 @@ internal interface ITypeData
 
     bool IsFormattable { get; }
 
+    bool IsOpaque { get; }
+
     IReadOnlyList<PropertyDataV2> Properties { get; }
 
     HashSet<SomeType> AssignableToTypes { get; }

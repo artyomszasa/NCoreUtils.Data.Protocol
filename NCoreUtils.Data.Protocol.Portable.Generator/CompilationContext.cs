@@ -191,7 +191,7 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
             isDirect = default;
             return false;
         }
-        if (symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, iEnumerable))
+        if (symbol is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
         {
             elementType = named.TypeArguments[0];
             isDirect = true;

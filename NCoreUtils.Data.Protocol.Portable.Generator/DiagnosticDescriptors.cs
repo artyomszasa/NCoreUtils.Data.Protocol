@@ -84,4 +84,40 @@ internal static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true
     );
+
+    public static DiagnosticDescriptor TypeNotFoundArrayElement = new(
+        id: "NCU0405",
+        title: "Element type not found",
+        messageFormat: "Type {0} is required (array element type) but has not been processed, for example is explicitly described",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
+
+    public static DiagnosticDescriptor TypeNotFoundEnumerableElement = new(
+        id: "NCU0406",
+        title: "Element type not found",
+        messageFormat: "Type {0} is required (enumerable element type) but has not been processed, for example is explicitly described: {1}",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
+
+    public static DiagnosticDescriptor TypeNotFoundLambdaArgument = new(
+        id: "NCU0406",
+        title: "Element type not found",
+        messageFormat: "Type {0} is required (lambda argument) but has not been processed, for example is explicitly described",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
+
+    public static DiagnosticDescriptor TypeNotFoundLambdaResult = new(
+        id: "NCU0406",
+        title: "Element type not found",
+        messageFormat: "Type {0} is required (lambda argument) but has not been processed, for example is explicitly described",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
 }

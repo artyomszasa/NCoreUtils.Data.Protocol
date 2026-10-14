@@ -20,6 +20,8 @@ internal static class T
         public static NameSyntax DescribedTypeAttribute => ParseName("global::NCoreUtils.Data.Protocol.Internal.DescribedTypeAttribute");
 
         public static NameSyntax IPortableDataContext => ParseName("global::NCoreUtils.Data.Protocol.IPortableDataContext");
+
+        public static TypeSyntax OpaqueTypeDescriptorBase => ParseTypeName("global::NCoreUtils.Data.Protocol.Internal.OpaqueTypeDescriptorBase");
     }
 
     public static class CodeAnalysis

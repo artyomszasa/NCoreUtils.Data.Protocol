@@ -23,6 +23,8 @@ internal sealed class PrimitiveValueTypeData(
 
     public bool IsFormattable => true;
 
+    public bool IsOpaque => true;
+
     public IReadOnlyList<PropertyDataV2> Properties => Array.Empty<PropertyDataV2>();
 
     public bool IsArray => false;

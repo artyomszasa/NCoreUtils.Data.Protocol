@@ -22,6 +22,8 @@ internal sealed class NullablePrimitiveValueTypeData(PrimitiveValueTypeData sour
 
     public bool IsFormattable => true;
 
+    public bool IsOpaque => false;
+
     public IReadOnlyList<PropertyDataV2> Properties => field ??=
     [
         new PropertyDataV2("HasValue", "bool"),

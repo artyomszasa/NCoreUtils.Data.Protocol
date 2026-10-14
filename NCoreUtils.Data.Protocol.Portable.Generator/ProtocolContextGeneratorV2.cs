@@ -313,7 +313,9 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     pending.Enqueue(compilation.CreateFuncTypeSymbol(symbol, compilation.@bool));
                 }
             }
-            var isOpaque = opaqueTypes.Contains(symbol);
+            var isOpaque = opaqueTypes.Contains(symbol)
+                || IsEnumerableOfOpaqueType(symbol)
+                || IsArrayOfOpaqueType(symbol);
             TypeDataV2 data;
             if (symbol is INamedTypeSymbol namedSymbol)
             {
@@ -321,7 +323,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                 targetTypes.Add(namedSymbol, data);
                 if (isOpaque)
                 {
-                    return;
+                    continue;
                 }
                 if (data.IsValueType)
                 {
@@ -351,6 +353,11 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                         pending.Enqueue(enumerableSymbol);
                     }
                 }
+                if (elementType is ITypeSymbol elementSymbol)
+                {
+                    // add T for IEnumerable<T> its derivatives
+                    pending.Enqueue(elementSymbol);
+                }
                 foreach (var prop in properties)
                 {
                     pending.Enqueue(prop.Type, fromProperty: true);
@@ -376,6 +383,14 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                 throw new Exception($"Not handled type: {symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
             }
         }
+
+        bool IsEnumerableOfOpaqueType(ITypeSymbol symbol)
+            => compilation.TryGetEnumerableElementType(symbol, out var elementType, out _)
+                && opaqueTypes.Contains(elementType);
+
+        bool IsArrayOfOpaqueType(ITypeSymbol symbol)
+            => compilation.TryGetEnumerableElementType(symbol, out var elementType, out _)
+                && opaqueTypes.Contains(elementType);
     }
 
     private static SymbolDisplayFormat MaybeNullableFullyQualifiedFormat { get; } =
@@ -425,7 +440,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             }
             else if (cctx.IsOpaque(attributeData, out var opaqueType))
             {
-                rootEntityTypes.Add(opaqueType);
+                opaqueTypes.Add(opaqueType);
             }
             else if (cctx.IsOptions(attributeData, out var explicitMode))
             {
@@ -538,7 +553,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     if (!targetTypes.TryGetValue(elementSymbol, out var elementData))
                     {
                         throw new GenerationException(new DiagnosticData(
-                            DiagnosticDescriptors.TypeNotFound,
+                            DiagnosticDescriptors.TypeNotFoundArrayElement,
                             default,
                             [elementSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
                         ));
@@ -552,9 +567,12 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     if (!targetTypes.TryGetValue(elementSymbol, out var elementData))
                     {
                         throw new GenerationException(new DiagnosticData(
-                            DiagnosticDescriptors.TypeNotFound,
+                            DiagnosticDescriptors.TypeNotFoundEnumerableElement,
                             default,
-                            [elementSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
+                            [
+                                elementSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                                string.Join(", ", targetTypes.Keys.Select(static key => key.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
+                            ]
                         ));
                     }
                     if (!isIEnumerable)
@@ -574,7 +592,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     if (!targetTypes.TryGetValue(argType, out var argData))
                     {
                         throw new GenerationException(new DiagnosticData(
-                            DiagnosticDescriptors.TypeNotFound,
+                            DiagnosticDescriptors.TypeNotFoundLambdaArgument,
                             default,
                             [argType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
                         ));
@@ -582,7 +600,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     if (!targetTypes.TryGetValue(resType, out var resData))
                     {
                         throw new GenerationException(new DiagnosticData(
-                            DiagnosticDescriptors.TypeNotFound,
+                            DiagnosticDescriptors.TypeNotFoundLambdaResult,
                             default,
                             [resType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)]
                         ));

@@ -288,6 +288,8 @@ internal static class Tokens
 
     public static SyntaxToken Out => Token(SyntaxKind.OutKeyword);
 
+    public static SyntaxToken Override => Token(SyntaxKind.OverrideKeyword);
+
     public static SyntaxToken Public => Token(SyntaxKind.PublicKeyword);
 
     public static SyntaxToken Private => Token(SyntaxKind.PrivateKeyword);
@@ -1085,7 +1087,9 @@ internal class ProtocolContextEmitterV2
 
         return PropertyDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Token(SyntaxKind.PublicKeyword)),
+            modifiers: data.IsOpaque
+                ? TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword))
+                : TokenList(Token(SyntaxKind.PublicKeyword)),
             type: T.Type,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.Type,
@@ -1181,7 +1185,9 @@ internal class ProtocolContextEmitterV2
         }
         return MethodDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             returnType: T.Object,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.Parse,
@@ -1208,13 +1214,23 @@ internal class ProtocolContextEmitterV2
         ExpressionSyntax body;
         if (data.IsEnum)
         {
+            var enumArms = new List<SwitchExpressionArmSyntax>(data.EnumFields.Count);
+            var enumValues = new HashSet<long>();
+            foreach (var field in data.EnumFields)
+            {
+                if (enumValues.Add(field.Value))
+                {
+                    enumArms.Add(EmitEnumArm(data, field));
+                }
+            }
+
             SwitchExpressionArmSyntax[] arms =
             [
                 SwitchExpressionArm(
                     pattern: ConstantPattern(NullLiteralExpression),
                     expression: DefaultExpression(T.String)
                 ),
-                ..data.EnumFields.Select(field => EmitEnumArm(data, field)),
+                ..enumArms,
                 SwitchExpressionArm(
                     pattern: DeclarationPattern(data.TypeName, SingleVariableDesignation(Identifiers.v)),
                     expression: SimpleInvocationExpression(IdentifierNames.v, IdentifierNames.ToString)
@@ -1256,7 +1272,9 @@ internal class ProtocolContextEmitterV2
 
         return MethodDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             returnType: NullableType(T.String),
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.Stringify,
@@ -1291,7 +1309,9 @@ internal class ProtocolContextEmitterV2
             : NullableType(data.TypeName, Token(SyntaxKind.QuestionToken));
         return MethodDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             returnType: T.Expression,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.CreateBoxedConstant,
@@ -1553,7 +1573,10 @@ internal class ProtocolContextEmitterV2
         // class:BOX
         members.Add(EmitBox(data));
         // field:_properties
-        members.Add(EmitProperties(data));
+        if (!data.IsOpaque)
+        {
+            members.Add(EmitProperties(data));
+        }
         // field:BoxValueField
         members.Add(EmitBoxValueField(data));
         // prop:Type
@@ -1561,7 +1584,9 @@ internal class ProtocolContextEmitterV2
         // prop:ArrayOfType
         members.Add(ArrowPropertyDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             type: T.Type,
             identifier: Identifiers.ArrayOfType,
             body: TypeOfExpression(ArrayType(data.TypeName, SingletonList(ArrayRankSpecifier())))
@@ -1569,62 +1594,76 @@ internal class ProtocolContextEmitterV2
         // prop:EnumerableOfType
         members.Add(ArrowPropertyDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             type: T.Type,
             identifier: Identifiers.EnumerableOfType,
             body: TypeOfExpression(T.IEnumerableOf(data.TypeName))
         ));
         // prop: Properties
-        members.Add(ArrowPropertyDeclaration(
-            type: T.IReadOnlyListOfPropertyInfo,
-            identifier: Identifiers.Properties,
-            body: IdentifierNames._properties
-        ));
-        // prop: IsArithmetic
-        members.Add(ArrowPropertyDeclaration(
-            type: T.Boolean,
-            identifier: Identifiers.IsArithmetic,
-            body: BooleanLiteralExpression(false)
-        ));
-        // prop: IsEnum
-        members.Add(ArrowPropertyDeclaration(
-            type: T.Boolean,
-            identifier: Identifiers.IsEnum,
-            body: BooleanLiteralExpression(data.IsEnum)
-        ));
+        if (!data.IsOpaque)
+        {
+            members.Add(ArrowPropertyDeclaration(
+                type: T.IReadOnlyListOfPropertyInfo,
+                identifier: Identifiers.Properties,
+                body: IdentifierNames._properties
+            ));
+            // prop: IsArithmetic
+            members.Add(ArrowPropertyDeclaration(
+                type: T.Boolean,
+                identifier: Identifiers.IsArithmetic,
+                body: BooleanLiteralExpression(false)
+            ));
+            // prop: IsEnum
+            members.Add(ArrowPropertyDeclaration(
+                type: T.Boolean,
+                identifier: Identifiers.IsEnum,
+                body: BooleanLiteralExpression(data.IsEnum)
+            ));
+        }
         // prop: IsValue
         members.Add(ArrowPropertyDeclaration(
+            attributeLists: default,
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             type: T.Boolean,
             identifier: Identifiers.IsValue,
             body: BooleanLiteralExpression(data.IsValueType)
         ));
-        // method:BoxNullable // FIXME: should be non-throwing for nullable types?
-        members.Add(MethodDeclaration(
-            attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
-            returnType: NullableType(T.Object),
-            explicitInterfaceSpecifier: default,
-            identifier: Identifiers.BoxNullable,
-            typeParameterList: default,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
-                Parameter(
-                    attributeLists: default,
-                    modifiers: default,
-                    type: T.Object,
-                    identifier: Identifiers.value,
-                    @default: default
-                )
-            })),
-            constraintClauses: default,
-            body: default,
-            expressionBody: ArrowExpressionClause(ThrowNotSupportedExpression),
-            semicolonToken: Tokens.Semicolon
-        ));
+        if (!data.IsOpaque)
+        {
+            // method:BoxNullable // FIXME: should be non-throwing for nullable types?
+            members.Add(MethodDeclaration(
+                attributeLists: default,
+                modifiers: TokenList(Tokens.Public),
+                returnType: NullableType(T.Object),
+                explicitInterfaceSpecifier: default,
+                identifier: Identifiers.BoxNullable,
+                typeParameterList: default,
+                parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
+                {
+                    Parameter(
+                        attributeLists: default,
+                        modifiers: default,
+                        type: T.Object,
+                        identifier: Identifiers.value,
+                        @default: default
+                    )
+                })),
+                constraintClauses: default,
+                body: default,
+                expressionBody: ArrowExpressionClause(ThrowNotSupportedExpression),
+                semicolonToken: Tokens.Semicolon
+            ));
+        }
         // method:IsAssignableTo
         members.Add(MethodDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             returnType: T.Boolean,
             explicitInterfaceSpecifier: default!,
             identifier: Identifiers.IsAssignableTo,
@@ -1661,214 +1700,225 @@ internal class ProtocolContextEmitterV2
             semicolonToken: Tokens.Semicolon
         ));
 
-        // method:IsEnumerable
-        members.Add(MethodDeclaration(
-            attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
-            returnType: T.Boolean,
-            explicitInterfaceSpecifier: default!,
-            identifier: Identifiers.IsEnumerable,
-            typeParameterList: default!,
-            parameterList: ParameterList(SingletonSeparatedList(
-                Parameter(
-                    attributeLists: AttrMaybeNullWhenFalse,
-                    modifiers: TokenList(Tokens.Out),
-                    type: T.Type,
-                    identifier: Identifiers.elementType,
-                    @default: default
-                )
-            )),
-            constraintClauses: default,
-            body: Block(
-                ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, data.IsEnumerable
-                    ? TypeOfExpression(data.ElementType.TypeName)
-                    : DefaultExpression(T.Type))),
-                ReturnStatement(BooleanLiteralExpression(data.IsEnumerable))
-            ),
-            semicolonToken: default
-        ));
-        // method:IsArray
-        members.Add(MethodDeclaration(
-            attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
-            returnType: T.Boolean,
-            explicitInterfaceSpecifier: default!,
-            identifier: Identifiers.IsArray,
-            typeParameterList: default!,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
-                Parameter(
-                    attributeLists: AttrMaybeNullWhenFalse,
-                    modifiers: TokenList(Tokens.Out),
-                    type: T.Type,
-                    identifier: Identifiers.elementType,
-                    @default: default
-                )
-            })),
-            constraintClauses: default,
-            body: Block(
-                ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, data.IsArray
-                    ? TypeOfExpression(data.ElementType.TypeName)
-                    : DefaultExpression(T.Type))),
-                ReturnStatement(BooleanLiteralExpression(data.IsArray))
-            ),
-            semicolonToken: default
-        ));
-        // method:IsLambda
-        members.Add(MethodDeclaration(
-            attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
-            returnType: T.Boolean,
-            explicitInterfaceSpecifier: default!,
-            identifier: Identifiers.IsLambda,
-            typeParameterList: default!,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
-                Parameter(
-                    attributeLists: AttrMaybeNullWhenFalse,
-                    modifiers: TokenList(Tokens.Out),
-                    type: T.Type,
-                    identifier: Identifiers.argType,
-                    @default: default
+        if (!data.IsOpaque)
+        {
+            // method:IsEnumerable
+            members.Add(MethodDeclaration(
+                attributeLists: default,
+                modifiers: TokenList(Tokens.Public),
+                returnType: T.Boolean,
+                explicitInterfaceSpecifier: default!,
+                identifier: Identifiers.IsEnumerable,
+                typeParameterList: default!,
+                parameterList: ParameterList(SingletonSeparatedList(
+                    Parameter(
+                        attributeLists: AttrMaybeNullWhenFalse,
+                        modifiers: TokenList(Tokens.Out),
+                        type: T.Type,
+                        identifier: Identifiers.elementType,
+                        @default: default
+                    )
+                )),
+                constraintClauses: default,
+                body: Block(
+                    ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, data.IsEnumerable
+                        ? TypeOfExpression(data.ElementType.TypeName)
+                        : DefaultExpression(T.Type))),
+                    ReturnStatement(BooleanLiteralExpression(data.IsEnumerable))
                 ),
-                Parameter(
-                    attributeLists: AttrMaybeNullWhenFalse,
-                    modifiers: TokenList(Tokens.Out),
-                    type: T.Type,
-                    identifier: Identifiers.resType,
-                    @default: default
-                )
-            })),
-            constraintClauses: default,
-            body: Block(
-                ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.argType, data.IsLambda
-                    ? TypeOfExpression(data.LambdaArg.Value.TypeName)
-                    : DefaultExpression(T.Type))),
-                ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.resType, data.IsLambda
-                    ? TypeOfExpression(data.LambdaRes.Value.TypeName)
-                    : DefaultExpression(T.Type))),
-                ReturnStatement(BooleanLiteralExpression(data.IsLambda))
-            ),
-            semicolonToken: default
-        ));
-        // method:IsMaybe
-        members.Add(MethodDeclaration(
-            attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
-            returnType: T.Boolean,
-            explicitInterfaceSpecifier: default!,
-            identifier: Identifiers.IsMaybe,
-            typeParameterList: default!,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
-                Parameter(
-                    attributeLists: AttrMaybeNullWhenFalse,
-                    modifiers: TokenList(Tokens.Out),
-                    type: T.Type,
-                    identifier: Identifiers.elementType,
-                    @default: default
-                )
-            })),
-            constraintClauses: default,
-            body: Block(
-                ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, DefaultExpression(T.Type))),
-                ReturnStatement(BooleanLiteralExpression(false))
-            ),
-            semicolonToken: default
-        ));
-        // method:IsNullable
-        members.Add(MethodDeclaration(
-            attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
-            returnType: T.Boolean,
-            explicitInterfaceSpecifier: default!,
-            identifier: Identifiers.IsNullable,
-            typeParameterList: default!,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
-                Parameter(
-                    attributeLists: AttrMaybeNullWhenFalse,
-                    modifiers: TokenList(Tokens.Out),
-                    type: T.Type,
-                    identifier: Identifiers.elementType,
-                    @default: default
-                )
-            })),
-            constraintClauses: default,
-            body: Block(
-                ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, data.IsNullable
-                    ? TypeOfExpression(data.UnderlyingType.Value.TypeName)
-                    : DefaultExpression(T.Type))),
-                ReturnStatement(BooleanLiteralExpression(data.IsNullable))
-            ),
-            semicolonToken: default
-        ));
+                semicolonToken: default
+            ));
+            // method:IsArray
+            members.Add(MethodDeclaration(
+                attributeLists: default,
+                modifiers: TokenList(Tokens.Public),
+                returnType: T.Boolean,
+                explicitInterfaceSpecifier: default!,
+                identifier: Identifiers.IsArray,
+                typeParameterList: default!,
+                parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
+                {
+                    Parameter(
+                        attributeLists: AttrMaybeNullWhenFalse,
+                        modifiers: TokenList(Tokens.Out),
+                        type: T.Type,
+                        identifier: Identifiers.elementType,
+                        @default: default
+                    )
+                })),
+                constraintClauses: default,
+                body: Block(
+                    ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, data.IsArray
+                        ? TypeOfExpression(data.ElementType.TypeName)
+                        : DefaultExpression(T.Type))),
+                    ReturnStatement(BooleanLiteralExpression(data.IsArray))
+                ),
+                semicolonToken: default
+            ));
+            // method:IsLambda
+            members.Add(MethodDeclaration(
+                attributeLists: default,
+                modifiers: TokenList(Tokens.Public),
+                returnType: T.Boolean,
+                explicitInterfaceSpecifier: default!,
+                identifier: Identifiers.IsLambda,
+                typeParameterList: default!,
+                parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
+                {
+                    Parameter(
+                        attributeLists: AttrMaybeNullWhenFalse,
+                        modifiers: TokenList(Tokens.Out),
+                        type: T.Type,
+                        identifier: Identifiers.argType,
+                        @default: default
+                    ),
+                    Parameter(
+                        attributeLists: AttrMaybeNullWhenFalse,
+                        modifiers: TokenList(Tokens.Out),
+                        type: T.Type,
+                        identifier: Identifiers.resType,
+                        @default: default
+                    )
+                })),
+                constraintClauses: default,
+                body: Block(
+                    ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.argType, data.IsLambda
+                        ? TypeOfExpression(data.LambdaArg.Value.TypeName)
+                        : DefaultExpression(T.Type))),
+                    ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.resType, data.IsLambda
+                        ? TypeOfExpression(data.LambdaRes.Value.TypeName)
+                        : DefaultExpression(T.Type))),
+                    ReturnStatement(BooleanLiteralExpression(data.IsLambda))
+                ),
+                semicolonToken: default
+            ));
+            // method:IsMaybe
+            members.Add(MethodDeclaration(
+                attributeLists: default,
+                modifiers: TokenList(Tokens.Public),
+                returnType: T.Boolean,
+                explicitInterfaceSpecifier: default!,
+                identifier: Identifiers.IsMaybe,
+                typeParameterList: default!,
+                parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
+                {
+                    Parameter(
+                        attributeLists: AttrMaybeNullWhenFalse,
+                        modifiers: TokenList(Tokens.Out),
+                        type: T.Type,
+                        identifier: Identifiers.elementType,
+                        @default: default
+                    )
+                })),
+                constraintClauses: default,
+                body: Block(
+                    ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, DefaultExpression(T.Type))),
+                    ReturnStatement(BooleanLiteralExpression(false))
+                ),
+                semicolonToken: default
+            ));
+            // method:IsNullable
+            members.Add(MethodDeclaration(
+                attributeLists: default,
+                modifiers: TokenList(Tokens.Public),
+                returnType: T.Boolean,
+                explicitInterfaceSpecifier: default!,
+                identifier: Identifiers.IsNullable,
+                typeParameterList: default!,
+                parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
+                {
+                    Parameter(
+                        attributeLists: AttrMaybeNullWhenFalse,
+                        modifiers: TokenList(Tokens.Out),
+                        type: T.Type,
+                        identifier: Identifiers.elementType,
+                        @default: default
+                    )
+                })),
+                constraintClauses: default,
+                body: Block(
+                    ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.elementType, data.IsNullable
+                        ? TypeOfExpression(data.UnderlyingType.Value.TypeName)
+                        : DefaultExpression(T.Type))),
+                    ReturnStatement(BooleanLiteralExpression(data.IsNullable))
+                ),
+                semicolonToken: default
+            ));
+        }
         // method:Parse
         members.Add(EmitParse(data));
         // method:Stringify
         members.Add(EmitStringify(data));
-        // method:TryGetEnumFactory
-        members.Add(MethodDeclaration(
-            attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
-            returnType: T.Boolean,
-            explicitInterfaceSpecifier: default!,
-            identifier: Identifiers.TryGetEnumFactory,
-            typeParameterList: default!,
-            parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
-            {
-                Parameter(
-                    attributeLists: AttrMaybeNullWhenFalse,
-                    modifiers: TokenList(Tokens.Out),
-                    type: T.Internal.IEnumFactory,
-                    identifier: Identifiers.enumFactory,
-                    @default: default
-                )
-            })),
-            constraintClauses: default,
-            body: Block(
-                ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.enumFactory, data.IsEnum
-                    ? SimpleMemberAccessExpression(
-                        ParseTypeName($"{data.SafeName}EnumFactory"),
-                        IdentifierNames.Singleton
+        if (!data.IsOpaque)
+        {
+            // method:TryGetEnumFactory
+            members.Add(MethodDeclaration(
+                attributeLists: default,
+                modifiers: TokenList(Tokens.Public),
+                returnType: T.Boolean,
+                explicitInterfaceSpecifier: default!,
+                identifier: Identifiers.TryGetEnumFactory,
+                typeParameterList: default!,
+                parameterList: ParameterList(SeparatedList(new ParameterSyntax[]
+                {
+                    Parameter(
+                        attributeLists: AttrMaybeNullWhenFalse,
+                        modifiers: TokenList(Tokens.Out),
+                        type: T.Internal.IEnumFactory,
+                        identifier: Identifiers.enumFactory,
+                        @default: default
                     )
-                    : DefaultExpression(T.Internal.IEnumFactory))),
-                ReturnStatement(BooleanLiteralExpression(data.IsEnum))
-            ),
-            semicolonToken: default
-        ));
+                })),
+                constraintClauses: default,
+                body: Block(
+                    ExpressionStatement(SimpleAssignmentExpression(IdentifierNames.enumFactory, data.IsEnum
+                        ? SimpleMemberAccessExpression(
+                            ParseTypeName($"{data.SafeName}EnumFactory"),
+                            IdentifierNames.Singleton
+                        )
+                        : DefaultExpression(T.Internal.IEnumFactory))),
+                    ReturnStatement(BooleanLiteralExpression(data.IsEnum))
+                ),
+                semicolonToken: default
+            ));
+        }
         // method:CreateBoxedConstant
         members.Add(EmitCreateBoxedConstant(data));
-        // method:CreateAdd
-        members.Add(EmitCreateAdd(data));
-        // method:CreateAndAlso
-        members.Add(EmitCreateAndAlso(data));
-        // method:CreateDivide
-        members.Add(EmitCreateDivide(data));
-        // method:CreateEqual
-        members.Add(EmitCreateEqual(data));
-        // method:CreateGreaterThan
-        members.Add(EmitCreateGreaterThan(data));
-        // method:CreateGreaterThanOrEqual
-        members.Add(EmitCreateGreaterThanOrEqual(data));
-        // method:CreateLessThan
-        members.Add(EmitCreateLessThan(data));
-        // method:CreateLessThanOrEqual
-        members.Add(EmitCreateLessThanOrEqual(data));
-        // method:CreateModulo
-        members.Add(EmitCreateModulo(data));
-        // method:CreateMultiply
-        members.Add(EmitCreateMultiply(data));
-        // method:CreateNotEqual
-        members.Add(EmitCreateNotEqual(data));
-        // method:CreateOrElse
-        members.Add(EmitCreateOrElse(data));
-        // method:CreateSubtract
-        members.Add(EmitCreateSubtract(data));
+        if (!data.IsOpaque)
+        {
+            // method:CreateAdd
+            members.Add(EmitCreateAdd(data));
+            // method:CreateAndAlso
+            members.Add(EmitCreateAndAlso(data));
+            // method:CreateDivide
+            members.Add(EmitCreateDivide(data));
+            // method:CreateEqual
+            members.Add(EmitCreateEqual(data));
+            // method:CreateGreaterThan
+            members.Add(EmitCreateGreaterThan(data));
+            // method:CreateGreaterThanOrEqual
+            members.Add(EmitCreateGreaterThanOrEqual(data));
+            // method:CreateLessThan
+            members.Add(EmitCreateLessThan(data));
+            // method:CreateLessThanOrEqual
+            members.Add(EmitCreateLessThanOrEqual(data));
+            // method:CreateModulo
+            members.Add(EmitCreateModulo(data));
+            // method:CreateMultiply
+            members.Add(EmitCreateMultiply(data));
+            // method:CreateNotEqual
+            members.Add(EmitCreateNotEqual(data));
+            // method:CreateOrElse
+            members.Add(EmitCreateOrElse(data));
+            // method:CreateSubtract
+            members.Add(EmitCreateSubtract(data));
+        }
         // prop:EnumerableAnyMethod
         members.Add(PropertyDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             type: T.MethodInfo,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.EnumerableAnyMethod,
@@ -1893,7 +1943,9 @@ internal class ProtocolContextEmitterV2
         // prop:EnumerableAllMethod
         members.Add(PropertyDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             type: T.MethodInfo,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.EnumerableAllMethod,
@@ -1918,7 +1970,9 @@ internal class ProtocolContextEmitterV2
         // prop:EnumerableContainsMethod
         members.Add(PropertyDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             type: T.MethodInfo,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.EnumerableContainsMethod,
@@ -1943,7 +1997,9 @@ internal class ProtocolContextEmitterV2
         // method:Accept
         members.Add(MethodDeclaration(
             attributeLists: default,
-            modifiers: TokenList(Tokens.Public),
+            modifiers: data.IsOpaque
+                ? TokenList(Tokens.Public, Tokens.Override)
+                : TokenList(Tokens.Public),
             returnType: T.Void,
             explicitInterfaceSpecifier: default,
             identifier: Identifiers.Accept,
@@ -1986,7 +2042,9 @@ internal class ProtocolContextEmitterV2
                 }))
             )
             .AddBaseListTypes(
-                SimpleBaseType(T.Internal.ITypeDescriptor)
+                data.IsOpaque
+                    ? [SimpleBaseType(T.Internal.OpaqueTypeDescriptorBase), SimpleBaseType(T.Internal.ITypeDescriptor)]
+                    : [SimpleBaseType(T.Internal.ITypeDescriptor)]
             )
             .AddModifiers(
                 Tokens.Public,

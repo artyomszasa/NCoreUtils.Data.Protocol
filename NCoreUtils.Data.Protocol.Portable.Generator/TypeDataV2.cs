@@ -13,6 +13,7 @@ internal sealed partial class TypeDataV2(
     IReadOnlyList<PropertyDataV2> properties,
     bool isArray,
     bool isEnumerable,
+    bool isOpaque,
     // TypeDataV2? elementType,
     bool isLambda,
     // TypeDataV2? lambdaArg,
@@ -45,6 +46,8 @@ internal sealed partial class TypeDataV2(
     public bool IsParseable { get; } = isParseable;
 
     public bool IsFormattable { get; } = isFormattable;
+
+    public bool IsOpaque { get; } = isOpaque;
 
     public IReadOnlyList<PropertyDataV2> Properties { get; } = properties;
 
@@ -150,6 +153,7 @@ internal sealed partial class TypeDataV2(
             || IsValueType != other.IsValueType
             || IsParseable != other.IsParseable
             || IsFormattable != other.IsFormattable
+            || IsOpaque != other.IsOpaque
             || !Properties.SequenceEqual(other.Properties)
             || IsArray != other.IsArray
             || IsEnumerable != other.IsEnumerable

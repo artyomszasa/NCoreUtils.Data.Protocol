@@ -4,7 +4,7 @@ namespace NCoreUtils.Data.Protocol.Generator;
 
 internal partial class TypeDataV2
 {
-    private static string GetSafeName(ITypeSymbol symbol, Func<ITypeSymbol, string?> safeNameFactory)
+    public static string GetSafeName(ITypeSymbol symbol, Func<ITypeSymbol, string?> safeNameFactory)
     {
         if (symbol is INamedTypeSymbol named && named.IsGenericType)
         {
@@ -112,24 +112,29 @@ internal partial class TypeDataV2
     {
         var safeName = GetSafeName(symbol, safeNameFactory);
         var fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        elementType = symbol is IArrayTypeSymbol arrayType
-            ? arrayType.ElementType
-            : compilation.TryGetEnumerableElementType(symbol, out var etype, out _) ? etype : default;
+        elementType = isOpaque
+            ? default
+            : symbol is IArrayTypeSymbol arrayType
+                ? arrayType.ElementType
+                : compilation.TryGetEnumerableElementType(symbol, out var etype, out _) ? etype : default;
         properties = (symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct) && elementType is null && !isOpaque
             ? GetPropertiesRecursive(symbol)
             : [];
-        var isLambda = symbol is INamedTypeSymbol named1Symbol && SymbolEqualityComparer.Default.Equals(named1Symbol.ConstructedFrom, compilation.func);
-        var isNullable = symbol.IsNullableStruct;
-        var isEnum = symbol.TypeKind == TypeKind.Enum;
+        var isLambda = !isOpaque && symbol is INamedTypeSymbol named1Symbol && SymbolEqualityComparer.Default.Equals(named1Symbol.ConstructedFrom, compilation.func);
+        var isNullable = !isOpaque && symbol.IsNullableStruct;
+        var isEnum = !isOpaque && symbol.TypeKind == TypeKind.Enum;
         return new TypeDataV2(
             safeName: safeName,
             fullName: fullName,
             isValueType: symbol.IsValueType,
-            isParseable: TypeIsParseable(compilation, symbol),
-            isFormattable: TypeIsFormattable(compilation, symbol),
-            properties: [..properties.Select(p => new PropertyDataV2(p.Name, p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)))],
-            isArray: symbol is IArrayTypeSymbol,
-            isEnumerable: symbol is not IArrayTypeSymbol && elementType is not null,
+            isParseable: !isOpaque && TypeIsParseable(compilation, symbol),
+            isFormattable: !isOpaque && TypeIsFormattable(compilation, symbol),
+            isOpaque: isOpaque,
+            properties: isOpaque
+                ? []
+                : [..properties.Select(p => new PropertyDataV2(p.Name, p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)))],
+            isArray: !isOpaque && symbol is IArrayTypeSymbol,
+            isEnumerable: !isOpaque && symbol is not IArrayTypeSymbol && elementType is not null,
             isLambda: isLambda,
             isNullable: isNullable,
             isEnum: isEnum,

@@ -17,6 +17,10 @@ public partial record ItemF(double Num, string? Str, SubItem[] Sub)
     public static ItemF FromNum(double numValue) => new(numValue, default, Array.Empty<SubItem>());
 }
 
+public partial record SubItemE(string Name);
+
+public partial record ItemE(double Num, string? Str, IReadOnlyList<SubItemE> Sub);
+
 public enum AOrB { A = 0, B }
 
 [Flags]
@@ -42,4 +46,18 @@ public class DerivedEntity : BaseEntity
     public int I32 { get; set; }
 }
 
+public enum EnumWithOverlappingValue
+{
+    None = 0,
+    First = 1,
+    Initial = First,
+    Second = 2
+}
+
 public record ItemWithNullableTimeSpan(TimeSpan? Value);
+
+public record ItemWithEnumWithOverlappingValue(EnumWithOverlappingValue Value);
+
+public record OpaqueType(int Value);
+
+public record ItemWithListOfOpaqueType(IReadOnlyList<OpaqueType> Subitems);
