@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using NCoreUtils.Data.Protocol.Internal;
 using System.Linq;
+using System.Linq.Expressions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace NCoreUtils.Data.Protocol.Unit;
@@ -82,5 +85,39 @@ public class GeneratorTests
     {
         var descriptor = GetDescriptor<FormattableWithoutInterface>();
         Assert.Throws<NotSupportedException>(() => descriptor.Stringify(new FormattableWithoutInterface("abc")));
+    }
+
+    // Types reached only through properties (element of collection property, underlying type of nullable property)
+    // used to get no array/enumerable/predicate descriptors.
+    [Theory]
+    [InlineData(typeof(Func<SubItemE, bool>))]
+    [InlineData(typeof(SubItemE[]))]
+    [InlineData(typeof(IEnumerable<SubItemE>))]
+    [InlineData(typeof(Func<TimeSpan, bool>))]
+    [InlineData(typeof(TimeSpan[]))]
+    [InlineData(typeof(IEnumerable<TimeSpan>))]
+    public void PropertyOnlyTypeHasCompanionDescriptors(Type type)
+        => Assert.Contains(GeneratedContext.Singleton.GetTypeDescriptors(), d => d.Type == type);
+
+    [Fact]
+    public void LambdaOnPropertyOnlyElementTypeIsBuilt()
+    {
+        using var serviceProvider = new ServiceCollection()
+            .AddTransient(typeof(ILogger<>), typeof(DummyLogger<>))
+            .AddDataQueryServerServices(GeneratedContext.Singleton)
+            .BuildServiceProvider(true);
+        using var scope = serviceProvider.CreateScope();
+        var builder = scope.ServiceProvider.GetRequiredService<IDataQueryExpressionBuilder>();
+        var expression = (Expression<Func<ItemE, bool>>)builder.BuildExpression(typeof(ItemE), "o => some(o.sub, e => e.name = \"xxx\")");
+        var fn = expression.Compile();
+        Assert.True(fn(new ItemE(default, default, [new SubItemE("xxx")])));
+        Assert.False(fn(new ItemE(default, default, [new SubItemE("yyy")])));
+    }
+
+    [Fact]
+    public void ContextsWithSameNameInDifferentNamespacesAreGenerated()
+    {
+        Assert.Contains(SameNamed.GeneratedContext.Singleton.GetTypeDescriptors(), d => d.Type == typeof(SubItem));
+        Assert.DoesNotContain(SameNamed.GeneratedContext.Singleton.GetTypeDescriptors(), d => d.Type == typeof(Item));
     }
 }

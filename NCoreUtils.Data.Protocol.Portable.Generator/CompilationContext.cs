@@ -262,6 +262,12 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
     public bool IsEnumerable(ITypeSymbol symbol)
         => symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, iEnumerable);
 
+    /// <summary>
+    /// Array or any type implementing <c>IEnumerable&lt;T&gt;</c> (except string).
+    /// </summary>
+    public bool IsCollection(ITypeSymbol symbol)
+        => symbol is IArrayTypeSymbol || TryGetEnumerableElementType(symbol, out _, out _);
+
     public bool IsLambda(ITypeSymbol symbol)
         => symbol is INamedTypeSymbol named && SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, func);
 }

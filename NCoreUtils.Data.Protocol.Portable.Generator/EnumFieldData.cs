@@ -7,7 +7,7 @@ internal readonly struct EnumFieldData(string name, long value)
 {
     public static bool operator==(EnumFieldData a, EnumFieldData b) => a.Equals(b);
 
-    public static bool operator!=(EnumFieldData a, EnumFieldData b) => a.Equals(b);
+    public static bool operator!=(EnumFieldData a, EnumFieldData b) => !(a == b);
 
     public string Name { get; } = name;
 

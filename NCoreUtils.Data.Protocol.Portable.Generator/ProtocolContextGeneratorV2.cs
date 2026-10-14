@@ -290,11 +290,11 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                 // roots (e.g. explicitly described types)..
                 if (fromProperty || root)
                 {
-                    if (mode.HasFlag(GenMode.Array) && !compilation.IsArray(symbol))
+                    if (mode.HasFlag(GenMode.Array) && !compilation.IsCollection(symbol))
                     {
                         pending.Enqueue(compilation.CreateArrayTypeSymbol(symbol));
                     }
-                    if (mode.HasFlag(GenMode.Enumerable) && !compilation.IsEnumerable(symbol))
+                    if (mode.HasFlag(GenMode.Enumerable) && !compilation.IsCollection(symbol))
                     {
                         pending.Enqueue(compilation.CreateIEnumerableTypeSymbol(symbol));
                     }
@@ -309,15 +309,18 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                 }
                 continue;
             }
-            if (root)
+            // NOTE: types first reached through properties (including element types of collection properties and
+            // underlying types of nullable properties) need predicate/enumerable/array descriptors as well, but
+            // (unlike roots) collection-of-collection types are not generated for them.
+            if (root || fromProperty)
             {
                 // add array type if not already present
-                if (mode.HasFlag(GenMode.Array))
+                if (mode.HasFlag(GenMode.Array) && (root || !compilation.IsCollection(symbol)))
                 {
                     pending.Enqueue(compilation.CreateArrayTypeSymbol(symbol));
                 }
                 // add enumerable type if not already present
-                if (mode.HasFlag(GenMode.Enumerable))
+                if (mode.HasFlag(GenMode.Enumerable) && (root || !compilation.IsCollection(symbol)))
                 {
                     pending.Enqueue(compilation.CreateIEnumerableTypeSymbol(symbol));
                 }
@@ -345,6 +348,11 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     {
                         pending.Enqueue(compilation.CreateNullableTypeSymbol(namedSymbol), root: true);
                     }
+                    if (data.IsNullable && (root || fromProperty))
+                    {
+                        // add T for T? (e.g. lambdas over nullable property may operate on T)
+                        pending.Enqueue(namedSymbol.TypeArguments[0], fromProperty: true);
+                    }
                 }
                 else
                 {
@@ -369,8 +377,8 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                 }
                 if (elementType is ITypeSymbol elementSymbol)
                 {
-                    // add T for IEnumerable<T> its derivatives
-                    pending.Enqueue(elementSymbol);
+                    // add T for IEnumerable<T> its derivatives (T of collection property is used in lambdas)
+                    pending.Enqueue(elementSymbol, fromProperty: root || fromProperty);
                 }
                 foreach (var prop in properties)
                 {
@@ -388,7 +396,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             {
                 data = TypeDataV2.Create(compilation, arraySymbol, isOpaque, safeNameFactory, out var elementType, out _);
                 targetTypes.Add(arraySymbol, data);
-                pending.Enqueue(elementType!);
+                pending.Enqueue(elementType!, fromProperty: root || fromProperty);
                 // add IEnumerable<T> for array types!
                 pending.Enqueue(compilation.CreateIEnumerableTypeSymbol(elementType!));
             }
@@ -762,7 +770,9 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     target.LambdaTypes,
                     ctx.ReportDiagnostic
                 );
-                ctx.AddSource($"{target.Name}.g.cs", unit.GetText(Utf8));
+                // NOTE: hint name must be unique within generator --> contexts with the same name may exist in
+                // different namespaces.
+                ctx.AddSource($"{target.Namespace}.{target.Name}.g.cs", unit.GetText(Utf8));
                 stopwatch.Stop();
             }
             catch (GenerationException exn)
