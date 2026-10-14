@@ -129,4 +129,13 @@ internal static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true
     );
+
+    public static DiagnosticDescriptor SafeNameCollision = new(
+        id: "NCU0413",
+        title: "Safe name collision",
+        messageFormat: "Types {1} share the same safe name \"{0}\", use ProtocolSafeName attribute to specify distinct safe name for (all but one of) them",
+        category: "ProtocolContextGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
 }

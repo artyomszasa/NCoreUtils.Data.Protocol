@@ -6,6 +6,12 @@ internal partial class TypeDataV2
 {
     public static string GetSafeName(ITypeSymbol symbol, Func<ITypeSymbol, string?> safeNameFactory)
     {
+        // NOTE: explicit safe name takes precedence for any type (including generic and array types) so that every
+        // safe name collision can be resolved via ProtocolSafeName attribute.
+        if (safeNameFactory(symbol) is string explicitSafeName)
+        {
+            return explicitSafeName;
+        }
         if (symbol is INamedTypeSymbol named && named.IsGenericType)
         {
             return $"{symbol.Name}Of{string.Join(string.Empty, named.TypeArguments.Select(ty => GetSafeName(ty, safeNameFactory)))}";
@@ -14,7 +20,7 @@ internal partial class TypeDataV2
         {
             return $"ArrayOf{GetSafeName(array.ElementType, safeNameFactory)}";
         }
-        return safeNameFactory(symbol) ?? symbol.Name;
+        return symbol.Name;
     }
 
     /// <summary>

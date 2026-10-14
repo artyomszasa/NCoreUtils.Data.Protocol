@@ -422,6 +422,31 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
                     SymbolDisplayMiscellaneousOptions.UseSpecialTypes |
                     SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
+    private static void EnsureSafeNamesAreUnique(IEnumerable<ITypeData> types, Location? location)
+    {
+        var collision = types
+            // NOTE: only generated types own generated names
+            .OfType<TypeDataV2>()
+            .GroupBy(static t => t.SafeName, StringComparer.Ordinal)
+            .Where(static g => g.Skip(1).Any())
+            // NOTE: derived names (e.g. FuncOfItemBoolean) contain the name they are derived from --> the shortest
+            // collision is the root cause, resolving it resolves the derived ones as well.
+            .OrderBy(static g => g.Key.Length)
+            .ThenBy(static g => g.Key, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (collision is not null)
+        {
+            throw new GenerationException(new DiagnosticData(
+                DiagnosticDescriptors.SafeNameCollision,
+                location,
+                [
+                    collision.Key,
+                    string.Join(", ", collision.Select(static t => t.FullName).OrderBy(static n => n, StringComparer.Ordinal))
+                ]
+            ));
+        }
+    }
+
     private ProtocolContextTargetV2 ExtractTarget(
         SemanticModel semanticModel,
         ClassDeclarationSyntax cds,
@@ -586,6 +611,10 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             safeNameFactory: safeNameFactory,
             cancellationToken: cancellationToken
         );
+        // all generated names (descriptors, enum factories, parse accessors) are derived from safe names --> these must
+        // be unique.
+        cancellationToken.ThrowIfCancellationRequested();
+        EnsureSafeNamesAreUnique(targetTypes.Values, symbol.Locations.FirstOrDefault());
         // PASS 3: connect types
         cancellationToken.ThrowIfCancellationRequested();
 
