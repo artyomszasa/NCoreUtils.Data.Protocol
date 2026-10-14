@@ -14,6 +14,12 @@ internal interface ITypeData
 
     bool IsParseable { get; }
 
+    /// <summary>
+    /// When <c>IParsable&lt;T&gt;.Parse</c> is implemented explicitly -- metadata name of the implementation, used to
+    /// bind <c>UnsafeAccessor</c>.
+    /// </summary>
+    string? ParseViaInterfaceMetadataName { get; }
+
     bool IsFormattable { get; }
 
     bool IsOpaque { get; }

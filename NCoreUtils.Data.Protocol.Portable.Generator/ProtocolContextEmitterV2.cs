@@ -1162,12 +1162,25 @@ internal class ProtocolContextEmitterV2
         // if (data.IsEnum)
         // {
         // }
-        if (data.IsParseable && data.IsFormattable)
+        if (data.IsParseable && data.IsFormattable && data.ParseViaInterfaceMetadataName is not null)
+        {
+            // Parse{SafeName}ViaInterface(default!, value, CultureInfo.InvariantCulture)
+            body = InvocationExpression(
+                IdentifierName(ParseViaInterfaceName(data)),
+                Args(
+                    Argument(PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, DefaultExpression(data.TypeName))),
+                    Argument(IdentifierNames.value),
+                    Argument(InvariantCulture)
+                )
+            );
+        }
+        else if (data.IsParseable && data.IsFormattable)
         {
             body = SimpleInvocationExpression(
                 data.TypeName,
                 IdentifierNames.Parse,
-                Argument(IdentifierNames.value)
+                Argument(IdentifierNames.value),
+                Argument(InvariantCulture)
             );
         }
         else
@@ -1208,6 +1221,20 @@ internal class ProtocolContextEmitterV2
             semicolonToken: Tokens.Semicolon
         );
     }
+
+    private static string ParseViaInterfaceName(ITypeData data)
+        => $"Parse{data.SafeName}ViaInterface";
+
+    /// <summary>
+    /// Accessor of the explicit <c>IParsable&lt;T&gt;.Parse</c> implementation. <c>UnsafeAccessor</c> is used instead
+    /// of generic helper constrained to <c>IParsable&lt;T&gt;</c> as no generic methods should be generated.
+    /// </summary>
+    private static MemberDeclarationSyntax EmitParseViaInterface(ITypeData data, string metadataName)
+        => ParseMemberDeclaration(
+            "[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod, "
+            + $"Name = {SymbolDisplay.FormatLiteral(metadataName, quote: true)})]"
+            + $" private static extern {data.FullName} {ParseViaInterfaceName(data)}({data.FullName} _, string value, global::System.IFormatProvider? provider);"
+        )!;
 
     private static MethodDeclarationSyntax EmitStringify(ITypeData data)
     {
@@ -1847,6 +1874,10 @@ internal class ProtocolContextEmitterV2
         }
         // method:Parse
         members.Add(EmitParse(data));
+        if (data.IsParseable && data.IsFormattable && data.ParseViaInterfaceMetadataName is string parseMetadataName)
+        {
+            members.Add(EmitParseViaInterface(data, parseMetadataName));
+        }
         // method:Stringify
         members.Add(EmitStringify(data));
         if (!data.IsOpaque)

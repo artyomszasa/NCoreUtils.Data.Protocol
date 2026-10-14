@@ -9,6 +9,7 @@ internal sealed partial class TypeDataV2(
     string fullName,
     bool isValueType,
     bool isParseable,
+    string? parseViaInterfaceMetadataName,
     bool isFormattable,
     IReadOnlyList<PropertyDataV2> properties,
     bool isArray,
@@ -44,6 +45,8 @@ internal sealed partial class TypeDataV2(
     public bool IsValueType { get; } = isValueType;
 
     public bool IsParseable { get; } = isParseable;
+
+    public string? ParseViaInterfaceMetadataName { get; } = parseViaInterfaceMetadataName;
 
     public bool IsFormattable { get; } = isFormattable;
 
@@ -152,6 +155,7 @@ internal sealed partial class TypeDataV2(
         if (!G.Eq(FullName, other.FullName)
             || !G.Eq(IsValueType, other.IsValueType)
             || !G.Eq(IsParseable, other.IsParseable)
+            || !G.Eq(ParseViaInterfaceMetadataName, other.ParseViaInterfaceMetadataName)
             || !G.Eq(IsFormattable, other.IsFormattable)
             || !G.Eq(IsOpaque, other.IsOpaque)
             || !G.Eq(Properties, other.Properties)

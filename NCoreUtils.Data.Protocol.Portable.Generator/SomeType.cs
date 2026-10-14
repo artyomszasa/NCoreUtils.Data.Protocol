@@ -80,7 +80,7 @@ internal readonly struct SomeType
         }
         if (_fullName is string fullName)
         {
-            return unchecked((int)(0xFFFFFFFFEu & (uint)fullName.GetHashCode()));
+            return unchecked((int)(0xFFFFFFFEu & (uint)fullName.GetHashCode()));
         }
         return default;
     }

@@ -34,6 +34,8 @@ internal sealed class ExplicitTypeData(
 
     public bool IsParseable => false;
 
+    public string? ParseViaInterfaceMetadataName => default;
+
     public bool IsFormattable => false;
 
     public bool IsOpaque => false;

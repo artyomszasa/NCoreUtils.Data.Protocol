@@ -61,3 +61,88 @@ public record ItemWithEnumWithOverlappingValue(EnumWithOverlappingValue Value);
 public record OpaqueType(int Value);
 
 public record ItemWithListOfOpaqueType(IReadOnlyList<OpaqueType> Subitems);
+public class ItemWithNonReadableProperties
+{
+    private int writeOnly;
+
+    private int privateGetter;
+
+    public int Id { get; set; }
+
+    public int WriteOnly { set => writeOnly = value; }
+
+    public int PrivateGetter { private get => privateGetter; set => privateGetter = value; }
+
+    public int Sum() => writeOnly + privateGetter;
+}
+
+// IParsable<T> implemented explicitly --> Parse cannot be invoked as ExplicitlyParsable.Parse(...).
+public sealed class ExplicitlyParsable(string value) : IParsable<ExplicitlyParsable>, IFormattable
+{
+    public string Value { get; } = value;
+
+    static ExplicitlyParsable IParsable<ExplicitlyParsable>.Parse(string s, IFormatProvider? provider)
+        => new(s);
+
+    static bool IParsable<ExplicitlyParsable>.TryParse(string? s, IFormatProvider? provider, out ExplicitlyParsable result)
+    {
+        result = new(s ?? string.Empty);
+        return s is not null;
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+        => Value;
+}
+
+public abstract class ParsableBase<TSelf>
+    where TSelf : ParsableBase<TSelf>, new()
+{
+    public string Value { get; set; } = string.Empty;
+
+    public static TSelf Parse(string value, IFormatProvider? provider)
+        => new() { Value = value };
+}
+
+// Parse(string, IFormatProvider) is inherited from the base class, IParsable<T> is not implemented.
+public sealed class InheritedParsable : ParsableBase<InheritedParsable>, IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider)
+        => Value;
+}
+
+// Parse(string, IFormatProvider) exists but is not accessible from the generated code.
+public sealed class PrivatelyParsable(string value) : IFormattable
+{
+    private static PrivatelyParsable Parse(string value, IFormatProvider? provider)
+        => new(value);
+
+    public string Value { get; } = value;
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+        => Value;
+
+    public static PrivatelyParsable Create(string value)
+        => Parse(value, default);
+}
+
+// Has ToString overloads (including the signature the former fallback check looked for) but does not implement
+// IFormattable, which is what Stringify relies on.
+public sealed class FormattableWithoutInterface(string value) : IParsable<FormattableWithoutInterface>
+{
+    public string Value { get; } = value;
+
+    public static FormattableWithoutInterface Parse(string s, IFormatProvider? provider)
+        => new(s);
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out FormattableWithoutInterface result)
+    {
+        result = new(s ?? string.Empty);
+        return s is not null;
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+        => Value;
+
+    public string ToString(FormattableWithoutInterface other, IFormatProvider? formatProvider)
+        => other.Value;
+}

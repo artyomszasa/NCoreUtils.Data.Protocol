@@ -35,4 +35,9 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolOpaque(typeof(OpaqueType))]
 [ProtocolEntity(typeof(ItemE))]
 [ProtocolEntity(typeof(ItemWithComplexData))]
+[ProtocolEntity(typeof(ItemWithNonReadableProperties))]
+[ProtocolEntity(typeof(ExplicitlyParsable))]
+[ProtocolEntity(typeof(InheritedParsable))]
+[ProtocolEntity(typeof(PrivatelyParsable))]
+[ProtocolEntity(typeof(FormattableWithoutInterface))]
 public partial class GeneratedContext { }

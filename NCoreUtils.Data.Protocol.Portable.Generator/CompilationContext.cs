@@ -32,6 +32,17 @@ internal sealed class CompilationContext(SemanticModel semanticModel, Compilatio
 
     public readonly INamedTypeSymbol? iFormattable = compilation.GetTypeSymbolOrDefault("System.IFormattable");
 
+    public readonly INamedTypeSymbol? attrUnsafeAccessor = compilation.GetTypeSymbolOrDefault("System.Runtime.CompilerServices.UnsafeAccessorAttribute");
+
+    /// <summary>
+    /// Whether the symbol can be referenced from the generated code (i.e. from the current assembly).
+    /// </summary>
+    public bool IsAccessible(ISymbol symbol)
+        => compilation.IsSymbolAccessibleWithin(symbol, compilation.Assembly);
+
+    public INamedTypeSymbol CreateParseableTypeSymbol(INamedTypeSymbol iParseable, ITypeSymbol elementType)
+        => iParseable.Construct(elementType);
+
     public IArrayTypeSymbol CreateArrayTypeSymbol(ITypeSymbol elementType)
         => compilation.CreateArrayTypeSymbol(elementType);
 

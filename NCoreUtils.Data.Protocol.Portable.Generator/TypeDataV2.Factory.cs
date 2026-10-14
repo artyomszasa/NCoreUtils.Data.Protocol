@@ -17,60 +17,58 @@ internal partial class TypeDataV2
         return safeNameFactory(symbol) ?? symbol.Name;
     }
 
-    private static bool TypeIsParseable(CompilationContext compilation, ITypeSymbol symbol)
+    /// <summary>
+    /// Determines how values of the specified type can be parsed:
+    /// <list type="bullet">
+    ///   <item><c>(true, null)</c> -- accessible static <c>T Parse(string, IFormatProvider)</c> is declared on the
+    ///   type or inherited from its base type, generated code calls it directly;</item>
+    ///   <item><c>(true, name)</c> -- <c>IParsable&lt;T&gt;.Parse</c> is implemented explicitly by the type itself,
+    ///   generated code calls it through <c>UnsafeAccessor</c> bound to the metadata name of the implementation (no
+    ///   generic methods are generated);</item>
+    ///   <item><c>(false, null)</c> -- the type is not parseable.</item>
+    /// </list>
+    /// </summary>
+    private static (bool IsParseable, string? ParseViaInterfaceMetadataName) TypeIsParseable(CompilationContext compilation, ITypeSymbol symbol)
     {
+        for (var type = symbol; type is not null; type = type.BaseType)
+        {
+            foreach (var member in type.GetMembers("Parse"))
+            {
+                if (member is IMethodSymbol { IsStatic: true, Parameters: [var par1, var par2] } method
+                    && SymbolEqualityComparer.Default.Equals(par1.Type, compilation.@string)
+                    && SymbolEqualityComparer.Default.Equals(par2.Type, compilation.iFormatProvider)
+                    && SymbolEqualityComparer.Default.Equals(method.ReturnType, symbol)
+                    && compilation.IsAccessible(method))
+                {
+                    return (true, default);
+                }
+            }
+        }
+        // NOTE: UnsafeAccessor only looks up members declared on the target type itself.
         if (compilation.iParseable is INamedTypeSymbol iParseable
-            && symbol.AllInterfaces.Any((iParseable, symbol), ImplementsParseable))
+            && compilation.attrUnsafeAccessor is not null
+            && symbol.AllInterfaces.FirstOrDefault(i => SymbolEqualityComparer.Default.Equals(i, compilation.CreateParseableTypeSymbol(iParseable, symbol))) is INamedTypeSymbol iParseableOfSelf
+            && iParseableOfSelf.GetMembers("Parse").OfType<IMethodSymbol>().FirstOrDefault(m => m.Parameters.Length == 2) is IMethodSymbol interfaceParse
+            && symbol.FindImplementationForInterfaceMember(interfaceParse) is IMethodSymbol { IsStatic: true } implementation
+            && SymbolEqualityComparer.Default.Equals(implementation.ContainingType, symbol))
         {
-            return true;
+            return (true, implementation.MetadataName);
         }
-        return symbol.GetMembers().Any((symbol, compilation), static (member, tup) =>
-        {
-            var (symbol, compilation) = tup;
-            return member is IMethodSymbol method
-                && method.Name == "Parse"
-                && method.Parameters is [var par1, var par2]
-                && SymbolEqualityComparer.Default.Equals(par1.Type, compilation.@string)
-                && SymbolEqualityComparer.Default.Equals(par2.Type, compilation.iFormatProvider)
-                && SymbolEqualityComparer.Default.Equals(method.ReturnType, symbol);
-        });
-
-        static bool ImplementsParseable(INamedTypeSymbol iParseable, (INamedTypeSymbol, ITypeSymbol) tup)
-        {
-            var (@interface, self) = tup;
-            return SymbolEqualityComparer.Default.Equals(@interface.ConstructedFrom, iParseable)
-                && @interface.TypeArguments is [var typeArg]
-                && SymbolEqualityComparer.Default.Equals(typeArg, self);
-        }
+        return (false, default);
     }
 
+    /// <summary>
+    /// Generated <c>Stringify</c> casts value to <c>IFormattable</c> --> the interface must be implemented.
+    /// </summary>
     private static bool TypeIsFormattable(CompilationContext compilation, ITypeSymbol symbol)
-    {
-        if (compilation.iFormattable is INamedTypeSymbol iFormattable
-            && symbol.AllInterfaces.Any(iFormattable, ImplementsFormattable))
-        {
-            return true;
-        }
-        return symbol.GetMembers().Any((symbol, compilation), static (member, tup) =>
-        {
-            var (symbol, compilation) = tup;
-            return member is IMethodSymbol method
-                && method.Name == "ToString"
-                && method.Parameters is [var par1, var par2]
-                && SymbolEqualityComparer.Default.Equals(method.ReturnType, compilation.@string)
-                && SymbolEqualityComparer.Default.Equals(par1.Type, symbol)
-                && SymbolEqualityComparer.Default.Equals(par2.Type, compilation.iFormatProvider);
-        });
+        => compilation.iFormattable is INamedTypeSymbol iFormattable
+            && symbol.AllInterfaces.Any(iFormattable, SymbolEqualityComparer.Default.Equals);
 
-        static bool ImplementsFormattable(INamedTypeSymbol iFormattable, ITypeSymbol @interface)
-            => SymbolEqualityComparer.Default.Equals(@interface, iFormattable);
-    }
-
-    private static void GetPropertiesRecursive(ITypeSymbol symbol, Dictionary<string, IPropertySymbol> properties)
+    private static void GetPropertiesRecursive(CompilationContext compilation, ITypeSymbol symbol, Dictionary<string, IPropertySymbol> properties)
     {
         if (symbol.BaseType is not null && symbol.BaseType.SpecialType != SpecialType.System_Object && symbol.BaseType.SpecialType != SpecialType.System_ValueType)
         {
-            GetPropertiesRecursive(symbol.BaseType, properties);
+            GetPropertiesRecursive(compilation, symbol.BaseType, properties);
         }
         foreach (var prop in symbol.GetMembers().OfType<IPropertySymbol>())
         {
@@ -83,15 +81,26 @@ internal partial class TypeDataV2
                 // NOTE: exclude EqualityContract present on records
                 && !string.IsNullOrEmpty(prop.Name) && prop.Name != "EqualityContract")
             {
-                properties[prop.Name] = prop;
+                // NOTE: generated code reads the property and references its type --> both getter and type must be
+                // accessible.
+                if (prop.GetMethod is IMethodSymbol getter && compilation.IsAccessible(getter) && compilation.IsAccessible(prop.Type))
+                {
+                    properties[prop.Name] = prop;
+                }
+                // NOTE: override may only override setter --> base getter is still in effect, otherwise the property
+                // hides the base one.
+                else if (!prop.IsOverride)
+                {
+                    properties.Remove(prop.Name);
+                }
             }
         }
     }
 
-    private static IPropertySymbol[] GetPropertiesRecursive(ITypeSymbol symbol)
+    private static IPropertySymbol[] GetPropertiesRecursive(CompilationContext compilation, ITypeSymbol symbol)
     {
         var properties = new Dictionary<string, IPropertySymbol>();
-        GetPropertiesRecursive(symbol, properties);
+        GetPropertiesRecursive(compilation, symbol, properties);
         return [.. properties.Values];
     }
 
@@ -118,16 +127,18 @@ internal partial class TypeDataV2
                 ? arrayType.ElementType
                 : compilation.TryGetEnumerableElementType(symbol, out var etype, out _) ? etype : default;
         properties = (symbol.TypeKind == TypeKind.Class || symbol.TypeKind == TypeKind.Interface || symbol.TypeKind == TypeKind.Struct) && elementType is null && !isOpaque
-            ? GetPropertiesRecursive(symbol)
+            ? GetPropertiesRecursive(compilation, symbol)
             : [];
         var isLambda = !isOpaque && symbol is INamedTypeSymbol named1Symbol && SymbolEqualityComparer.Default.Equals(named1Symbol.ConstructedFrom, compilation.func);
         var isNullable = !isOpaque && symbol.IsNullableStruct;
         var isEnum = !isOpaque && symbol.TypeKind == TypeKind.Enum;
+        var (isParseable, parseViaInterfaceMetadataName) = isOpaque ? (false, default) : TypeIsParseable(compilation, symbol);
         return new TypeDataV2(
             safeName: safeName,
             fullName: fullName,
             isValueType: symbol.IsValueType,
-            isParseable: !isOpaque && TypeIsParseable(compilation, symbol),
+            isParseable: isParseable,
+            parseViaInterfaceMetadataName: parseViaInterfaceMetadataName,
             isFormattable: !isOpaque && TypeIsFormattable(compilation, symbol),
             isOpaque: isOpaque,
             properties: isOpaque

@@ -20,6 +20,8 @@ internal sealed class NullablePrimitiveValueTypeData(PrimitiveValueTypeData sour
 
     public bool IsParseable => true;
 
+    public string? ParseViaInterfaceMetadataName => default;
+
     public bool IsFormattable => true;
 
     public bool IsOpaque => false;
