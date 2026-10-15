@@ -103,7 +103,7 @@ internal partial class TypeDataV2
         }
     }
 
-    private static IPropertySymbol[] GetPropertiesRecursive(CompilationContext compilation, ITypeSymbol symbol)
+    internal static IPropertySymbol[] GetPropertiesRecursive(CompilationContext compilation, ITypeSymbol symbol)
     {
         var properties = new Dictionary<string, IPropertySymbol>();
         GetPropertiesRecursive(compilation, symbol, properties);

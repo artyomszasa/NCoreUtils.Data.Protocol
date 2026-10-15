@@ -137,7 +137,11 @@ internal sealed partial class TypeDataV2(
 
     #region computed
 
-    public TypeSyntax TypeName => SyntaxFactory.ParseTypeName(FullName);
+    // NOTE: caching is safe: SyntaxFactory only uses the (immutable) green node of the passed node, the cached
+    // instance itself never becomes part of the emitted tree. Not part of equality.
+    private TypeSyntax? _typeName;
+
+    public TypeSyntax TypeName => _typeName ??= SyntaxFactory.ParseTypeName(FullName);
 
     #endregion
 

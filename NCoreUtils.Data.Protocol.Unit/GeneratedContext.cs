@@ -41,4 +41,5 @@ namespace NCoreUtils.Data.Protocol.Unit;
 [ProtocolEntity(typeof(PrivatelyParsable))]
 [ProtocolEntity(typeof(FormattableWithoutInterface))]
 [ProtocolEntity(typeof(ItemWithKeywordEnums))]
+[ProtocolEntity(typeof(ItemWithNested))]
 public partial class GeneratedContext { }

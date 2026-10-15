@@ -15,8 +15,9 @@ namespace NCoreUtils.Data.Protocol
         Array = 0x02,
         Enumerable = 0x04,
         Nullable = 0x08,
+        BaseTypes = 0x10,
         Optimal = Predicates | Enumerable,
-        Full = Predicates | Array | Enumerable | Nullable
+        Full = Predicates | Array | Enumerable | Nullable | BaseTypes
     }
 
     [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]

@@ -276,11 +276,16 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         HashSet<ITypeSymbol> opaqueTypes,
         HashSet<ITypeSymbol> builtin,
         Func<ITypeSymbol, string?> safeNameFactory,
+        HashSet<ITypeSymbol> propertyReachedTypes,
         CancellationToken cancellationToken)
     {
         while (pending.TryDequeue(out var symbol, out var root, out var fromProperty))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (fromProperty)
+            {
+                propertyReachedTypes.Add(symbol);
+            }
             if (targetTypes.ContainsKey(symbol) || builtin.Contains(symbol))
             {
                 // NOTE: we still need to generate predicate/enumerable/array descriptors for property types and
@@ -447,6 +452,85 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
         }
     }
 
+    /// <summary>
+    /// Argument/result types of the lambda types present in <c>PortableDataUtils</c> by default (all pairs). Must be
+    /// kept in sync with <c>DefaultsGenerator.BuiltInTypes</c>.
+    /// </summary>
+    private static HashSet<ITypeSymbol> GetDefaultLambdaTypeArgs(Compilation compilation, INamedTypeSymbol nullableT)
+    {
+        ITypeSymbol[] valueTypes =
+        [
+            compilation.GetSpecialType(SpecialType.System_Boolean),
+            compilation.GetSpecialType(SpecialType.System_Int16),
+            compilation.GetSpecialType(SpecialType.System_Int32),
+            compilation.GetSpecialType(SpecialType.System_Int64),
+            compilation.GetSpecialType(SpecialType.System_UInt16),
+            compilation.GetSpecialType(SpecialType.System_UInt32),
+            compilation.GetSpecialType(SpecialType.System_UInt64),
+            compilation.GetSpecialType(SpecialType.System_Single),
+            compilation.GetSpecialType(SpecialType.System_Double),
+            compilation.GetSpecialType(SpecialType.System_DateTime),
+            compilation.GetTypeSymbol("System.DateTimeOffset"),
+            compilation.GetTypeSymbol("System.Guid")
+        ];
+        return new HashSet<ITypeSymbol>(
+            valueTypes
+                .Concat(valueTypes.Select(t => nullableT.Construct(t)))
+                .Append(compilation.GetSpecialType(SpecialType.System_String)),
+            SymbolEqualityComparer.Default
+        );
+    }
+
+    private static bool IsQueryableBaseType([NotNullWhen(true)] INamedTypeSymbol? baseType)
+        => baseType is not null
+            && baseType.SpecialType != SpecialType.System_Object
+            && baseType.SpecialType != SpecialType.System_ValueType
+            && baseType.SpecialType != SpecialType.System_Enum
+            && baseType.SpecialType != SpecialType.System_Delegate
+            && baseType.SpecialType != SpecialType.System_MulticastDelegate;
+
+    /// <summary>
+    /// Types of the properties reachable from the root through (non-collection) member paths, e.g. <c>o.a.b</c>.
+    /// Only types with generated descriptors are traversed (opaque, explicitly described, nullable and built-in
+    /// types are not).
+    /// </summary>
+    private static HashSet<ITypeSymbol> GetReachablePropertyTypes(
+        CompilationContext compilation,
+        ITypeSymbol root,
+        IReadOnlyDictionary<ITypeSymbol, ITypeData> targetTypes,
+        CancellationToken cancellationToken)
+    {
+        var result = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        var visited = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default) { root };
+        var pending = new Queue<ITypeSymbol>();
+        pending.Enqueue(root);
+        while (pending.Count > 0)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var type = pending.Dequeue();
+            if (!(targetTypes.TryGetValue(type, out var data) && data is TypeDataV2 { IsOpaque: false, Properties.Count: > 0 })
+                || type.IsNullableStruct)
+            {
+                continue;
+            }
+            foreach (var prop in TypeDataV2.GetPropertiesRecursive(compilation, type))
+            {
+                var propType = prop.Type;
+                // NOTE: sorting/selecting by collection is not supported
+                if (compilation.IsCollection(propType))
+                {
+                    continue;
+                }
+                result.Add(propType);
+                if (visited.Add(propType))
+                {
+                    pending.Enqueue(propType);
+                }
+            }
+        }
+        return result;
+    }
+
     private ProtocolContextTargetV2 ExtractTarget(
         SemanticModel semanticModel,
         ClassDeclarationSyntax cds,
@@ -572,6 +656,10 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             pending.Enqueue(describedType, root: true);
         }
 
+        // types reached through properties (including elements of collection properties), used to distinguish base
+        // types that are only present as base types.
+        var propertyReachedTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+
         // PASS 1: collect types starting from root
         cancellationToken.ThrowIfCancellationRequested();
         AddTargetTypes(
@@ -582,6 +670,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             opaqueTypes: opaqueTypes,
             builtin: builtInTypes,
             safeNameFactory: safeNameFactory,
+            propertyReachedTypes: propertyReachedTypes,
             cancellationToken: cancellationToken
         );
         // PASS 2: find indirect types (type args)
@@ -609,6 +698,7 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             opaqueTypes: opaqueTypes,
             builtin: builtInTypes,
             safeNameFactory: safeNameFactory,
+            propertyReachedTypes: propertyReachedTypes,
             cancellationToken: cancellationToken
         );
         // all generated names (descriptors, enum factories, parse accessors) are derived from safe names --> these must
@@ -723,23 +813,88 @@ public partial class ProtocolContextGeneratorV2 : IIncrementalGenerator
             }
         }
         // PASS 4: collect lambda types
-        var boolType = compilation.GetSpecialType(SpecialType.System_Boolean);
+        cancellationToken.ThrowIfCancellationRequested();
+        var defaultLambdaTypeArgs = GetDefaultLambdaTypeArgs(compilation, cctx.nullable);
+
+        void AddLambda(ITypeSymbol argType, ITypeSymbol resType)
+        {
+            // NOTE: PortableDataUtils already contains lambda types for these pairs
+            if (!(defaultLambdaTypeArgs.Contains(argType) && defaultLambdaTypeArgs.Contains(resType)))
+            {
+                lambdaTypes.Add(new(argType, resType));
+            }
+        }
+
+        // types only present as base types of other types (not entities, not reached through properties): lambda
+        // types are only generated for them if requested.
+        var baseOnlyTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        if (!genMode.HasFlag(GenMode.BaseTypes))
+        {
+            foreach (var type in targetTypes.Keys)
+            {
+                for (var baseType = type.BaseType; IsQueryableBaseType(baseType); baseType = baseType.BaseType)
+                {
+                    if (!rootEntityTypes.Contains(baseType) && !propertyReachedTypes.Contains(baseType))
+                    {
+                        baseOnlyTypes.Add(baseType);
+                    }
+                }
+            }
+        }
+
+        // (1) every lambda type known to the context (predicates of the entities, elements, properties, explicitly
+        // listed lambda entities) except for collection, lambda, explicitly described and base-only arguments (these
+        // should be registered via ProtocolLambdaAttribute or ProtocolGenerationMode.BaseTypes).
+        foreach (var type in targetTypes.Keys)
+        {
+            if (cctx.TryGetLambdaTypes(type, out var argType, out var resType)
+                && !cctx.IsCollection(argType)
+                && !cctx.IsLambda(argType)
+                && !descriptors.ContainsKey(argType)
+                && !baseOnlyTypes.Contains(argType))
+            {
+                AddLambda(argType, resType);
+            }
+        }
+        // (2) predicates of the built-in types not covered by defaults
         foreach (var biType in builtInTypes)
         {
-            // predicates
-            lambdaTypes.Add(new (
-                argType: biType,
-                resType: boolType
-            ));
+            AddLambda(biType, cctx.@bool);
         }
-        foreach (var type in targetTypes.Keys.Where(ty => !builtInTypes.Contains(ty) && !cctx.IsLambda(ty) && ty is not IArrayTypeSymbol))
+        // (3) root lambdas (filtering, sorting, selection): root -> built-in types (expression/function results) and
+        // root -> types of the properties reachable from root (sorting by property).
+        // NOTE: collection roots (e.g. List<X> -> Y) and explicitly described types are not included, lambda types
+        // for them should be registered via ProtocolLambdaAttribute.
+        var queryRoots = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (var root in rootEntityTypes)
         {
-            foreach (var biType in builtInTypes)
+            if (cctx.IsLambda(root) || cctx.IsCollection(root) || descriptors.ContainsKey(root))
             {
-                lambdaTypes.Add(new (
-                    argType: type,
-                    resType: biType
-                ));
+                continue;
+            }
+            queryRoots.Add(root);
+            if (genMode.HasFlag(GenMode.BaseTypes))
+            {
+                for (var baseType = root.BaseType; IsQueryableBaseType(baseType); baseType = baseType.BaseType)
+                {
+                    if (!descriptors.ContainsKey(baseType))
+                    {
+                        queryRoots.Add(baseType);
+                    }
+                }
+            }
+        }
+        // NOTE: excluding rarely used result types (byte, sbyte, short, ushort) was measured to have no significant
+        // effect (~0.5 KiB of NativeAOT binary size per lambda type) --> all built-in types are included.
+        foreach (var root in queryRoots)
+        {
+            foreach (var resType in builtInTypes)
+            {
+                AddLambda(root, resType);
+            }
+            foreach (var resType in GetReachablePropertyTypes(cctx, root, targetTypes, cancellationToken))
+            {
+                AddLambda(root, resType);
             }
         }
 

@@ -166,3 +166,8 @@ public enum KeywordFlags
 }
 
 public record ItemWithKeywordEnums(KeywordUlongEnum Value, KeywordFlags Flags);
+
+public record NestedValue(AOrB Kind, TimeSpan Duration);
+
+// root -> property type lambdas must also cover types reachable through member paths (o.nested.kind)
+public record ItemWithNested(int Id, NestedValue Nested);
